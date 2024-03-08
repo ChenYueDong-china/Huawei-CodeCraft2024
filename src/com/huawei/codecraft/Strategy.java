@@ -15,8 +15,7 @@ public class Strategy {
     private int money;
 
 
-    private String[] ch = new String[MAP_FILE_ROW_NUMS + 1];
-
+    public GameMap gameMap;
 
     public static int workbenchId = 0;
     private final HashMap<Integer, Workbench> workbenches = new HashMap<>();
@@ -27,10 +26,12 @@ public class Strategy {
     private final Boat[] boats = new Boat[BOATS_PER_PLAYER];
 
     public void init() throws IOException {
-        for (int i = 1; i <= MAP_FILE_ROW_NUMS; i++) {
-            ch[i] = inStream.readLine();
-            printMOST(ch[i]);
+        char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
+        gameMap = new GameMap();
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            fgets(mapData[i], inStream);
         }
+        gameMap.setMap(mapData);
         //码头
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             String s = inStream.readLine();
@@ -38,10 +39,12 @@ public class Strategy {
             String[] parts = s.trim().split(" ");
             int id = Integer.parseInt(parts[0]);
             berths[id] = new Berth();
-            berths[id].x = Integer.parseInt(parts[1]);
-            berths[id].y = Integer.parseInt(parts[2]);
-            berths[id].transport_time = Integer.parseInt(parts[3]);
-            berths[id].loading_speed = Integer.parseInt(parts[4]);
+            berths[id].leftTopPos.x = Integer.parseInt(parts[1]);
+            berths[id].leftTopPos.y = Integer.parseInt(parts[2]);
+            berths[id].transportTime = Integer.parseInt(parts[3]);
+            berths[id].loadingSpeed = Integer.parseInt(parts[4]);
+            berths[id].init(gameMap);
+
         }
         String s = inStream.readLine().trim();
         printMOST(s);
@@ -53,6 +56,7 @@ public class Strategy {
         //机器人
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
             robots[i] = new Robot();
+            robots[i].id = i;
         }
 
         String okk = inStream.readLine();
@@ -111,7 +115,7 @@ public class Strategy {
             robots[i].input();
         }
         //船
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < BOATS_PER_PLAYER; i++) {
             boats[i].input();
         }
         String okk = inStream.readLine();

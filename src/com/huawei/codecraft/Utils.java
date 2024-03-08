@@ -8,13 +8,13 @@ import static java.lang.Math.*;
 public class Utils {
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-//    static {
-//        try {
-//            inStream = new BufferedReader(new FileReader("in.txt"));
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    static {
+        try {
+            inStream = new BufferedReader(new FileReader("in.txt"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final boolean ERROR = false;
 
@@ -79,7 +79,23 @@ public class Utils {
             y += v.y;
             return this;
         }
+
+        boolean equal(Point point) {
+            return point.x == x && point.y == y;
+        }
     }
+
+    public static final Point[] DIR = {
+            new Point(0, 1),//右移
+            new Point(0, -1),//左移
+            new Point(1, 0),//上移
+            new Point(-1, 0),//下移
+            new Point(-1, -1),
+            new Point(1, 1),
+            new Point(-1, 1),
+            new Point(1, -1),
+
+    };
 
     public static class Vec2 // 向量或坐标
     {

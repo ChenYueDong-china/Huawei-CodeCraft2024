@@ -17,6 +17,9 @@ public class Constants {
     public static final int ROBOTS_PER_PLAYER = 10;    // 每个玩家的机器人数
     public static final int BERTH_PER_PLAYER = 10;    // 每个玩家的泊位
     public static final int BOATS_PER_PLAYER = 5;    // 每个玩家的船
+
+    public static final int BERTH_HEIGHT = 4;    // 每个玩家的船
+    public static final int BERTH_WIDTH = 4;    // 每个玩家的船
     public static int frameId;
 
 }
