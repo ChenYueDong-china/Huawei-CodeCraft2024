@@ -71,13 +71,11 @@ public class Dijkstra {
                     if (!mGameMap.canReachDiscrete(dx, dy) || cs[dx][dy].dist != Integer.MAX_VALUE) {
                         continue; // 不可达或者访问过了
                     }
-                    cs[dx][dy].dist = deep + 1;
-                    cs[dx][dy].dir = dirIdx;
+                    cs[dx][dy].set(deep + 1, dirIdx);//第一步
                     dx += dir.x;
                     dy += dir.y;
                     assert (mGameMap.canReachDiscrete(dx, dy));//必定可达
-                    cs[dx][dy].dist = deep + 2;//第二步
-                    cs[dx][dy].dir = dirIdx;
+                    cs[dx][dy].set(deep + 2, dirIdx);//第二步
                     queue.offer(new Point(dx, dy));
                 }
             }

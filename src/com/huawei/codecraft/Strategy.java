@@ -105,7 +105,7 @@ public class Strategy {
         }
         for (int i = 1; i <= num; i++) {
             Workbench workbench = new Workbench(workbenchId);
-            workbench.input();
+            workbench.input(gameMap);
             workbenches.put(workbenchId, workbench);
             workbenchId++;
         }

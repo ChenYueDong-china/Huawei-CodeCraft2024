@@ -15,11 +15,11 @@ public class Workbench {
     int remainTime;
 
     public Workbench(int id) {
-        this.id=id;
+        this.id = id;
         remainTime = WORKBENCH_EXIST_TIME;
     }
 
-    public void input() throws IOException {
+    public void input(GameMap map) throws IOException {
         String line = inStream.readLine();
         printMOST(line);
         String[] parts = line.trim().split(" ");
@@ -27,5 +27,13 @@ public class Workbench {
         pos.y = Integer.parseInt(parts[1]);
         value = Integer.parseInt(parts[2]);
         //初始化dij
+        dijkstra = new Dijkstra();
+        dijkstra.init(pos, map);
+        dijkstra.update();
+    }
+
+    //获得这个workbench到任意一个位置的最小距离
+    int getMinDistance(Point point) {
+        return dijkstra.getMoveDistance(point);
     }
 }
