@@ -21,7 +21,7 @@ public class Main {
     static Strategy strategy = new Strategy();
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        //Thread.sleep(15000);
+//        Thread.sleep(25000);
 //        schedule();
         // 如果在本地调试时不需要重启，在启动参数中添加restart，如：java -jar main.jar restart
         if (args.length == 0) {
