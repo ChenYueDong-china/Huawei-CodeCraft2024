@@ -46,11 +46,11 @@ public class Map {
 
 
     @SuppressWarnings("all")
-    boolean SetMap(char[][] mapData) {
+    boolean setMap(char[][] mapData) {
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             System.arraycopy(mapData[i], 0, mapData[i], 0, MAP_FILE_COL_NUMS);
         }
-        InitDiscrete();
+        initDiscrete();
         return true;
     }
 
@@ -64,7 +64,7 @@ public class Map {
     }
 
 
-    private void InitDiscrete() {
+    private void initDiscrete() {
         for (boolean[] data : discreteMapData) {
             Arrays.fill(data, false);
         }
