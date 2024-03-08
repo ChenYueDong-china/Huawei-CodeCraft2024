@@ -42,7 +42,7 @@ public class Main {
         }
     }
 
-    private static void schedule() throws IOException, InterruptedException {
+    private static void schedule() throws IOException {
         strategy.init();
         strategy.mainLoop();
     }

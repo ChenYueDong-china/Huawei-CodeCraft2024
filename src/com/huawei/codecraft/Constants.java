@@ -11,6 +11,9 @@ public class Constants {
     public static final int MAP_FILE_ROW_NUMS = 200;    // 地图文件行数
     public static final int MAP_FILE_COL_NUMS = 200;    // 地图文件列数
 
+    public static final int MAP_DISCRETE_WIDTH = 2 * MAP_FILE_COL_NUMS + 1;    // 离散列
+    public static final int MAP_DISCRETE_HEIGHT = 2 * MAP_FILE_ROW_NUMS + 1;    // 离散行
+
     public static final int ROBOTS_PER_PLAYER = 10;    // 每个玩家的机器人数
     public static final int BERTH_PER_PLAYER = 10;    // 每个玩家的泊位
     public static final int BOATS_PER_PLAYER = 5;    // 每个玩家的船
