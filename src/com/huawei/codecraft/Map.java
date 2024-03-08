@@ -39,9 +39,9 @@ public class Map {
     }
 
 
-    public boolean canReachDiscrete(int row, int col) {
-        return (row > 0 && row < MAP_DISCRETE_HEIGHT && col > 0 && col < MAP_DISCRETE_WIDTH &&
-                (discreteMapData[row][col]));
+    public boolean canReachDiscrete(int x, int y) {
+        return (x > 0 && x < MAP_DISCRETE_HEIGHT && y > 0 && y < MAP_DISCRETE_WIDTH &&
+                (discreteMapData[x][y]));
     }
 
 
