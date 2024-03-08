@@ -8,13 +8,13 @@ import static java.lang.Math.*;
 public class Utils {
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-    static {
-        try {
-            inStream = new BufferedReader(new FileReader("in.txt"));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    static {
+//        try {
+//            inStream = new BufferedReader(new FileReader("in.txt"));
+//        } catch (FileNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private static final boolean ERROR = false;
 
@@ -48,6 +48,37 @@ public class Utils {
 
     public static boolean DoubleEqual(double a, double b) {
         return abs(a - b) < ALG_EPS;
+    }
+
+    public static class Point {
+        int x, y;
+
+        public Point() {
+        }
+
+        public Point(Point v) {
+            this.x = v.x;
+            this.y = v.y;
+        }
+
+        public Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        Point add(Point v) {
+            return new Point(x + v.x, y + v.y);
+        }
+
+        Point sub(Point v) {
+            return new Point(x - v.x, y - v.y);
+        }
+
+        Point addEquals(Point v) {
+            x += v.x;
+            y += v.y;
+            return this;
+        }
     }
 
     public static class Vec2 // 向量或坐标
@@ -389,7 +420,6 @@ inline double GetShadow(Vec2 sVec2, Vec2 stAnother)
         System.arraycopy(s.toCharArray(), 0, result, 0, s.length());
         return true;
     }
-
 
 
 }
