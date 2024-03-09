@@ -13,6 +13,7 @@ public class Berth {
     public Dijkstra[][] dijkstras = new Dijkstra[BERTH_HEIGHT][BERTH_WIDTH];//berth有16个点,需要16次dij
 
     public int[][] minDistance = new int[MAP_FILE_COL_NUMS][MAP_FILE_COL_NUMS];
+    @SuppressWarnings("unchecked")
     public ArrayList<Point>[][] minDistancePos = new ArrayList[MAP_FILE_COL_NUMS][MAP_FILE_COL_NUMS];
 
     public void init(GameMap gameMap) {
@@ -47,7 +48,9 @@ public class Berth {
                 }
             }
         }
-        System.out.println("111");
+//        dijkstras[0][0].moveTo(new Point(4, 110));
+//        dijkstras[0][0].moveFrom(new Point(4, 110));
+//        System.out.println("111");
 
     }
 

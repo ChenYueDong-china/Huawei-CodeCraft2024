@@ -66,6 +66,10 @@ public class Utils {
             this.y = y;
         }
 
+        Point div(int i) {
+            return new Point(x / i, y / i);
+        }
+
         Point add(Point v) {
             return new Point(x + v.x, y + v.y);
         }

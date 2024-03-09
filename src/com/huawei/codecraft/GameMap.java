@@ -1,6 +1,7 @@
 package com.huawei.codecraft;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static com.huawei.codecraft.Constants.*;
@@ -74,10 +75,33 @@ public class GameMap {
         }
     }
 
-    // 判断地图上某个坐标能否容纳半径为radius的圆
-    boolean canReach(int x, int y) {
-        // 对圆心 + 圆上8个点进行检测
-        return canReachDiscrete(posToDiscrete(x, y).x, posToDiscrete(x, y).y);
+    public boolean canReach(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                (mapData[x][y] != '*' && mapData[x][y] != '#'));//不是海洋或者障碍
+    }
+
+    //普通路径转细化路径
+    public ArrayList<Point> toDiscretePath(ArrayList<Point> tmp) {
+        ArrayList<Point> result = new ArrayList<>();
+        for (int i = 0; i < tmp.size() - 1; i++) {
+            Point cur = posToDiscrete(tmp.get(i));
+            Point next = posToDiscrete(tmp.get(i + 1));
+            Point mid = cur.add(next).div(2);
+            result.add(cur);
+            result.add(mid);
+        }
+        result.add(posToDiscrete(tmp.get(tmp.size() - 1)));
+        return result;
+    }
+
+    //细化路径转会普通路径
+    public ArrayList<Point> toRealPath(ArrayList<Point> tmp) {
+        assert tmp.size() % 2 == 1;//2倍的路径加个起始点
+        ArrayList<Point> result = new ArrayList<>();
+        for (int i = 0; i < tmp.size(); i += 2) {
+            result.add(discreteToPos(tmp.get(i).x, tmp.get(i).y));
+        }
+        return result;
     }
 
 }
