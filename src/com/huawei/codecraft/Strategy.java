@@ -243,7 +243,6 @@ public class Strategy {
                 }
                 int fixTime = sellBerth.getMinDistance(robot.lastBuyPos); //机器人买物品的位置开始
                 int arriveTime = sellBerth.getMinDistance(robot.pos);
-                //int arriveTime = getArriveTime(sellWorkBench, STAT_CARRY_ROBOT, m_workbench.get(robot.lastBuyId).pos); //机器人买物品的位置开始
                 double profit;
                 //包裹被揽收的最小需要的时间
                 int collectTime = getFastestCollectTime(arriveTime - 1, sellBerth);
