@@ -36,4 +36,8 @@ public class Workbench {
     int getMinDistance(Point point) {
         return dijkstra.getMoveDistance(point);
     }
+
+    public boolean canReach(Point pos) {
+        return getMinDistance(pos) != Integer.MAX_VALUE;
+    }
 }

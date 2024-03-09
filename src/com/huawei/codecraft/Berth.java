@@ -6,9 +6,12 @@ import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.Point;
 
 public class Berth {
+
+    int id;
     Point leftTopPos = new Point();
     int transportTime;
     int loadingSpeed;
+    int goodsNums;//泊位目前没装的货物数量
 
     public Dijkstra[][] dijkstras = new Dijkstra[BERTH_HEIGHT][BERTH_WIDTH];//berth有16个点,需要16次dij
 
@@ -52,6 +55,14 @@ public class Berth {
 //        dijkstras[0][0].moveFrom(new Point(4, 110));
 //        System.out.println("111");
 
+    }
+
+    public boolean canReach(Point pos) {
+        return minDistance[pos.x][pos.y] != Integer.MAX_VALUE;
+    }
+
+    public int getMinDistance(Point pos) {
+        return minDistance[pos.x][pos.y];
     }
 
 

@@ -6,7 +6,9 @@ import static com.huawei.codecraft.Utils.inStream;
 import static com.huawei.codecraft.Utils.printMOST;
 
 public class Boat {
+    int id;
     int status;//状态
+    int remainTime;//到达目标剩余时间
     int targetId;//泊位id
     int num;//目前货物数量
     final int capacity;//容量
