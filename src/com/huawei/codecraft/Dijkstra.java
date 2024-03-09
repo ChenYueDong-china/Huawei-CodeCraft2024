@@ -58,7 +58,7 @@ public class Dijkstra {
         if (cs[source.x][source.y] == Integer.MAX_VALUE) {
             return new ArrayList<>();
         }
-        ArrayList<Point> result = getBasicPath(source);
+        ArrayList<Point> result = getPathByCs(cs, source);
         //细化，转成精细坐标
         return mGameMap.toDiscretePath(result);
     }
@@ -68,21 +68,10 @@ public class Dijkstra {
         if (cs[target.x][target.y] == Integer.MAX_VALUE) {
             return new ArrayList<>();
         }
-        ArrayList<Point> result = getBasicPath(target);
+        ArrayList<Point> result = getPathByCs(cs, target);
         Collections.reverse(result);
         //细化，转成精细坐标
         return mGameMap.toDiscretePath(result);
-    }
-
-    private ArrayList<Point> getBasicPath(Point target) {
-        ArrayList<Point> result = new ArrayList<>();
-        Point point = new Point(target);
-        result.add(new Point(point));
-        while (cs[point.x][point.y] != 0) {
-            point.addEquals(DIR[(cs[point.x][point.y] & 3) ^ 1]);
-            result.add(new Point(point));
-        }
-        return result;
     }
 
 

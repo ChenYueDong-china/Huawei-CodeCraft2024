@@ -11,12 +11,12 @@ import static com.huawei.codecraft.Utils.DIR;
 public class GameMap {
 
 
-    private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
-    private final boolean[][] discreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
+    private final char[][] mapData = new char[MAP_FILE_COL_NUMS][MAP_FILE_ROW_NUMS];//列到行
+    private final boolean[][] discreteMapData = new boolean[MAP_DISCRETE_WIDTH][MAP_DISCRETE_HEIGHT];//0不可达 1可达
 
 
     public boolean canReachDiscrete(int x, int y) {
-        return (x > 0 && x < MAP_DISCRETE_HEIGHT - 1 && y > 0 && y < MAP_DISCRETE_WIDTH - 1 &&
+        return (x > 0 && x < MAP_DISCRETE_WIDTH - 1 && y > 0 && y < MAP_DISCRETE_HEIGHT - 1 &&
                 (discreteMapData[x][y]));//0和最后一行或者列是墙，不判断
     }
 
@@ -24,7 +24,9 @@ public class GameMap {
     @SuppressWarnings("all")
     boolean setMap(char[][] mapData) {
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            System.arraycopy(mapData[i], 0, this.mapData[i], 0, MAP_FILE_COL_NUMS);
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                this.mapData[j][i] = mapData[i][j];//颠倒一下
+            }
         }
         initDiscrete();
         return true;
@@ -36,6 +38,10 @@ public class GameMap {
 
     public Point posToDiscrete(int x, int y) {
         return new Point(2 * x + 1, 2 * y + 1);
+    }
+
+    public Point discreteToPos(Point point) {
+        return discreteToPos(point.x, point.y);
     }
 
     public Point discreteToPos(int x, int y) {
@@ -76,7 +82,7 @@ public class GameMap {
     }
 
     public boolean canReach(int x, int y) {
-        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+        return (x >= 0 && x < MAP_FILE_COL_NUMS && y >= 0 && y < MAP_FILE_ROW_NUMS &&
                 (mapData[x][y] != '*' && mapData[x][y] != '#'));//不是海洋或者障碍
     }
 
@@ -104,4 +110,8 @@ public class GameMap {
         return result;
     }
 
+    public boolean isBerth(Point target) {
+        assert target.x >= 0 && target.y >= 0 && target.x < MAP_FILE_COL_NUMS && target.y <= MAP_FILE_ROW_NUMS;
+        return mapData[target.x][target.y] == 'B';
+    }
 }

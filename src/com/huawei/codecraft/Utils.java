@@ -1,6 +1,7 @@
 package com.huawei.codecraft;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.function.Function;
 
 import static java.lang.Math.*;
@@ -24,7 +25,7 @@ public class Utils {
         }
     }
 
-    private static final boolean MOST = true;
+    private static final boolean MOST = false;
 
     public static void printMOST(String s) {
         if (MOST) {
@@ -87,19 +88,48 @@ public class Utils {
         boolean equal(Point point) {
             return point.x == x && point.y == y;
         }
+
+        boolean equal(int x, int y) {
+            return this.x == x && this.y == y;
+        }
+
+        public int mul(Point p) {
+            return x * p.x + y * p.y;
+        }
     }
 
     public static final Point[] DIR = {
-            new Point(0, 1),//右移
-            new Point(0, -1),//左移
-            new Point(1, 0),//上移
-            new Point(-1, 0),//下移
+            new Point(1, 0),//右移
+            new Point(-1, 0),//左移
+            new Point(0, -1),//上移
+            new Point(0, 1),//下移
             new Point(-1, -1),
             new Point(1, 1),
             new Point(-1, 1),
             new Point(1, -1),
 
     };
+
+    public static ArrayList<Point> getPathByCs(int[][] cs, Point target) {
+        ArrayList<Point> result = new ArrayList<>();
+        Point t = new Point(target);
+        result.add(new Point(t));
+        while (cs[t.x][t.y] != 0) {
+            t.addEquals(DIR[(cs[t.x][t.y] & 3) ^ 1]);
+            result.add(new Point(t));
+        }
+        return result;
+    }
+
+    public static int getDir(Point point) {
+        for (int i = 0; i < DIR.length; i++) {
+            if (DIR[i].mul(point) > 0) {
+                return i;
+            }
+        }
+        assert false;
+        return -1;
+    }
 
     public static class Vec2 // 向量或坐标
     {
