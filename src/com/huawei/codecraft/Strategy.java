@@ -44,8 +44,8 @@ public class Strategy {
             String[] parts = s.trim().split(" ");
             int id = Integer.parseInt(parts[0]);
             berths[id] = new Berth();
-            berths[id].leftTopPos.x = Integer.parseInt(parts[1]);
-            berths[id].leftTopPos.y = Integer.parseInt(parts[2]);
+            berths[id].leftTopPos.y = Integer.parseInt(parts[1]);
+            berths[id].leftTopPos.x = Integer.parseInt(parts[2]);
             berths[id].transportTime = Integer.parseInt(parts[3]);
             berths[id].loadingSpeed = Integer.parseInt(parts[4]);
             berths[id].id = i;
@@ -82,17 +82,68 @@ public class Strategy {
     }
 
     private void dispatch() {
-        while (greedySell()) ; //决策
-        workbenchesLock.clear();//动态需要解锁
-        for (HashSet<Integer> set : robotLock) {
-            set.clear();
+//        while (greedySell()) ; //决策
+//        workbenchesLock.clear();//动态需要解锁
+//        for (HashSet<Integer> set : robotLock) {
+//            set.clear();
+//        }
+//        while (greedyBuy()) ;
+//
+//        robotDoAction();
+        //先做测试
+        //9号去128,165
+        if (frameId < 50) {
+            Dijkstra dijkstra = new Dijkstra();
+            dijkstra.init(new Point(14, 189), gameMap);
+            dijkstra.update();
+            robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
+            robots[8].finish();
         }
-        while (greedyBuy()) ;
+        if (frameId == 50) {
+            outStream.printf("get %d\n", 8);
+        }
+        if (frameId >= 50 && frameId < 100) {
+            Dijkstra dijkstra = new Dijkstra();
+            dijkstra.init(new Point(4, 174), gameMap);
+            dijkstra.update();
+            robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
+            robots[8].finish();
+        }
+        if (frameId == 100) {
+            outStream.printf("move %d %d\n", 8, 1);
+            outStream.printf("pull %d\n", 8);
+        }
+        if (frameId == 1) {
+            //开船过来
+            outStream.printf("ship %d %d", 0, 9);
+//            outStream.printf("ship %d %d", 1, 9);
+        }
+        if (frameId == 1 + 1219 + 1) {//到达之后
+            //1220帧到达，然后开始装货，。，至少到达一帧才能走
+            outStream.printf("go %d", 0);
+        }
+//        if (frameId == 1 + 1219 + 1219) {
+//            printERROR("money" + money);
+//        }
+//        if (frameId > 50) {
+//            outStream.printf("move %d %d\n", 9, 0);
+//            outStream.printf("move %d %d\n", 7, 0);
+//
+//        }
 
-        robotDoAction();
+        //船只选择去哪个泊位
 
 
-        //todo 船只选择去哪个泊位
+        //装载货物
+//        for (Boat boat : boats) {
+//            if (boat.remainTime == 0 && boat.targetId != -1 && berths[boat.targetId].goodsNums > 0) {
+//                //开始装货
+//                int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
+//                load = min(load, boat.capacity - boat.num);//剩余空间
+//                boat.num += load;
+//                berths[boat.targetId].goodsNums -= load;
+//            }
+//        }
 
 
     }
@@ -206,6 +257,8 @@ public class Strategy {
             // 先考虑自己离目标点距离，
             // 一样的话考虑不在别人路径上
             //这个预测路径包含了起始点，不管了
+            boolean[] avoids = new boolean[ROBOTS_PER_PLAYER];
+            Arrays.fill(avoids, false);
             while (crashId != -1) {
                 if (count == ROBOTS_PER_PLAYER) {
                     printERROR("the code is worst");
@@ -222,6 +275,8 @@ public class Strategy {
                 Point crashPoint = gameMap.discreteToPos(robotsPredictPath[crashId].get(1));
                 Point result = new Point(-1, -1);
                 int bestDist = Integer.MAX_VALUE;
+                ArrayList<Integer> crashIds = new ArrayList<>();
+                crashIds.add(crashId);
                 for (Point candidate : candidates) {
                     if (candidate.equal(crashPoint)) {
                         continue;
@@ -237,6 +292,7 @@ public class Strategy {
                         Point end = gameMap.posToDiscrete(candidate);
                         Point mid = start.add(end).div(2);
                         if (mid.equal(robotsPredictPath[tmpRobot.id].get(0)) || end.equal(robotsPredictPath[tmpRobot.id].get(1))) {
+                            crashIds.add(tmpRobot.id);
                             crash = true;
                             break;
                         }
@@ -275,8 +331,16 @@ public class Strategy {
                 } else {
                     robots[avoidId].beConflicted = FPS;
                     robots[avoidId].forcePri = 1;
+                    //不可能没一个机器人没法避让，如果这样说明陷入了死锁，但是这个地图不可能思索
+                    avoids[avoidId] = true;//下次这个机器人不避让，避免死循环
                     int tmp = avoidId;
-                    avoidId = crashId;
+                    //寻找避让id
+                    for (Integer id : crashIds) {
+                        if (!avoids[id]) {
+                            avoidId = id;
+                            break;
+                        }
+                    }
                     crashId = tmp;//撞到的让
                 }
                 count++;
@@ -720,6 +784,9 @@ public class Strategy {
         //船
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
             boats[i].input();
+            if (boats[i].remainTime != 0) {
+                boats[i].remainTime--;
+            }
         }
         String okk = inStream.readLine();
         printMOST(okk);

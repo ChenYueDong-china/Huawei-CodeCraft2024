@@ -23,8 +23,8 @@ public class Workbench {
         String line = inStream.readLine();
         printMOST(line);
         String[] parts = line.trim().split(" ");
-        pos.x = Integer.parseInt(parts[0]);
-        pos.y = Integer.parseInt(parts[1]);
+        pos.y = Integer.parseInt(parts[0]);
+        pos.x = Integer.parseInt(parts[1]);
         value = Integer.parseInt(parts[2]);
         //初始化dij
         dijkstra = new Dijkstra();

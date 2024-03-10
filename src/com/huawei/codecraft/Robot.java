@@ -29,6 +29,7 @@ public class Robot {
     int beConflicted = 0;  // 被冲突
 
     public Robot(Strategy strategy) {
+        this.strategy = strategy;
     }
 
 
@@ -37,8 +38,8 @@ public class Robot {
         printMOST(line);
         String[] parts = line.trim().split(" ");
         carry = Integer.parseInt(parts[0]) == 1;
-        pos.x = Integer.parseInt(parts[1]);
-        pos.y = Integer.parseInt(parts[2]);
+        pos.y = Integer.parseInt(parts[1]);
+        pos.x = Integer.parseInt(parts[2]);
         status = Integer.parseInt(parts[3]);
         assigned = false;
         if (!carry) {
@@ -62,7 +63,11 @@ public class Robot {
 
     public void finish() {
         //按照path来看做什么操作
-        if (!assigned && !avoid) {
+//        if (!assigned && !avoid) {
+//            return;
+//        }
+        if (path.size() <= 2) {
+            printERROR("error");
             return;
         }
         Point target = strategy.gameMap.discreteToPos(path.get(2));
@@ -71,7 +76,7 @@ public class Robot {
             return;
         }
         int dir = getDir(target.sub(pos));
-        outStream.printf("move %d\n", dir);
+        outStream.printf("move %d %d\n", id, dir);
         if (!assigned) {
             //没任务，但是避让了
             return;
@@ -87,15 +92,16 @@ public class Robot {
                     && target.y >= strategy.berths[targetBerthId].leftTopPos.y
                     && target.y < strategy.berths[targetBerthId].leftTopPos.y + BERTH_HEIGHT
             ) {
-                //提前卖，移动完毕卖
-                outStream.print("pull\n");
+                //提前卖，移动完毕卖,货物这种时候可以增加
+                strategy.berths[targetBerthId].goodsNums++;
+                outStream.printf("pull %d\n",id);
             }
         } else {
             //要去买
             assert targetWorkBenchId != -1;
             if (strategy.workbenches.get(targetWorkBenchId).pos.equal(target)) {
                 //提前买，移动完毕买,机器人可以移动后立即取货
-                outStream.print("get\n");
+                outStream.printf("get %d\n",id);
             }
         }
     }
