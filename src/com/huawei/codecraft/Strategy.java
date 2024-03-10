@@ -153,9 +153,10 @@ public class Strategy {
             } else if (boat.num > 0 && boat.targetId != -1) {
                 int minSellTime;
                 if (boat.status != 0) {
+                    //正在切换，没到目标回家？
                     minSellTime = BERTH_CHANGE_TIME;
                 } else {
-                    //切换到一半回家，是上一个的还是这一个??????
+                    //切换到一半回家，是上一个的还是这一个??????,到达目标说明是泊位
                     minSellTime = berths[boat.targetId].transportTime;
                 }
                 if (frameId + minSellTime >= GAME_FRAME) {
