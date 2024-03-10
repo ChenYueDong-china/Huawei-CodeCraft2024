@@ -36,6 +36,10 @@ public class Boat {
     }
 
     public void ship(int id) {
-        outStream.printf("ship %d", id);
+        outStream.printf("ship %d %d", this.id, id);
+    }
+
+    public void go() {
+        outStream.printf("go %d", id);
     }
 }

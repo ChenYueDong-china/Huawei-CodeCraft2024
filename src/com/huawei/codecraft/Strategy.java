@@ -144,12 +144,28 @@ public class Strategy {
     private void doBoatAction() {
         //船只选择回家
         for (Boat boat : boats) {
-            if (boat.status == 1 && boat.num == boat.capacity) {//满了回家
-                outStream.printf("go %d", boat.id);
+            if (boat.targetId != -1 && boat.num == boat.capacity) {//满了回家
+                boat.go();
                 boat.remainTime = berths[boat.targetId].transportTime;
                 boat.status = 0;//移动中
                 boat.targetId = -1;
                 boat.assigned = true;
+            } else if (boat.num > 0 && boat.targetId != -1) {
+                int minSellTime;
+                if (boat.status != 0) {
+                    minSellTime = BERTH_CHANGE_TIME;
+                } else {
+                    //切换到一半回家，是上一个的还是这一个??????
+                    minSellTime = berths[boat.targetId].transportTime;
+                }
+                if (frameId + minSellTime >= GAME_FRAME) {
+                    //极限卖
+                    boat.go();
+                    boat.remainTime = minSellTime;
+                    boat.status = 0;//移动中
+                    boat.targetId = -1;
+                    boat.assigned = true;
+                }
             }
         }
         //船只贪心去买卖，跟机器人做一样的决策
@@ -251,7 +267,7 @@ public class Strategy {
                 int buyTime;
                 if (boat.targetId == buyBerth.id) {
                     buyTime = boat.remainTime;
-                } else if (boat.status != 0) {
+                } else if (boat.targetId != -1 && boat.status != 0) {
                     //不在运输中
                     buyTime = BERTH_CHANGE_TIME;
                 } else {
@@ -301,6 +317,13 @@ public class Strategy {
         //boat去移动
         if (boat.targetId != berth.id) {
             boat.ship(berth.id);
+            if (boat.targetId != -1 && boat.status != 0) {
+                boat.remainTime = BERTH_CHANGE_TIME;
+            } else {
+                boat.remainTime = berth.transportTime;
+            }
+            boat.targetId = berth.id;
+            boat.status = 0;
         }
         boat.assigned = true;
         //更新泊位的货物列表和前缀和,说明这个船消耗了这么多货物
@@ -313,7 +336,6 @@ public class Strategy {
         for (Integer value : goodsList[berth.id]) {
             prefixSum[berth.id].add(prefixSum[berth.id].get(prefixSum[berth.id].size() - 1) + value);
         }
-        //锁住买家
         return false;
     }
 
