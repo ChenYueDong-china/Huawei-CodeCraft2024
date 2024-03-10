@@ -8,7 +8,8 @@ public class Boat {
     int id;
     int status;//状态
     int remainTime;//到达目标剩余时间
-    int targetId;//泊位id
+    int targetId = -1;//泊位id
+    int lastTargetId = -1;//泊位id
     int num;//目前货物数量
     final int capacity;//容量
 
@@ -25,7 +26,12 @@ public class Boat {
         printMOST(line);
         String[] parts = line.trim().split(" ");
         status = Integer.parseInt(parts[0]);
+        int tmp = targetId;
         targetId = Integer.parseInt(parts[1]);
+        if (tmp != targetId) {
+            lastTargetId = targetId;
+        }
+
         if (targetId == -1 && status == 1) {
             num = 0;//空闲了，销货完毕
         }

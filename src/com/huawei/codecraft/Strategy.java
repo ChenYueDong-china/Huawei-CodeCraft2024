@@ -109,7 +109,7 @@ public class Strategy {
             robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
             robots[8].finish();
         }
-        if (frameId == 100) {
+        if (frameId == 1 + 1219 + 5) {
             outStream.printf("move %d %d\n", 8, 1);
             outStream.printf("pull %d\n", 8);
         }
@@ -118,14 +118,29 @@ public class Strategy {
             outStream.printf("ship %d %d", 0, 9);
 //            outStream.printf("ship %d %d", 1, 9);
         }
-        if (frameId == 1 + 1219 + 1) {//到达之后
-            //1220帧到达，然后开始装货，。，至少到达一帧才能走
-            outStream.printf("go %d", 0);
-        }
-        if (frameId == 1 + 1219 + 1 + 1219) {//到达之后
+//        if (frameId == 2) {
+//            //开船过来
+//            outStream.printf("ship %d %d", 0, 9);
+////            outStream.printf("ship %d %d", 1, 9);
+//        }
+        if (frameId == 1 + 1219 + 2) {//到达之后
             //1220帧到达，然后开始装货，。，至少到达一帧才能走
             outStream.printf("ship %d %d", 0, 9);
         }
+//
+//        if (frameId == 1 + 1219 + 5) {//到达之后
+//            //1220帧到达，然后开始装货，。，至少到达一帧才能走
+//            outStream.printf("ship %d %d", 0, 9);
+//        }
+//        if (frameId == 1 + 1219 + 30) {//到达之后
+//            //1220帧到达，然后开始装货，。，至少到达一帧才能走
+//            outStream.printf("go %d", 0);
+//        }
+
+//        if (frameId == 1 + 1219 + 10) {
+//            outStream.printf("go %d", 0);
+//            //outStream.printf("ship %d %d", 0, 9);
+//        }
 //        if (frameId == 1 + 1219 + 1219) {
 //            printERROR("money" + money);
 //        }
@@ -148,13 +163,14 @@ public class Strategy {
                 boat.go();
                 boat.remainTime = berths[boat.targetId].transportTime;
                 boat.status = 0;//移动中
+                boat.lastTargetId = boat.targetId;
                 boat.targetId = -1;
                 boat.assigned = true;
             } else if (boat.num > 0 && boat.targetId != -1) {
                 int minSellTime;
                 if (boat.status != 0) {
                     //正在切换，没到目标回家？
-                    minSellTime = BERTH_CHANGE_TIME;
+                    minSellTime = berths[boat.lastTargetId].transportTime;
                 } else {
                     //切换到一半回家，是上一个的还是这一个??????,到达目标说明是泊位
                     minSellTime = berths[boat.targetId].transportTime;
@@ -164,10 +180,14 @@ public class Strategy {
                     boat.go();
                     boat.remainTime = minSellTime;
                     boat.status = 0;//移动中
+                    boat.lastTargetId = boat.targetId;
                     boat.targetId = -1;
                     boat.assigned = true;
                 }
             }
+
+            //到达，且泊位有货，不给离开
+
         }
         //船只贪心去买卖，跟机器人做一样的决策
         //先保存一下泊位的价值列表
@@ -200,7 +220,12 @@ public class Strategy {
             }
         }
 
+        //todo 到达，且现在有货或者未来有货，优先消费掉，剩下的才给别人争抢
+        //todo 到达先吃，
 
+        //todo 等待中吃，如果吃不到则进入贪心
+
+        //贪心切换找一个泊位
         while (boatGreedyBuy(goodsList, prefixSum)) ;
 
         //装载货物
@@ -247,6 +272,7 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
+        //todo 切到一半不能反悔
         int[] berthBoatCount = new int[BERTH_PER_PLAYER];
         Arrays.fill(berthBoatCount, -1);
         for (Boat boat : boats) {
@@ -261,13 +287,17 @@ public class Strategy {
         for (Berth buyBerth : berths) {
             //存在就一定有产品
             for (Boat boat : boats) {
-                if (boat.assigned) {
+                if (boat.assigned || boat.lastTargetId == buyBerth.id) {
+                    //切到一半没法返回，会直接卡死
                     continue;
                 }
                 //计算到达时间
                 int buyTime;
                 if (boat.targetId == buyBerth.id) {
                     buyTime = boat.remainTime;
+                    if (boat.status == 1) {
+                        buyTime = 1;//泊位外等待为1
+                    }
                 } else if (boat.targetId != -1 && boat.status != 0) {
                     //不在运输中
                     buyTime = BERTH_CHANGE_TIME;
@@ -284,6 +314,7 @@ public class Strategy {
                     maxLoadCount = min(boat.capacity - boat.num, goodsList[buyBerth.id].size());
                     maxLoadCount = min((GAME_FRAME - buyTime - sellTime) * buyBerth.loadingSpeed, maxLoadCount);
                     double value = prefixSum[buyBerth.id].get(maxLoadCount);
+                    //消除价值
                     int loadTime = (int) floor(maxLoadCount * 1.0 / buyBerth.loadingSpeed);
                     profit = value / (buyTime + sellTime + loadTime);//买的时间卖的时间，和最后的时间
                     //相同泊位增加一下价值？
@@ -323,6 +354,7 @@ public class Strategy {
             } else {
                 boat.remainTime = berth.transportTime;
             }
+            boat.lastTargetId = boat.targetId;
             boat.targetId = berth.id;
             boat.status = 0;
         }
