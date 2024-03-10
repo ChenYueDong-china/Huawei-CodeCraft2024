@@ -44,7 +44,7 @@ public class Utils {
 
     public static final PrintStream outStream = new PrintStream(new BufferedOutputStream(System.out), true);
 
-    public static final double ALG_EPS = 0.00001;
+    public static final double ALG_EPS = 0.000001;
 
 
     public static boolean DoubleEqual(double a, double b) {

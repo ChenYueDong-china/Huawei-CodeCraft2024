@@ -122,6 +122,10 @@ public class Strategy {
             //1220帧到达，然后开始装货，。，至少到达一帧才能走
             outStream.printf("go %d", 0);
         }
+        if (frameId == 1 + 1219 + 1 + 1219) {//到达之后
+            //1220帧到达，然后开始装货，。，至少到达一帧才能走
+            outStream.printf("ship %d %d", 0, 9);
+        }
 //        if (frameId == 1 + 1219 + 1219) {
 //            printERROR("money" + money);
 //        }
@@ -131,21 +135,186 @@ public class Strategy {
 //
 //        }
 
-        //船只选择去哪个泊位
 
+        doBoatAction();
+
+
+    }
+
+    private void doBoatAction() {
+        //船只选择回家
+        for (Boat boat : boats) {
+            if (boat.status == 1 && boat.num == boat.capacity) {//满了回家
+                outStream.printf("go %d", boat.id);
+                boat.remainTime = berths[boat.targetId].transportTime;
+                boat.status = 0;//移动中
+                boat.targetId = -1;
+                boat.assigned = true;
+            }
+        }
+        //船只贪心去买卖，跟机器人做一样的决策
+        //先保存一下泊位的价值列表
+        //1当前价值列表+机器人运过来的未来价值列表
+        @SuppressWarnings("unchecked")
+        LinkedList<Integer>[] goodsList = new LinkedList[BERTH_PER_PLAYER];
+        for (int i = 0; i < goodsList.length; i++) {
+            goodsList[i].addAll(berths[i].goods);
+        }
+
+        //未来价值列表，直接加进去
+        for (Robot robot : robots) {
+            if (!robot.assigned) {
+                continue;
+            }
+            if (robot.carry) {
+                goodsList[robot.targetBerthId].offer(robot.carryValue);
+            } else {
+                goodsList[robot.targetBerthId].offer(workbenches.get(robot.targetBerthId).value);
+            }
+        }
+        //计算前缀和
+        @SuppressWarnings("unchecked")
+        ArrayList<Integer>[] prefixSum = new ArrayList[BERTH_PER_PLAYER];
+        for (int i = 0; i < BERTH_PER_PLAYER; i++) {
+            prefixSum[i] = new ArrayList<>();
+            prefixSum[i].add(0);
+            for (Integer value : goodsList[i]) {
+                prefixSum[i].add(prefixSum[i].get(prefixSum[i].size() - 1) + value);
+            }
+        }
+
+
+        while (boatGreedyBuy(goodsList, prefixSum)) ;
 
         //装载货物
-//        for (Boat boat : boats) {
-//            if (boat.remainTime == 0 && boat.targetId != -1 && berths[boat.targetId].goodsNums > 0) {
-//                //开始装货
-//                int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
-//                load = min(load, boat.capacity - boat.num);//剩余空间
-//                boat.num += load;
-//                berths[boat.targetId].goodsNums -= load;
-//            }
-//        }
+        for (Boat boat : boats) {
+            //移动立即生效
+            if (boat.remainTime > 0) {
+                boat.remainTime--;
+            }
+            //移动完之后的下一帧才能开始装货
+            if (boat.status == 1 && boat.targetId != -1 && berths[boat.targetId].goodsNums > 0) {
+                //正常运行,开始装货
+                assert boat.remainTime == 0;
+                int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
+                load = min(load, boat.capacity - boat.num);//剩余空间
+                boat.num += load;
+                berths[boat.targetId].goodsNums -= load;
+                for (int i = 0; i < load; i++) {
+                    assert !berths[boat.targetId].goods.isEmpty();
+                    Integer value = berths[boat.targetId].goods.poll();
+                    if (value != null) {
+                        berths[boat.targetId].totalValue -= value;
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean boatGreedyBuy(LinkedList<Integer>[] goodsList, ArrayList<Integer>[] prefixSum) {
+        class Stat implements Comparable<Stat> {
+            final Boat boat;
+            final Berth berth;
+            final int count;//消费个数
+            final double profit;
+
+            public Stat(Boat boat, Berth berth, int count, double profit) {
+                this.boat = boat;
+                this.berth = berth;
+                this.count = count;
+                this.profit = profit;
+            }
+
+            @Override
+            public int compareTo(Stat b) {
+                return Double.compare(b.profit, profit);
+            }
+        }
+        int[] berthBoatCount = new int[BERTH_PER_PLAYER];
+        Arrays.fill(berthBoatCount, -1);
+        for (Boat boat : boats) {
+            if (boat.assigned && boat.targetId != -1) {
+                berthBoatCount[boat.targetId]++;
+            }
+        }
 
 
+        ArrayList<Stat> stat = new ArrayList<>();
+        //选择折现价值最大的
+        for (Berth buyBerth : berths) {
+            //存在就一定有产品
+            for (Boat boat : boats) {
+                if (boat.assigned) {
+                    continue;
+                }
+                //计算到达时间
+                int buyTime;
+                if (boat.targetId == buyBerth.id) {
+                    buyTime = boat.remainTime;
+                } else if (boat.status != 0) {
+                    //不在运输中
+                    buyTime = BERTH_CHANGE_TIME;
+                } else {
+                    buyTime = buyBerth.transportTime;//虚拟点到泊位时间
+                }
+                int sellTime = buyBerth.transportTime;
+                double profit;
+                int maxLoadCount = 0;
+                if (frameId + buyTime + sellTime >= GAME_FRAME) {
+                    profit = -buyTime;
+                } else {
+                    //估计未来货物个数，计算装货时间
+                    maxLoadCount = min(boat.capacity - boat.num, goodsList[buyBerth.id].size());
+                    maxLoadCount = min((GAME_FRAME - buyTime - sellTime) * buyBerth.loadingSpeed, maxLoadCount);
+                    double value = prefixSum[buyBerth.id].get(maxLoadCount);
+                    int loadTime = (int) floor(maxLoadCount * 1.0 / buyBerth.loadingSpeed);
+                    profit = value / (buyTime + sellTime + loadTime);//买的时间卖的时间，和最后的时间
+                    //相同泊位增加一下价值？
+                    if (boat.targetId == buyBerth.id) {
+                        profit *= (1 + SAME_TARGET_REWARD_FACTOR);
+                        profit += 2 * ALG_EPS;//可以让他继续走
+                    }
+                }
+
+                stat.add(new Stat(boat, buyBerth, maxLoadCount, profit));
+            }
+
+        }
+        if (stat.isEmpty())
+            return false;
+        Collections.sort(stat);
+        //同一个目标不用管
+        Berth berth = stat.get(0).berth;
+        if (abs(stat.get(0).profit) < ALG_EPS && berthBoatCount[berth.id] >= 1) {
+            //价值为0,此时还有其他船去了这个泊位，则换个泊位，保证比较均匀
+            ArrayList<Integer> candidates = new ArrayList<>();
+            for (int i = 0; i < berthBoatCount.length; i++) {
+                if (berthBoatCount[i] == 0) {
+                    candidates.add(i);
+                }
+            }
+            //随机选一个，玩的就是运气
+            berth = berths[rad.nextInt(candidates.size())];
+        }
+
+        Boat boat = stat.get(0).boat;
+        //boat去移动
+        if (boat.targetId != berth.id) {
+            boat.ship(berth.id);
+        }
+        boat.assigned = true;
+        //更新泊位的货物列表和前缀和,说明这个船消耗了这么多货物
+        int count = stat.get(0).count;
+        for (int i = 0; i < count; i++) {
+            goodsList[berth.id].poll();
+        }
+        prefixSum[berth.id].clear();
+        prefixSum[berth.id].add(0);
+        for (Integer value : goodsList[berth.id]) {
+            prefixSum[berth.id].add(prefixSum[berth.id].get(prefixSum[berth.id].size() - 1) + value);
+        }
+        //锁住买家
+        return false;
     }
 
     private void robotDoAction() {
@@ -177,15 +346,24 @@ public class Strategy {
                 ArrayList<Point> candidate = berths[robot.targetBerthId].minDistancePos[robot.pos.x][robot.pos.y];
                 //找到一条路径不与之前的路径相撞,找不到，选择第一条路径
                 path = berths[robot.targetBerthId].dijkstras[candidate.get(0).x][candidate.get(0).y].moveFrom(robot.pos);
-                heuristicPoints = berths[robot.targetBerthId].dijkstras[candidate.get(0).x][candidate.get(0).y].cs;
+
                 for (int j = 1; j < candidate.size(); j++) {
                     Point point = candidate.get(j);
                     ArrayList<Point> candidatePath = berths[robot.targetBerthId].dijkstras[point.x][point.y].moveFrom(robot.pos);
                     if (!checkCrash(candidatePath, robot.id)) {
                         path = candidatePath;
                         break;
+                    } else {
+                        //尝试找不撞的
+                        heuristicPoints = berths[robot.targetBerthId].dijkstras[candidate.get(j).x][candidate.get(j).y].cs;
+                        boolean result = findABestPath(candidatePath, heuristicPoints, robot.id);
+                        if (result) {
+                            path = candidatePath;
+                            break;
+                        }
                     }
                 }
+                heuristicPoints = berths[robot.targetBerthId].dijkstras[candidate.get(0).x][candidate.get(0).y].cs;
             } else {
                 path = workbenches.get(robot.targetWorkBenchId).dijkstra.moveFrom(robot.pos);
                 heuristicPoints = workbenches.get(robot.targetWorkBenchId).dijkstra.cs;

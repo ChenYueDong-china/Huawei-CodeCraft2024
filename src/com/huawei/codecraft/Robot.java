@@ -94,14 +94,16 @@ public class Robot {
             ) {
                 //提前卖，移动完毕卖,货物这种时候可以增加
                 strategy.berths[targetBerthId].goodsNums++;
-                outStream.printf("pull %d\n",id);
+                strategy.berths[targetBerthId].goods.offer(carryValue);
+                strategy.berths[targetBerthId].totalValue += carryValue;
+                outStream.printf("pull %d\n", id);
             }
         } else {
             //要去买
             assert targetWorkBenchId != -1;
             if (strategy.workbenches.get(targetWorkBenchId).pos.equal(target)) {
                 //提前买，移动完毕买,机器人可以移动后立即取货
-                outStream.printf("get %d\n",id);
+                outStream.printf("get %d\n", id);
             }
         }
     }

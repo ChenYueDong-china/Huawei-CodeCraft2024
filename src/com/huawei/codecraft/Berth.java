@@ -1,6 +1,8 @@
 package com.huawei.codecraft;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.Point;
@@ -12,6 +14,10 @@ public class Berth {
     int transportTime;
     int loadingSpeed;
     int goodsNums;//泊位目前没装的货物数量
+
+    Queue<Integer> goods = new LinkedList<>();
+
+    int totalValue = 0;//货物总价值
 
     public Dijkstra[][] dijkstras = new Dijkstra[BERTH_HEIGHT][BERTH_WIDTH];//berth有16个点,需要16次dij
 
