@@ -149,17 +149,6 @@ public class Strategy {
     }
 
     private void robotDoAction() {
-        for (Robot robot : robots) {
-            if (!robot.assigned || robot.carry) {
-                continue;
-            }
-            assert robot.estimateUnloadTime == frameId + workbenches.get(robot.targetWorkBenchId).getMinDistance(robot.pos);
-            assert robot.estimateUnloadTime - frameId <= workbenches.get(robot.targetWorkBenchId).remainTime;
-            if (robot.estimateUnloadTime - frameId == workbenches.get(robot.targetWorkBenchId).remainTime) {
-                robot.redundancy = false;
-            }
-        }
-
         //todo 选择路径，修复路径
         Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
         System.arraycopy(robots, 0, tmpRobots, 0, ROBOTS_PER_PLAYER);
@@ -181,6 +170,7 @@ public class Strategy {
             if (!robot.assigned) {
                 continue;
             }
+
             ArrayList<Point> path;
             int[][] heuristicPoints;
             if (robot.carry) {
@@ -211,6 +201,7 @@ public class Strategy {
                     robotLock[robot.id].add(robot.targetBerthId);
                     greedyBuy();
                     i--;
+                    //重开
                     continue;
                 }
 
@@ -664,7 +655,10 @@ public class Strategy {
             workbenchesLock.add(workbench.id);//锁住，别人不准选择
             robot.targetWorkBenchId = workbench.id;
             robot.estimateUnloadTime = frameId + workbench.getMinDistance(robot.pos) + berth.getMinDistance(workbench.pos);
+            assert workbench.getMinDistance(robot.pos) <= workbench.remainTime;
+            robot.redundancy = workbench.getMinDistance(robot.pos) != workbench.remainTime;
         } else {
+            robot.redundancy = true;
             robot.estimateUnloadTime = frameId + berth.getMinDistance(robot.pos);
         }
         if (action == RA_BUY && robot.pos.equal(workbench.pos)) {
