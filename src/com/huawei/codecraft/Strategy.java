@@ -26,6 +26,8 @@ public class Strategy {
     public final Berth[] berths = new Berth[BERTH_PER_PLAYER];
 
     public final Boat[] boats = new Boat[BOATS_PER_PLAYER];
+    public int totalValue = 0;
+    public int goodAvgValue = 0;
 
     @SuppressWarnings("unchecked")
     public ArrayList<Point>[] robotsPredictPath = new ArrayList[ROBOTS_PER_PLAYER];
@@ -82,14 +84,14 @@ public class Strategy {
     }
 
     private void dispatch() {
-//        while (greedySell()) ; //决策
-//        workbenchesLock.clear();//动态需要解锁
-//        for (HashSet<Integer> set : robotLock) {
-//            set.clear();
-//        }
-//        while (greedyBuy()) ;
-//
-//        robotDoAction();
+        while (greedySell()) ; //决策
+        workbenchesLock.clear();//动态需要解锁
+        for (HashSet<Integer> set : robotLock) {
+            set.clear();
+        }
+        while (greedyBuy()) ;
+
+        robotDoAction();
         //先做测试
         //9号去128,165
         if (frameId < 50) {
@@ -163,31 +165,28 @@ public class Strategy {
                 boat.go();
                 boat.remainTime = berths[boat.targetId].transportTime;
                 boat.status = 0;//移动中
-                boat.lastTargetId = boat.targetId;
                 boat.targetId = -1;
                 boat.assigned = true;
             } else if (boat.num > 0 && boat.targetId != -1) {
                 int minSellTime;
                 if (boat.status != 0) {
-                    //正在切换，没到目标回家？
-                    minSellTime = berths[boat.lastTargetId].transportTime;
-                } else {
-                    //切换到一半回家，是上一个的还是这一个??????,到达目标说明是泊位
+                    //说明到达目标了
                     minSellTime = berths[boat.targetId].transportTime;
+                } else {
+                    //没到目标
+                    minSellTime = berths[boat.lastTargetId].transportTime;
                 }
                 if (frameId + minSellTime >= GAME_FRAME) {
                     //极限卖
                     boat.go();
                     boat.remainTime = minSellTime;
                     boat.status = 0;//移动中
-                    boat.lastTargetId = boat.targetId;
                     boat.targetId = -1;
                     boat.assigned = true;
                 }
+            } else if (boat.targetId == -1 && boat.status == 0) {
+                boat.assigned = true;//运输中
             }
-
-            //到达，且泊位有货，不给离开
-
         }
         //船只贪心去买卖，跟机器人做一样的决策
         //先保存一下泊位的价值列表
@@ -220,10 +219,6 @@ public class Strategy {
             }
         }
 
-        //todo 到达，且现在有货或者未来有货，优先消费掉，剩下的才给别人争抢
-        //todo 到达先吃，
-
-        //todo 等待中吃，如果吃不到则进入贪心
 
         //贪心切换找一个泊位
         while (boatGreedyBuy(goodsList, prefixSum)) ;
@@ -245,9 +240,9 @@ public class Strategy {
                 for (int i = 0; i < load; i++) {
                     assert !berths[boat.targetId].goods.isEmpty();
                     Integer value = berths[boat.targetId].goods.poll();
-                    if (value != null) {
-                        berths[boat.targetId].totalValue -= value;
-                    }
+                    assert value != null;
+                    boat.value += value;
+                    berths[boat.targetId].totalValue -= value;
                 }
             }
         }
@@ -273,6 +268,7 @@ public class Strategy {
             }
         }
         //todo 切到一半不能反悔
+        //考虑在移动，运输中也算不能返回，移动完才可以动？
         int[] berthBoatCount = new int[BERTH_PER_PLAYER];
         Arrays.fill(berthBoatCount, -1);
         for (Boat boat : boats) {
@@ -286,25 +282,68 @@ public class Strategy {
         //选择折现价值最大的
         for (Berth buyBerth : berths) {
             //存在就一定有产品
+            //贪心，选择最近的机器人
+            ArrayList<Boat> selectBoats = new ArrayList<>();
+            int minDist = Integer.MAX_VALUE;
             for (Boat boat : boats) {
                 if (boat.assigned || boat.lastTargetId == buyBerth.id) {
-                    //切到一半没法返回，会直接卡死
                     continue;
                 }
-                //计算到达时间
-                int buyTime;
+                int dist;
                 if (boat.targetId == buyBerth.id) {
-                    buyTime = boat.remainTime;
+                    dist = boat.remainTime;
                     if (boat.status == 1) {
-                        buyTime = 1;//泊位外等待为1
+                        dist = 1;//泊位外等待为1
                     }
-                } else if (boat.targetId != -1 && boat.status != 0) {
+                } else if (boat.lastTargetId != -1) {
                     //不在运输中
-                    buyTime = BERTH_CHANGE_TIME;
+                    dist = BERTH_CHANGE_TIME;
                 } else {
-                    buyTime = buyBerth.transportTime;//虚拟点到泊位时间
+                    dist = buyBerth.transportTime;//虚拟点到泊位时间
                 }
-                int sellTime = buyBerth.transportTime;
+                if (dist < minDist) {
+                    minDist = dist;
+                    selectBoats.clear();
+                    selectBoats.add(boat);
+                } else if (dist == minDist) {
+                    selectBoats.add(boat);
+                }
+            }
+            //判断是否是最近的去买的,因为贪心，可以让他卖了再买，如果当前有卖的且距离更近，直接赋值null
+            for (Boat boat : boats) {
+                //在卖
+                if (boat.assigned && boat.targetId == -1 && boat.status == 0) {
+                    int dist = boat.remainTime + buyBerth.transportTime;//去到距离
+                    //来到距离
+
+                    if (dist < minDist) { //此时另一个机器人卖完了再买，比选择的机器人直接去买更划算
+                        selectBoats.clear();
+                        break;
+                    }
+                }
+            }
+            if (selectBoats.isEmpty()) {
+                continue;
+            }
+
+            //考虑优先选择没在运行中的船?
+            if (minDist == BERTH_CHANGE_TIME) {
+                //在切换中的船换不如到达泊位的换，因为可能他到达之后就有货物了
+                ArrayList<Boat> noRunningBoats = new ArrayList<>();
+                for (Boat selectBoat : selectBoats) {
+                    if (selectBoat.status != 0) {
+                        noRunningBoats.add(selectBoat);
+                    }
+                }
+                if (noRunningBoats.isEmpty()) {
+                    selectBoats.clear();
+                    selectBoats.addAll(noRunningBoats);
+                }
+            }
+
+            int buyTime = minDist;
+            int sellTime = buyBerth.transportTime;
+            for (Boat boat : selectBoats) {
                 double profit;
                 int maxLoadCount = 0;
                 if (frameId + buyTime + sellTime >= GAME_FRAME) {
@@ -315,17 +354,24 @@ public class Strategy {
                     maxLoadCount = min((GAME_FRAME - buyTime - sellTime) * buyBerth.loadingSpeed, maxLoadCount);
                     double value = prefixSum[buyBerth.id].get(maxLoadCount);
                     //消除价值
+                    if (frameId + buyTime + sellTime + 2 * sellTime < GAME_FRAME) {
+                        //买了再卖，再买，在卖，此时存在消除价值,说明携带越贵物品的船优先级最高，感觉数量更好？
+                        value += goodAvgValue * boat.num;//数量越多，消除价值越高
+                    }
+                    if (berthBoatCount[buyBerth.id] >= 1) {
+                        value -= 1;//稍微降低点价值，让最开始能分散开来
+                    }
                     int loadTime = (int) floor(maxLoadCount * 1.0 / buyBerth.loadingSpeed);
                     profit = value / (buyTime + sellTime + loadTime);//买的时间卖的时间，和最后的时间
                     //相同泊位增加一下价值？
                     if (boat.targetId == buyBerth.id) {
                         profit *= (1 + SAME_TARGET_REWARD_FACTOR);
-                        profit += 2 * ALG_EPS;//可以让他继续走
                     }
-                }
 
+                }
                 stat.add(new Stat(boat, buyBerth, maxLoadCount, profit));
             }
+
 
         }
         if (stat.isEmpty())
@@ -333,28 +379,15 @@ public class Strategy {
         Collections.sort(stat);
         //同一个目标不用管
         Berth berth = stat.get(0).berth;
-        if (abs(stat.get(0).profit) < ALG_EPS && berthBoatCount[berth.id] >= 1) {
-            //价值为0,此时还有其他船去了这个泊位，则换个泊位，保证比较均匀
-            ArrayList<Integer> candidates = new ArrayList<>();
-            for (int i = 0; i < berthBoatCount.length; i++) {
-                if (berthBoatCount[i] == 0) {
-                    candidates.add(i);
-                }
-            }
-            //随机选一个，玩的就是运气
-            berth = berths[rad.nextInt(candidates.size())];
-        }
-
         Boat boat = stat.get(0).boat;
         //boat去移动
         if (boat.targetId != berth.id) {
             boat.ship(berth.id);
-            if (boat.targetId != -1 && boat.status != 0) {
+            if (boat.lastTargetId != -1) {
                 boat.remainTime = BERTH_CHANGE_TIME;
             } else {
                 boat.remainTime = berth.transportTime;
             }
-            boat.lastTargetId = boat.targetId;
             boat.targetId = berth.id;
             boat.status = 0;
         }
@@ -366,7 +399,7 @@ public class Strategy {
         }
         prefixSum[berth.id].clear();
         prefixSum[berth.id].add(0);
-        for (Integer value : goodsList[berth.id]) {
+        for (int value : goodsList[berth.id]) {
             prefixSum[berth.id].add(prefixSum[berth.id].get(prefixSum[berth.id].size() - 1) + value);
         }
         return false;
@@ -857,6 +890,8 @@ public class Strategy {
                     profit = -sellTime;
                 } else {
                     double value = robot.carryValue;
+                    //todo 消除价值？某个港口只差一个货物了，你去满足了他，就产生了消除价值
+                    //差的越多消除价值越低
                     //防止走的特别近马上切泊位了
                     profit = value / (arriveTime + fixTime);
                     if (robot.targetBerthId == sellBerth.id) {//同一泊位
@@ -1000,8 +1035,10 @@ public class Strategy {
         for (int i = 1; i <= num; i++) {
             Workbench workbench = new Workbench(workbenchId);
             workbench.input(gameMap);
+            totalValue += workbench.value;
             workbenches.put(workbenchId, workbench);
             workbenchId++;
+            goodAvgValue = totalValue / workbenchId;
         }
 
         //机器人
