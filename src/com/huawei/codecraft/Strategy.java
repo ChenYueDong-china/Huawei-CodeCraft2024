@@ -94,7 +94,7 @@ public class Strategy {
         robotDoAction();
 
 
-        //doBoatAction();
+        doBoatAction();
 
 
     }
@@ -135,6 +135,7 @@ public class Strategy {
         @SuppressWarnings("unchecked")
         LinkedList<Integer>[] goodsList = new LinkedList[BERTH_PER_PLAYER];
         for (int i = 0; i < goodsList.length; i++) {
+            goodsList[i]=new LinkedList<>();
             goodsList[i].addAll(berths[i].goods);
         }
 
@@ -146,7 +147,7 @@ public class Strategy {
             if (robot.carry) {
                 goodsList[robot.targetBerthId].offer(robot.carryValue);
             } else {
-                goodsList[robot.targetBerthId].offer(workbenches.get(robot.targetBerthId).value);
+                goodsList[robot.targetBerthId].offer(workbenches.get(robot.targetWorkBenchId).value);
             }
         }
         //计算前缀和
