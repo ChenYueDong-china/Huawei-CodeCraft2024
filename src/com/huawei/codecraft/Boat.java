@@ -5,6 +5,12 @@ import java.io.IOException;
 import static com.huawei.codecraft.Utils.*;
 
 public class Boat {
+
+    //todo 定义船四种状态
+    //1.和虚拟点移动中
+    //2.泊位之间移动中
+    //3.泊位外面等待
+    //4.进入泊位
     int id;
     int status;//状态
     int remainTime;//到达目标剩余时间

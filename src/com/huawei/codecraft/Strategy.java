@@ -61,12 +61,12 @@ public class Strategy {
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
             boats[i] = new Boat(boatCapacity);
             boats[i].id = i;
-            robotLock[i] = new HashSet<>();
         }
         //机器人
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
             robots[i] = new Robot(this);
             robots[i].id = i;
+            robotLock[i] = new HashSet<>();
         }
 
         String okk = inStream.readLine();
@@ -92,68 +92,9 @@ public class Strategy {
         while (greedyBuy()) ;
 
         robotDoAction();
-        //先做测试
-        //9号去128,165
-        if (frameId < 50) {
-            Dijkstra dijkstra = new Dijkstra();
-            dijkstra.init(new Point(14, 189), gameMap);
-            dijkstra.update();
-            robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
-            robots[8].finish();
-        }
-        if (frameId == 50) {
-            outStream.printf("get %d\n", 8);
-        }
-        if (frameId >= 50 && frameId < 100) {
-            Dijkstra dijkstra = new Dijkstra();
-            dijkstra.init(new Point(4, 174), gameMap);
-            dijkstra.update();
-            robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
-            robots[8].finish();
-        }
-        if (frameId == 1 + 1219 + 5) {
-            outStream.printf("move %d %d\n", 8, 1);
-            outStream.printf("pull %d\n", 8);
-        }
-        if (frameId == 1) {
-            //开船过来
-            outStream.printf("ship %d %d", 0, 9);
-//            outStream.printf("ship %d %d", 1, 9);
-        }
-//        if (frameId == 2) {
-//            //开船过来
-//            outStream.printf("ship %d %d", 0, 9);
-////            outStream.printf("ship %d %d", 1, 9);
-//        }
-        if (frameId == 1 + 1219 + 2) {//到达之后
-            //1220帧到达，然后开始装货，。，至少到达一帧才能走
-            outStream.printf("ship %d %d", 0, 9);
-        }
-//
-//        if (frameId == 1 + 1219 + 5) {//到达之后
-//            //1220帧到达，然后开始装货，。，至少到达一帧才能走
-//            outStream.printf("ship %d %d", 0, 9);
-//        }
-//        if (frameId == 1 + 1219 + 30) {//到达之后
-//            //1220帧到达，然后开始装货，。，至少到达一帧才能走
-//            outStream.printf("go %d", 0);
-//        }
-
-//        if (frameId == 1 + 1219 + 10) {
-//            outStream.printf("go %d", 0);
-//            //outStream.printf("ship %d %d", 0, 9);
-//        }
-//        if (frameId == 1 + 1219 + 1219) {
-//            printERROR("money" + money);
-//        }
-//        if (frameId > 50) {
-//            outStream.printf("move %d %d\n", 9, 0);
-//            outStream.printf("move %d %d\n", 7, 0);
-//
-//        }
 
 
-        doBoatAction();
+        //doBoatAction();
 
 
     }
@@ -286,7 +227,7 @@ public class Strategy {
             ArrayList<Boat> selectBoats = new ArrayList<>();
             int minDist = Integer.MAX_VALUE;
             for (Boat boat : boats) {
-                if (boat.assigned || boat.lastTargetId == buyBerth.id) {
+                if (boat.assigned || (boat.lastTargetId == buyBerth.id && boat.status == 0)) {
                     continue;
                 }
                 int dist;
@@ -296,7 +237,7 @@ public class Strategy {
                         dist = 1;//泊位外等待为1
                     }
                 } else if (boat.lastTargetId != -1) {
-                    //不在运输中
+                    //切换泊位移动中，或者在另一个泊位等待或者进入
                     dist = BERTH_CHANGE_TIME;
                 } else {
                     dist = buyBerth.transportTime;//虚拟点到泊位时间
@@ -489,22 +430,29 @@ public class Strategy {
                     robotsPredictPath[robot.id].add(robot.pos);
                 }
             } else {
-                assert robot.path.size() >= 3;//包含起始点
+//                assert robot.path.size() >= 3;//包含起始点
+                if (robot.path.size() == 1) {
+                    //原点不动，大概率有漏洞
+                    robotsPredictPath[robot.id].add(robot.path.get(0));
+                    robotsPredictPath[robot.id].add(robot.path.get(0));
+                    printERROR("error robot.path.size()==1");
+                }
                 //至少有未来一个格子
-                for (int j = 1; j <= 4; j++) {
-                    if (robot.path.size() > j + 1) {
-                        robotsPredictPath[robot.id].add(robot.path.get(j));
-                    }
+                for (int j = 1; j <= min(4, robot.path.size() - 1); j++) {
+                    robotsPredictPath[robot.id].add(robot.path.get(j));
                 }
             }
             int crashId = -1;
             for (int j = 0; j < i; j++) {
                 //一个格子之内撞不撞
                 for (int k = 0; k < 2; k++) {
-                    if (robotsPredictPath[robot.id].get(k) == robotsPredictPath[tmpRobots[j].id].get(k)) {
+                    if (robotsPredictPath[robot.id].get(k).equal(robotsPredictPath[tmpRobots[j].id].get(k))) {
                         crashId = tmpRobots[j].id;
                         break;
                     }
+                }
+                if (crashId != -1) {
+                    break;
                 }
             }
             int avoidId = robot.id;
@@ -529,21 +477,19 @@ public class Strategy {
                 for (int j = 0; j < DIR.length / 2; j++) {
                     candidates.add(robots[avoidId].pos.add(DIR[j]));
                 }
-                Point crashPoint = gameMap.discreteToPos(robotsPredictPath[crashId].get(1));
                 Point result = new Point(-1, -1);
                 int bestDist = Integer.MAX_VALUE;
                 ArrayList<Integer> crashIds = new ArrayList<>();
-                crashIds.add(crashId);
                 for (Point candidate : candidates) {
-                    if (candidate.equal(crashPoint)) {
+                    if (!gameMap.canReach(candidate.x, candidate.y)) {
                         continue;
                     }
                     //todo 检查是否会撞到任意一个其他人,会的话也不是候选点
                     //细化成两个去判断
                     boolean crash = false;
                     for (Robot tmpRobot : tmpRobots) {
-                        if (tmpRobot.id == crashId || tmpRobot.id == avoidId) {
-                            continue;
+                        if (tmpRobot.id == avoidId || robotsPredictPath[tmpRobot.id] == null) {
+                            continue;//后面的
                         }
                         Point start = gameMap.posToDiscrete(robots[avoidId].pos);
                         Point end = gameMap.posToDiscrete(candidate);
@@ -566,9 +512,9 @@ public class Strategy {
                         dist = berths[robots[avoidId].targetBerthId].getMinDistance(candidate);
                     }
                     assert dist != Integer.MAX_VALUE;
-                    if (robotsPredictPath[crashId].size() == 4 && !candidate.equal
+                    if (robotsPredictPath[crashId].size() == 4 && candidate.equal
                             (gameMap.discreteToPos(robotsPredictPath[crashId].get(3)))) {
-                        dist -= 1;//不在对面路径上认为更好一点
+                        dist += 2;//不在对面路径上认为更好一点
                     }
                     if (dist < bestDist) {
                         result = candidate;
@@ -758,7 +704,7 @@ public class Strategy {
                 if (robot.assigned || robot.carry) {
                     continue;
                 }
-                if (buyWorkbench.canReach(robot.pos)) {
+                if (!buyWorkbench.canReach(robot.pos)) {
                     continue; //不能到达
                 }
                 if (robotLock[robot.id].contains(buyWorkbench.id)) {
@@ -821,6 +767,10 @@ public class Strategy {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
                 } else {
                     double value = buyWorkbench.value;
+
+                    //消除价值计算,至少要一来一会才会出现消除价值
+                    value += estimateEraseValue(arriveSellTime + sellTime, selectRobot, sellBerth, goodAvgValue * 2);
+
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
                     if (selectRobot.targetWorkBenchId == buyWorkbench.id) {
@@ -846,6 +796,39 @@ public class Strategy {
         return true;
     }
 
+
+    private double estimateEraseValue(int beginFrame, Robot robot, Berth berth, int basicValue) {
+        if (beginFrame + 3 * berth.transportTime > GAME_FRAME) {
+            return 0;
+        }
+        //基本价值越高，机器人越容易打配合
+        int berthTotalNum = berth.goodsNums;
+        int remainSpace = 0;
+        for (Boat boat : boats) {
+            if (boat.status == 1 && boat.targetId == berth.id) {
+                remainSpace = boat.capacity - boat.num;
+                break;
+            }
+        }
+        if (remainSpace == 0) {
+            return 0;
+        }
+        for (Robot other : robots) {
+            if (other.id == robot.id || !other.assigned) {
+                continue;
+            }
+            if (other.targetBerthId == berth.id) {
+                berthTotalNum++;
+            }
+        }
+        int needNum = remainSpace - berthTotalNum;
+        if (needNum <= 0) {
+            return 0;//不用消除，还有更多
+        }
+        //需要的越少，消除价值越高
+        return basicValue * 1.0 / needNum;
+    }
+
     private boolean greedySell() {
         class Stat implements Comparable<Stat> {
             final Robot robot;
@@ -867,7 +850,7 @@ public class Strategy {
         ArrayList<Stat> stat = new ArrayList<>();
 
         for (Robot robot : robots) {
-            if (robot.assigned || robot.carry) {
+            if (robot.assigned || !robot.carry) {
                 continue;
             }
 
@@ -890,8 +873,7 @@ public class Strategy {
                     profit = -sellTime;
                 } else {
                     double value = robot.carryValue;
-                    //todo 消除价值？某个港口只差一个货物了，你去满足了他，就产生了消除价值
-                    //差的越多消除价值越低
+                    value += estimateEraseValue(sellTime, robot, sellBerth, goodAvgValue * 2);
                     //防止走的特别近马上切泊位了
                     profit = value / (arriveTime + fixTime);
                     if (robot.targetBerthId == sellBerth.id) {//同一泊位
@@ -999,7 +981,7 @@ public class Strategy {
         }
 
         //补充一点装货时间
-        consumeTime += estimateGoodsNums / berth.transportTime;
+        consumeTime += estimateGoodsNums / berth.loadingSpeed;
         //没到达也没法消费
         return max(goodArriveTime, consumeTime);
     }
