@@ -63,9 +63,9 @@ public class Robot {
 
     public void finish() {
         //按照path来看做什么操作
-        if (!assigned && !avoid) {
-            return;
-        }
+//        if (!assigned && !avoid) {
+//            return;
+//        }
         if (path.size() <= 2) {
             printERROR("error");
             return;

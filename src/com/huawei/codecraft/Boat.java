@@ -13,6 +13,8 @@ public class Boat {
     //4.进入泊位
     int id;
     int status;//状态
+    int originStatus;//原始状态,因为可能会被变，导致上一个id不一样
+    int originTargetId = -1;//原始目标id,因为代码可能漏洞，导致改变
     int remainTime;//到达目标剩余时间
     int targetId = -1;//泊位id
     int lastTargetId = -1;//泊位id
@@ -32,11 +34,13 @@ public class Boat {
         String line = inStream.readLine();
         printMOST(line);
         String[] parts = line.trim().split(" ");
-        int lastStatus = status;
+        int lastStatus = originStatus;
         status = Integer.parseInt(parts[0]);
-        int lastTargetId = targetId;
+        originStatus = status;
+        int lastTargetId = originTargetId;
         targetId = Integer.parseInt(parts[1]);
-        if (lastStatus != 1 && status == 0 && lastTargetId != targetId) {
+        originTargetId = targetId;
+        if (lastStatus != 0 && status == 0 && lastTargetId != targetId) {
             //从完成或者等待变道运输中
             this.lastTargetId = targetId;
         }

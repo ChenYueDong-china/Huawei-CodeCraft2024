@@ -95,6 +95,55 @@ public class Strategy {
 
 
         doBoatAction();
+        //todo 测试机器人能不能取货立即装货
+//        if (frameId < 50) {
+//            Dijkstra dijkstra = new Dijkstra();
+//            dijkstra.init(new Point(14, 189), gameMap);
+//            dijkstra.update();
+//            robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
+//            robots[8].finish();
+//        }
+//        if (frameId == 50) {
+//            outStream.printf("get %d\n", 8);
+//        }
+//        if (frameId >= 50 && frameId < 100) {
+//            Dijkstra dijkstra = new Dijkstra();
+//            dijkstra.init(new Point(4, 174), gameMap);
+//            dijkstra.update();
+//            robots[8].path.addAll(dijkstra.moveFrom(robots[8].pos));
+//            robots[8].finish();
+//        }
+//        if (frameId == 1) {//开船
+//            //开船过来
+//            boats[0].ship(9);
+////            outStream.printf("ship %d %d", 1, 9);
+//        }
+//        if (frameId == 1 + 1219 + 10) {//卸货
+//            outStream.printf("move %d %d\n", 8, 1);
+//            outStream.printf("pull %d\n", 8);
+//        }
+//
+//        if (frameId == 1 + 1219 + 6) {
+//            boats[0].ship(9);
+//        }
+//        if (frameId == 1 + 1219 + 20) {
+//            boats[0].go();
+//        }
+//        if (frameId == 1 + 1219 + 20 + 1219) {
+//            boats[0].ship(9);
+//        }
+//        if (frameId == 1 + 1219 + +20 + 1219 + 1219 + 1) {
+//            boats[0].go();
+//        }
+//        if (frameId == 2) {
+//            //开船过来
+//            outStream.printf("ship %d %d", 0, 9);
+////            outStream.printf("ship %d %d", 1, 9);
+//        }
+//        if (frameId == 1 + 1219 + 2) {//到达之后
+//            //1220帧到达，然后开始装货，。，至少到达一帧才能走
+//            outStream.printf("ship %d %d", 0, 9);
+//        }
 
 
     }
@@ -114,7 +163,7 @@ public class Strategy {
                     //说明到达目标了
                     minSellTime = berths[boat.targetId].transportTime;
                 } else {
-                    //没到目标
+                    //没到目标,如果是船运过来，num一定为0
                     minSellTime = berths[boat.lastTargetId].transportTime;
                 }
                 if (frameId + minSellTime >= GAME_FRAME) {
@@ -135,7 +184,7 @@ public class Strategy {
         @SuppressWarnings("unchecked")
         LinkedList<Integer>[] goodsList = new LinkedList[BERTH_PER_PLAYER];
         for (int i = 0; i < goodsList.length; i++) {
-            goodsList[i]=new LinkedList<>();
+            goodsList[i] = new LinkedList<>();
             goodsList[i].addAll(berths[i].goods);
         }
 
@@ -313,8 +362,6 @@ public class Strategy {
                 }
                 stat.add(new Stat(boat, buyBerth, maxLoadCount, profit));
             }
-
-
         }
         if (stat.isEmpty())
             return false;
@@ -325,10 +372,18 @@ public class Strategy {
         //boat去移动
         if (boat.targetId != berth.id) {
             boat.ship(berth.id);
-            if (boat.lastTargetId != -1) {
-                boat.remainTime = BERTH_CHANGE_TIME;
-            } else {
+            if (boat.targetId == -1) {
+                //在虚拟点
+                assert boat.status == 1;
                 boat.remainTime = berth.transportTime;
+            } else {
+                if (boat.status != 0 || boat.lastTargetId != -1) {
+                    //在已经到达泊位,或者切换泊位（上一个目标不是虚拟点），一般情况下都是虚拟点
+                    boat.remainTime = BERTH_CHANGE_TIME;
+                } else {
+                    //在从虚拟点移动到泊位或者
+                    boat.remainTime = berth.transportTime;
+                }
             }
             boat.targetId = berth.id;
             boat.status = 0;
@@ -344,7 +399,7 @@ public class Strategy {
         for (int value : goodsList[berth.id]) {
             prefixSum[berth.id].add(prefixSum[berth.id].get(prefixSum[berth.id].size() - 1) + value);
         }
-        return false;
+        return true;
     }
 
     private void robotDoAction() {
