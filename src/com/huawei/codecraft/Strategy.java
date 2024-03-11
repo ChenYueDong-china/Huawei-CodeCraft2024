@@ -1020,10 +1020,18 @@ public class Strategy {
                 timePairs.offer(new Pair(boat.remainTime + berth.transportTime, boat.id));
                 boatNum[boat.id] = boat.capacity;
             } else {
+                int changeTime;
+                if (boat.lastTargetId == -1) {
+                    //从虚拟点来的
+                    changeTime = berth.transportTime;
+                } else {
+                    //从某个泊位来的
+                    changeTime = BERTH_CHANGE_TIME;
+                }
                 int loadTime = berths[boat.targetId].goodsNums / berths[boat.targetId].loadingSpeed;
                 boatNum[boat.id] = max(0, boat.capacity - boat.num - berths[boat.targetId].goodsNums);
                 if (boatNum[boat.id] > 0) {//有剩余空间
-                    timePairs.offer(new Pair(boat.remainTime + loadTime + BERTH_CHANGE_TIME, boat.id));
+                    timePairs.offer(new Pair(boat.remainTime + loadTime + changeTime, boat.id));
                 } else {//没剩余空间
                     //基本不会轮到？
                     boatNum[boat.id] = boat.capacity;
