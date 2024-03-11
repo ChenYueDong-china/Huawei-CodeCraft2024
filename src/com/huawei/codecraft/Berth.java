@@ -72,4 +72,13 @@ public class Berth {
     }
 
 
+    public boolean inBerth(Point point) {
+        //在berth范围内
+        if (point.x >= leftTopPos.x && point.x < leftTopPos.x + BERTH_WIDTH && point.y >= leftTopPos.y && point.y < leftTopPos.y + BERTH_HEIGHT) {
+            return true;
+        }
+        return false;
+    }
+
+
 }

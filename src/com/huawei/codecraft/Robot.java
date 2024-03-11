@@ -63,9 +63,9 @@ public class Robot {
 
     public void finish() {
         //按照path来看做什么操作
-//        if (!assigned && !avoid) {
-//            return;
-//        }
+        if (!assigned && !avoid) {
+            return;
+        }
         if (path.size() <= 2) {
             printERROR("error");
             return;
@@ -86,26 +86,25 @@ public class Robot {
             //要去卖
             assert targetBerthId != -1;
             //在他这个berth范围内
-            if (strategy.gameMap.isBerth(target)
-                    && target.x >= strategy.berths[targetBerthId].leftTopPos.x
-                    && target.x < strategy.berths[targetBerthId].leftTopPos.x + BERTH_WIDTH
-                    && target.y >= strategy.berths[targetBerthId].leftTopPos.y
-                    && target.y < strategy.berths[targetBerthId].leftTopPos.y + BERTH_HEIGHT
-            ) {
+            if (strategy.berths[targetBerthId].inBerth(target)) {
                 //提前卖，移动完毕卖,货物这种时候可以增加
-                strategy.berths[targetBerthId].goodsNums++;
-                strategy.berths[targetBerthId].goods.offer(carryValue);
-                strategy.berths[targetBerthId].totalValue += carryValue;
-                outStream.printf("pull %d\n", id);
+                pull();
             }
         } else {
             //要去买
             assert targetWorkBenchId != -1;
             if (strategy.workbenches.get(targetWorkBenchId).pos.equal(target)) {
                 //提前买，移动完毕买,机器人可以移动后立即取货
-                outStream.printf("get %d\n", id);
+                buy();
             }
         }
+    }
+
+    private void pull() {
+        strategy.berths[targetBerthId].goodsNums++;
+        strategy.berths[targetBerthId].goods.offer(carryValue);
+        strategy.berths[targetBerthId].totalValue += carryValue;
+        outStream.printf("pull %d\n", id);
     }
 }
 

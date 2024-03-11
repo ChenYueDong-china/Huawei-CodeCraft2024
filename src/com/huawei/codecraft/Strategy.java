@@ -507,7 +507,12 @@ public class Strategy {
 
                     int dist;
                     if (!robots[avoidId].carry) {
-                        dist = workbenches.get(robots[avoidId].targetWorkBenchId).getMinDistance(candidate);
+                        if (robots[avoidId].targetWorkBenchId == -1) {
+                            assert !robots[avoidId].assigned;
+                            dist = MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
+                        } else {
+                            dist = workbenches.get(robots[avoidId].targetWorkBenchId).getMinDistance(candidate);
+                        }
                     } else {
                         dist = berths[robots[avoidId].targetBerthId].getMinDistance(candidate);
                     }
@@ -553,7 +558,7 @@ public class Strategy {
 
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
             if (robots[i].avoid) {
-                Point start = robots[i].path.get(0);
+                Point start = robots[i].pos;
                 robots[i].path.clear();
                 robots[i].path.add(start);
                 robots[i].path.add(robotsPredictPath[robots[i].id].get(0));
@@ -863,6 +868,7 @@ public class Strategy {
                     continue; //不能到达
                 }
                 int fixTime = sellBerth.getMinDistance(robot.lastBuyPos); //机器人买物品的位置开始
+                //assert fixTime != Integer.MAX_VALUE;
                 int arriveTime = sellBerth.getMinDistance(robot.pos);
                 double profit;
                 //包裹被揽收的最小需要的时间
