@@ -479,7 +479,7 @@ public class Strategy {
                 }
                 Point result = new Point(-1, -1);
                 int bestDist = Integer.MAX_VALUE;
-                ArrayList<Integer> crashIds = new ArrayList<>();
+                HashSet<Integer> crashIds = new HashSet<>();
                 for (Point candidate : candidates) {
                     if (!gameMap.canReach(candidate.x, candidate.y)) {
                         continue;
@@ -496,6 +496,7 @@ public class Strategy {
                         Point mid = start.add(end).div(2);
                         if (mid.equal(robotsPredictPath[tmpRobot.id].get(0)) || end.equal(robotsPredictPath[tmpRobot.id].get(1))) {
                             crashIds.add(tmpRobot.id);
+                            //去重全加进来
                             crash = true;
                             break;
                         }
@@ -614,7 +615,10 @@ public class Strategy {
                 int dx = top.x + dir.x;
                 int dy = top.y + dir.y;//第一步
                 if (!gameMap.canReachDiscrete(dx, dy) || discreteCs[dx][dy] != Integer.MAX_VALUE) {
-                    continue; // 不可达或者访问过了
+                    continue; // 下个点不可达
+                }
+                if (!gameMap.canReachDiscrete(dx + dir.x, dy + dir.y) || discreteCs[dx + dir.x][dy + dir.y] != Integer.MAX_VALUE) {
+                    continue;//下下个点
                 }
                 if (checkCrashInDeep(robotId, deep + 1, dx, dy)
                         || checkCrashInDeep(robotId, deep + 2, dx + dir.x, dy + dir.y)) {
@@ -622,14 +626,13 @@ public class Strategy {
                 }
                 Point cur = gameMap.discreteToPos(top.x, top.y);
                 Point next = gameMap.discreteToPos(dx + dir.x, dy + dir.y);
-                if (cs[cur.x][cur.y] != cs[next.x][next.y]) {
+                if ((cs[cur.x][cur.y] >> 2) != (cs[next.x][next.y] >> 2) + 1) {
                     //启发式剪枝，不是距离更近则直接结束
                     continue;
                 }
                 discreteCs[dx][dy] = ((deep + 1) << 2) + dirIdx;//第一步
                 dx += dir.x;
                 dy += dir.y;
-                assert (gameMap.canReachDiscrete(dx, dy) && discreteCs[dx][dy] == Integer.MAX_VALUE);//必定可达
                 discreteCs[dx][dy] = ((deep + 2) << 2) + dirIdx;//第一步
                 stack.push(new Pair(deep + 2, new Point(dx, dy)));
             }
@@ -644,7 +647,7 @@ public class Strategy {
             if (!robot.assigned || robot.id == robotId) {
                 continue;
             }
-            if (robot.path.size() < deep + 1) {
+            if (deep > robot.path.size() - 1) {
                 continue;
             }
             if (robot.path.get(deep).equal(dx, dy)) {
