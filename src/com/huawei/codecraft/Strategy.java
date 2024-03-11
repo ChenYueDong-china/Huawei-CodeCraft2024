@@ -493,7 +493,8 @@ public class Strategy {
                     robotsPredictPath[robot.id].add(robot.path.get(0));
                     printERROR("error robot.path.size()==1");
                 }
-                //至少有未来一个格子
+                //todo 改成6，然后躲开，在别人预测路径上则加惩罚
+                //至少有未来一个格子，如果有两个也要预测，因为两个可以让他往旁边避让，预测前面3个格子，避让机器人要尽量躲开他的三个格子。
                 for (int j = 1; j <= min(4, robot.path.size() - 1); j++) {
                     robotsPredictPath[robot.id].add(robot.path.get(j));
                 }
