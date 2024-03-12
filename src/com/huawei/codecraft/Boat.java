@@ -35,18 +35,15 @@ public class Boat {
         String line = inStream.readLine();
         printMOST(line);
         String[] parts = line.trim().split(" ");
-        int lastStatus = originStatus;
         status = Integer.parseInt(parts[0]);
-        originStatus = status;
-        int lastTargetId = originTargetId;
         targetId = Integer.parseInt(parts[1]);
-        originTargetId = targetId;
-        if (lastStatus != 0 && status == 0 && lastTargetId != targetId) {
-            //从完成或者等待变道运输中
-            this.lastTargetId = lastTargetId;
+        if (originStatus != 0 && status == 0) {
+            //上一个是等待或者进入，这一个是移动，并且目标还变了，此时
+            assert originTargetId != targetId;//目标一定变，不然咋移动
+            this.lastTargetId = originTargetId;
         }
-
-
+        originTargetId = targetId;
+        originStatus = status;
         //计算泊位状态
         if (targetId == -1) {
             if (status == 0) {
@@ -69,7 +66,6 @@ public class Boat {
                 }
             }
         }
-
         if (targetId == -1 && status == 1) {
             num = 0;//空闲了，销货完毕
             value = 0;
