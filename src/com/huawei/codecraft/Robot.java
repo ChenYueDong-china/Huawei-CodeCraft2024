@@ -104,6 +104,7 @@ public class Robot {
         strategy.berths[targetBerthId].goodsNums++;
         strategy.berths[targetBerthId].goods.offer(carryValue);
         strategy.berths[targetBerthId].totalValue += carryValue;
+        strategy.jixianScore += carryValue;
         outStream.printf("pull %d\n", id);
     }
 }

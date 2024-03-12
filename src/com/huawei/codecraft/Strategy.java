@@ -13,6 +13,7 @@ import static java.lang.Math.*;
 public class Strategy {
 
 
+    public int jixianScore;//船把所有货物都收了的极限分
     private int money;
 
     public GameMap gameMap;
@@ -90,6 +91,7 @@ public class Strategy {
             }
             if (frameId == 15000) {
                 printERROR("跳帧：" + count);
+                printERROR("极限分：" + jixianScore);
             }
             outStream.print("OK\n");
             outStream.flush();
