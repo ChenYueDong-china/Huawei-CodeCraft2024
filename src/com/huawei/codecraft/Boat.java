@@ -15,10 +15,9 @@ public class Boat {
     int status;//状态
     BoatStatus exactStatus;//状态
     int originStatus;//原始状态,因为可能会被变，导致上一个id不一样
-    int originTargetId = -1;//原始目标id,因为代码可能漏洞，导致改变
     int remainTime;//到达目标剩余时间
     int targetId = -1;//泊位id
-    int lastTargetId = -1;//泊位id
+    int lastArriveTargetId = -1;//泊位id
     int num;//目前货物数量
     final int capacity;//容量
     int value;//货物金额
@@ -37,16 +36,16 @@ public class Boat {
         String[] parts = line.trim().split(" ");
         status = Integer.parseInt(parts[0]);
         targetId = Integer.parseInt(parts[1]);
-        if (originStatus != 0 && status == 0) {
-            //上一个是等待或者进入，这一个是移动，并且目标还变了，此时
-            assert originTargetId != targetId;//目标一定变，不然咋移动
-            this.lastTargetId = originTargetId;
+        if (originStatus == 0 && status != 0) {
+            //不到达变到达状态
+            this.lastArriveTargetId = targetId;
         }
-        originTargetId = targetId;
         originStatus = status;
+
+
         //计算泊位状态
         if (targetId == -1) {
-            if (status == 0) {
+            if (status != 0) {
                 exactStatus = BoatStatus.IN_ORIGIN_POINT;
             } else {
                 //虚拟点没有等待状态
@@ -59,7 +58,7 @@ public class Boat {
                 exactStatus = BoatStatus.IN_BERTH_WAIT;
             } else {
                 //运输中，可能是泊位到泊位，可能是虚拟点到泊位
-                if (lastTargetId == -1) {
+                if (lastArriveTargetId == -1) {
                     exactStatus = BoatStatus.IN_ORIGIN_TO_BERTH;
                 } else {
                     exactStatus = BoatStatus.IN_BERTH_TO_BERTH;
