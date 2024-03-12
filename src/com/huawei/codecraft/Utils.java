@@ -17,7 +17,7 @@ public class Utils {
 //        }
 //    }
 
-    private static final boolean ERROR = false;
+    private static final boolean ERROR = true;
 
     public static void printERROR(String s) {
         if (ERROR) {
@@ -42,7 +42,7 @@ public class Utils {
         }
     }
 
-    public static final PrintStream outStream = new PrintStream(new BufferedOutputStream(System.out), true);
+    public static final PrintStream outStream = System.out;
 
     public static final double ALG_EPS = 0.000001;
 

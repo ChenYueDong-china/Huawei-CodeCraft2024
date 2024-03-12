@@ -67,7 +67,7 @@ public class Robot {
 //            return;
 //        }
         if (path.size() <= 2) {
-            printERROR("error");
+            //printERROR("error");
             return;
         }
         Point target = strategy.gameMap.discreteToPos(path.get(2));

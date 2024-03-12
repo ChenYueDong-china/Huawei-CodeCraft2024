@@ -3,6 +3,7 @@ package com.huawei.codecraft;
 import java.io.IOException;
 import java.util.*;
 
+import static com.huawei.codecraft.BoatStatus.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.RobotAction.RA_BUY;
 import static com.huawei.codecraft.RobotAction.RA_SELL;
@@ -74,27 +75,45 @@ public class Strategy {
         outStream.print("OK\n");
     }
 
+    int count = 0;
+
     public void mainLoop() throws IOException {
 
+
         while (input()) {
+            long l = System.currentTimeMillis();
             dispatch();
+            long e = System.currentTimeMillis();
+            if (e - l > 15) {
+                printERROR("frameId:" + frameId + ",time:" + (e - l));
+            }
+            if (frameId == 15000) {
+                printERROR("跳帧：" + count);
+            }
             outStream.print("OK\n");
+            outStream.flush();
         }
+
 
     }
 
+    long time1, time2, time3;
+
     private void dispatch() {
+
         while (greedySell()) ; //决策
         workbenchesLock.clear();//动态需要解锁
         for (HashSet<Integer> set : robotLock) {
             set.clear();
         }
+
         while (greedyBuy()) ;
 
         robotDoAction();
 
-
         doBoatAction();
+
+
         //todo 测试机器人能不能取货立即装货
 //        if (frameId < 50) {
 //            Dijkstra dijkstra = new Dijkstra();
@@ -177,6 +196,19 @@ public class Strategy {
             } else if (boat.targetId == -1 && boat.status == 0) {
                 boat.assigned = true;//运输中
             }
+            if (boatDecisionType == BoatDecisionType.DECISION_ON_ORIGIN
+                    && (boat.exactStatus != IN_ORIGIN_POINT)) {
+                //只要现在不在虚拟点,不在虚拟点，都认为赋值了
+                boat.assigned = true;
+            }
+            if (boatDecisionType == BoatDecisionType.DECISION_ON_ORIGIN_BERTH
+                    && (boat.exactStatus != IN_ORIGIN_POINT//虚拟点
+                    && boat.exactStatus != IN_BERTH_INTER//泊位内
+                    && boat.exactStatus != IN_BERTH_WAIT)) {//泊位外等待
+                //只要在移动过程中，都认为不可以切换，只有在泊位上，或者在虚拟点，才开始重新决策
+                boat.assigned = true;
+            }
+
         }
         //船只贪心去买卖，跟机器人做一样的决策
         //先保存一下泊位的价值列表
@@ -283,11 +315,12 @@ public class Strategy {
                 int dist;
                 if (boat.targetId == buyBerth.id) {
                     dist = boat.remainTime;
-                    if (boat.status == 1) {
+                    if (boat.exactStatus == IN_BERTH_WAIT) {
                         dist = 1;//泊位外等待为1
                     }
-                } else if (boat.lastTargetId != -1) {
-                    //切换泊位移动中，或者在另一个泊位等待或者进入
+                } else if (boat.exactStatus == IN_BERTH_INTER || boat.exactStatus == IN_BERTH_WAIT
+                        || boat.exactStatus == IN_BERTH_TO_BERTH) {
+                    //泊位内，泊位等待，泊位切换中
                     dist = BERTH_CHANGE_TIME;
                 } else {
                     dist = buyBerth.transportTime;//虚拟点到泊位时间
@@ -372,19 +405,13 @@ public class Strategy {
         //boat去移动
         if (boat.targetId != berth.id) {
             boat.ship(berth.id);
-            if (boat.targetId == -1) {
-                //在虚拟点
-                assert boat.status == 1;
+            if (boat.exactStatus == IN_ORIGIN_POINT || boat.exactStatus == IN_ORIGIN_TO_BERTH) {
+                //在虚拟点，或者虚拟点到泊位
                 boat.remainTime = berth.transportTime;
             } else {
-                if (boat.status != 0 || boat.lastTargetId != -1) {
-                    //在已经到达泊位,或者切换泊位（上一个目标不是虚拟点），一般情况下都是虚拟点
-                    boat.remainTime = BERTH_CHANGE_TIME;
-                } else {
-                    //在从虚拟点移动到泊位或者
-                    boat.remainTime = berth.transportTime;
-                }
+                boat.remainTime = BERTH_CHANGE_TIME;
             }
+            //printERROR("boat:" + boat.id + ",原来目标:" + boat.targetId + ",现在目标:" + berth.id + ",time:" + boat.remainTime);
             boat.targetId = berth.id;
             boat.status = 0;
         }
@@ -493,9 +520,8 @@ public class Strategy {
                     robotsPredictPath[robot.id].add(robot.path.get(0));
                     printERROR("error robot.path.size()==1");
                 }
-                //todo 改成6，然后躲开，在别人预测路径上则加惩罚
                 //至少有未来一个格子，如果有两个也要预测，因为两个可以让他往旁边避让，预测前面3个格子，避让机器人要尽量躲开他的三个格子。
-                for (int j = 1; j <= min(4, robot.path.size() - 1); j++) {
+                for (int j = 1; j <= min(6, robot.path.size() - 1); j++) {
                     robotsPredictPath[robot.id].add(robot.path.get(j));
                 }
             }
@@ -514,10 +540,6 @@ public class Strategy {
             }
             int avoidId = robot.id;
             int count = 0;
-            //todo 这个不可能撞两，因为前面有做避让
-            //todo 避让只选择上下左右四个格子，或者不动，如果四个都撞前面的，让前面那个人让。直到没人撞，都可以让时，
-            // 先考虑自己离目标点距离，
-            // 一样的话考虑不在别人路径上
             //这个预测路径包含了起始点，不管了
             boolean[] avoids = new boolean[ROBOTS_PER_PLAYER];
             Arrays.fill(avoids, false);
@@ -541,8 +563,6 @@ public class Strategy {
                     if (!gameMap.canReach(candidate.x, candidate.y)) {
                         continue;
                     }
-                    //todo 检查是否会撞到任意一个其他人,会的话也不是候选点
-                    //细化成两个去判断
                     boolean crash = false;
                     for (Robot tmpRobot : tmpRobots) {
                         if (tmpRobot.id == avoidId || robotsPredictPath[tmpRobot.id] == null) {
@@ -575,9 +595,11 @@ public class Strategy {
                         dist = berths[robots[avoidId].targetBerthId].getMinDistance(candidate);
                     }
                     assert dist != Integer.MAX_VALUE;
-                    if (robotsPredictPath[crashId].size() == 4 && candidate.equal
-                            (gameMap.discreteToPos(robotsPredictPath[crashId].get(3)))) {
-                        dist += 2;//不在对面路径上认为更好一点
+                    for (Point point : robotsPredictPath[crashId]) {
+                        if (candidate.equal(point)) {
+                            dist += 2;//在别人路径上惩罚增大
+                            break;
+                        }
                     }
                     if (dist < bestDist) {
                         result = candidate;
@@ -1067,7 +1089,11 @@ public class Strategy {
             return false;
         }
         String[] parts = line.trim().split(" ");
+        int tmp = frameId;
         frameId = Integer.parseInt(parts[0]);
+        if (tmp + 1 != frameId) {
+            count += frameId - tmp - 1;
+        }
         money = Integer.parseInt(parts[1]);
 
         line = inStream.readLine();

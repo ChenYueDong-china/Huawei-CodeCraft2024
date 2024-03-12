@@ -24,7 +24,9 @@ public class Constants {
     public static final int BERTH_WIDTH = 4;    // 每个玩家的船
     public static int frameId;
     public static final int BERTH_CHANGE_TIME = 10 * FPS; //切换泊位需要时间
-    public static final boolean STATIC_DECISION = false;    // 机器人决策，静态or动态
+
+
+    public static final BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ORIGIN_BERTH;
 
     public static final double SAME_TARGET_REWARD_FACTOR = 1; //动态保险因子，防止老是切换目标工作台
     public static final Random rad = new Random(666); //船到那里都没区别，则随机选一个泊位

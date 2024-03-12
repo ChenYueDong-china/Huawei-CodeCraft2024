@@ -13,6 +13,7 @@ public class Boat {
     //4.进入泊位
     int id;
     int status;//状态
+    BoatStatus exactStatus;//状态
     int originStatus;//原始状态,因为可能会被变，导致上一个id不一样
     int originTargetId = -1;//原始目标id,因为代码可能漏洞，导致改变
     int remainTime;//到达目标剩余时间
@@ -42,7 +43,31 @@ public class Boat {
         originTargetId = targetId;
         if (lastStatus != 0 && status == 0 && lastTargetId != targetId) {
             //从完成或者等待变道运输中
-            this.lastTargetId = targetId;
+            this.lastTargetId = lastTargetId;
+        }
+
+
+        //计算泊位状态
+        if (targetId == -1) {
+            if (status == 0) {
+                exactStatus = BoatStatus.IN_ORIGIN_POINT;
+            } else {
+                //虚拟点没有等待状态
+                exactStatus = BoatStatus.IN_ORIGIN_TO_BERTH;
+            }
+        } else {
+            if (status == 1) {
+                exactStatus = BoatStatus.IN_BERTH_INTER;
+            } else if (status == 2) {
+                exactStatus = BoatStatus.IN_BERTH_WAIT;
+            } else {
+                //运输中，可能是泊位到泊位，可能是虚拟点到泊位
+                if (lastTargetId == -1) {
+                    exactStatus = BoatStatus.IN_ORIGIN_TO_BERTH;
+                } else {
+                    exactStatus = BoatStatus.IN_BERTH_TO_BERTH;
+                }
+            }
         }
 
         if (targetId == -1 && status == 1) {
