@@ -21,15 +21,15 @@ public class Berth {
 
     int totalValue = 0;//货物总价值
 
-    public Dijkstra[][] dijkstras = new Dijkstra[BERTH_HEIGHT][BERTH_WIDTH];//berth有16个点,需要16次dij
+    public Dijkstra[][] dijkstras = new Dijkstra[BERTH_WIDTH][BERTH_HEIGHT];//berth有16个点,需要16次dij
 
     public int[][] minDistance = new int[MAP_FILE_COL_NUMS][MAP_FILE_COL_NUMS];
     @SuppressWarnings("unchecked")
     public ArrayList<Point>[][] minDistancePos = new ArrayList[MAP_FILE_COL_NUMS][MAP_FILE_COL_NUMS];
 
     public void init(GameMap gameMap) {
-        for (int i = 0; i < BERTH_HEIGHT; i++) {
-            for (int j = 0; j < BERTH_WIDTH; j++) {
+        for (int i = 0; i < BERTH_WIDTH; i++) {
+            for (int j = 0; j < BERTH_HEIGHT; j++) {
                 dijkstras[i][j] = new Dijkstra();
                 Point point = new Point(leftTopPos.x + i, leftTopPos.y + j);
                 dijkstras[i][j].init(point, gameMap);
@@ -37,13 +37,13 @@ public class Berth {
             }
         }
         //保存一下最小的到每个其它点的距离,便于选择驳口
-        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+        for (int i = 0; i < MAP_FILE_COL_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_ROW_NUMS; j++) {
                 Point point = new Point(i, j);
                 minDistancePos[i][j] = new ArrayList<>();
                 minDistance[i][j] = Integer.MAX_VALUE - 1;
-                for (int k = 0; k < BERTH_HEIGHT; k++) {
-                    for (int l = 0; l < BERTH_WIDTH; l++) {
+                for (int k = 0; k < BERTH_WIDTH; k++) {
+                    for (int l = 0; l < BERTH_HEIGHT; l++) {
                         int moveDistance = dijkstras[k][l].getMoveDistance(point);
                         if (moveDistance <= minDistance[i][j]) {
                             if (moveDistance < minDistance[i][j]) {

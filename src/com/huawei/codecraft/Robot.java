@@ -3,8 +3,7 @@ package com.huawei.codecraft;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static com.huawei.codecraft.Constants.BERTH_HEIGHT;
-import static com.huawei.codecraft.Constants.BERTH_WIDTH;
+import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
 
 public class Robot {
@@ -101,6 +100,10 @@ public class Robot {
     }
 
     private void pull() {
+        strategy.totalPullGoodsCount++;
+        strategy.totalPullGoodsValues += carryValue;
+        strategy.avgPullGoodsValue = 1.0 * strategy.totalPullGoodsValues / strategy.totalPullGoodsCount;
+        strategy.avgPullGoodsTime = 1.0 * frameId / strategy.totalPullGoodsCount;
         strategy.berths[targetBerthId].goodsNums++;
         strategy.berths[targetBerthId].goods.offer(carryValue);
         strategy.berths[targetBerthId].totalValue += carryValue;

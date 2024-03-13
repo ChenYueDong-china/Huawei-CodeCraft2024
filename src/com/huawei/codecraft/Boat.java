@@ -21,7 +21,7 @@ public class Boat {
     int num;//目前货物数量
     final int capacity;//容量
     int value;//货物金额
-    int estimateComingBerthId;//估计要去的id
+    int estimateComingBerthId = 0;//估计要去的id,第一帧都默认0吧
 
     boolean assigned;
 

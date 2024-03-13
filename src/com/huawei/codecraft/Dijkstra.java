@@ -11,7 +11,7 @@ public class Dijkstra {
     private Point mTarget;//目标点
     private GameMap mGameMap;
 
-    int[][] cs = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS]; //前面2位是距离，后面的位数是距离0xdistdir
+    int[][] cs = new int[MAP_FILE_COL_NUMS][MAP_FILE_ROW_NUMS]; //前面2位是距离，后面的位数是距离0xdistdir
 
     void init(Point target, GameMap gameMap) {
         this.mTarget = target;
