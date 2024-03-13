@@ -35,6 +35,8 @@ public class Strategy {
     @SuppressWarnings("unchecked")
     public ArrayList<Point>[] robotsPredictPath = new ArrayList[ROBOTS_PER_PLAYER];
 
+    public int curFrameDiff = 1;
+
     public void init() throws IOException {
         char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
         gameMap = new GameMap();
@@ -312,19 +314,24 @@ public class Strategy {
             }
             //移动完之后的下一帧才能开始装货
             if (boat.status == 1 && boat.targetId != -1 && berths[boat.targetId].goodsNums > 0) {
-                //正常运行,开始装货
-                assert boat.remainTime == 0;
-                int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
-                load = min(load, boat.capacity - boat.num);//剩余空间
-                boat.num += load;
-                berths[boat.targetId].goodsNums -= load;
-                for (int i = 0; i < load; i++) {
-                    assert !berths[boat.targetId].goods.isEmpty();
-                    Integer value = berths[boat.targetId].goods.poll();
-                    assert value != null;
-                    boat.value += value;
-                    berths[boat.targetId].totalValue -= value;
+                //正常运行,开始装货，如果跳帧，什么时候到达已经不知道了
+                //如果remainTime不为0，说明中间跳帧了，多装几次货就好了
+                for (int i = 0; i < (boat.remainTime + 1); i++) {
+                    int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
+                    load = min(load, boat.capacity - boat.num);//剩余空间
+                    boat.num += load;
+                    berths[boat.targetId].goodsNums -= load;
+                    for (int j = 0; j < load; j++) {
+                        assert !berths[boat.targetId].goods.isEmpty();
+                        Integer value = berths[boat.targetId].goods.poll();
+                        assert value != null;
+                        boat.value += value;
+                        berths[boat.targetId].totalValue -= value;
+                    }
                 }
+                boat.remainTime = 0;
+
+
             }
         }
 
@@ -1201,6 +1208,7 @@ public class Strategy {
         String[] parts = line.trim().split(" ");
         int tmp = frameId;
         frameId = Integer.parseInt(parts[0]);
+        curFrameDiff = frameId - tmp;
         if (tmp + 1 != frameId) {
             count += frameId - tmp - 1;
         }
@@ -1216,8 +1224,8 @@ public class Strategy {
         ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
         for (Map.Entry<Integer, Workbench> entry : workbenches.entrySet()) {
             Workbench workbench = entry.getValue();
-            workbench.remainTime--;
-            if (workbench.remainTime == 0) {
+            workbench.remainTime -= curFrameDiff;//跳帧也要减过去
+            if (workbench.remainTime <= 0) {
                 deleteIds.add(entry.getKey());
             }
         }
