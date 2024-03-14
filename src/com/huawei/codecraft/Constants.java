@@ -6,6 +6,12 @@ import java.util.Random;
  * 常量
  */
 public class Constants {
+
+    //调调超参数，打不过的话
+    public static final double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
+    public static final double BOAT_MAINTAIN_FACTOR = 1.0;//超参数,玩运气保持因子
+
+
     public static final int FPS = 50;                   // 每秒运行帧数
     public static final int GAME_FRAME = 5 * 60 * FPS;
     public static final int WORKBENCH_EXIST_TIME = 20 * FPS;//1000帧
@@ -25,11 +31,7 @@ public class Constants {
     public static int frameId;
     public static final int BERTH_CHANGE_TIME = 10 * FPS; //切换泊位需要时间
 
-
     public static final BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ANY;
-    public static final double BOAT_MAINTAIN_FACTOR = 0.5;//保持因子
 
-    public static final double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
-    public static final Random rad = new Random(666); //船到那里都没区别，则随机选一个泊位
 
 }
