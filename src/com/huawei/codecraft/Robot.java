@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
+import static java.lang.Math.min;
 
 public class Robot {
 
@@ -103,7 +104,10 @@ public class Robot {
         strategy.totalPullGoodsCount++;
         strategy.totalPullGoodsValues += carryValue;
         strategy.avgPullGoodsValue = 1.0 * strategy.totalPullGoodsValues / strategy.totalPullGoodsCount;
-        strategy.avgPullGoodsTime = 1.0 * frameId / strategy.totalPullGoodsCount;
+        strategy.avgPullGoodsTime = min(1.0 * frameId / strategy.totalPullGoodsCount, 15);
+
+
+        //10帧一个
         strategy.berths[targetBerthId].goodsNums++;
         strategy.berths[targetBerthId].goods.offer(carryValue);
         strategy.berths[targetBerthId].totalValue += carryValue;
