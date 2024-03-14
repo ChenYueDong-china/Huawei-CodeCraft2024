@@ -27,7 +27,7 @@ public class Constants {
 
 
     public static final BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ANY;
-    public static final double BOAT_MAINTAIN_FACTOR = 1;//保持因子
+    public static final double BOAT_MAINTAIN_FACTOR = 0.5;//保持因子
 
     public static final double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
     public static final Random rad = new Random(666); //船到那里都没区别，则随机选一个泊位

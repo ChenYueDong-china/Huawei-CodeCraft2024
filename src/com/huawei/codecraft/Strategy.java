@@ -428,28 +428,26 @@ public class Strategy {
                 if (boat.assigned || (boat.lastArriveTargetId == buyBerth.id && boat.status == 0 && boat.targetId != -1)) {
                     continue;
                 }
-                int dist = getBoatToBerthDistance(buyBerth, boat);
-                if (dist < minDist) {
-                    minDist = dist;
-                    selectBoats.clear();
-                    selectBoats.add(boat);
-                } else if (dist == minDist) {
-                    selectBoats.add(boat);
-                }
+                selectBoats.add(boat);
             }
             if (selectBoats.isEmpty()) {
                 continue;
             }
-            int buyTime = minDist;
+
             int sellTime = buyBerth.transportTime;
             for (Boat boat : selectBoats) {
+                int buyTime = getBoatToBerthDistance(buyBerth, boat);
                 BoatProfitAndCount boatProfitAndCount = estimateBoatProfitAndCount(boat, buyBerth, buyTime
                         , sellTime, goodsList, prefixSum, goodToBerthsStartTime[buyBerth.id]);
                 if (boatProfitAndCount.profit < 0) {
                     continue;
                 }
-                double addProfit = boat.estimateComingBerthId == buyBerth.id ? abs(boatProfitAndCount.profit) * BOAT_MAINTAIN_FACTOR
-                        : (boatProfitAndCount.profit - boatLastTargetProfit[boat.id]);
+
+                double addProfit = boat.estimateComingBerthId == buyBerth.id ? boatProfitAndCount.profit
+                        : boatProfitAndCount.profit - boatLastTargetProfit[boat.id];
+//                if (boat.estimateComingBerthId == buyBerth.id) {
+//                    addProfit *= 2;
+//                }
                 //增益超过保持因子，则切换目标
                 stat.add(new Stat(boat, buyBerth, boatProfitAndCount.count, boatProfitAndCount.updateStartTime, addProfit));
             }
@@ -468,17 +466,9 @@ public class Strategy {
                 continue;
             }
             if (other.estimateComingBerthId == berth.id && !other.assigned) {
-                //我先决策
-//                for (Stat cur : stat) {
-//                    if (other.id == cur.boat.id) {
-//                        berth = cur.berth;
-//                        boat = cur.boat;
-//                        updateTime = cur.updateTime;
-//                        break;
-//                    }
-//                }
-                boat=other;
-                break;
+                //我先决策,效果不好
+//                boat = other;//让他保持不变
+//                break;
             }
         }
         goodToBerthsStartTime[berth.id] = updateTime;
@@ -514,7 +504,7 @@ public class Strategy {
         int loadCount = 0;
         int updateStartComingTime = startComingTime;
         if (frameId + buyTime + sellTime >= GAME_FRAME) {
-            profit = 0;
+            profit = -1;
             updateStartComingTime = GAME_FRAME + 1;
         } else {
             //分两部分，到达前，到达后
@@ -524,8 +514,10 @@ public class Strategy {
             }
             int loadTime;
             double value = 0;
-
-            double comingSpeed = avgPullGoodsTime * 5;
+            double comingSpeed = avgPullGoodsTime * BERTH_PER_PLAYER;
+//            if (frameId + buyTime + sellTime > GAME_FRAME - FPS * 10) {
+//                comingSpeed = avgPullGoodsTime * 5;
+//            }
             if (goodsList[buyBerth.id].size() >= needCount) {
                 //不更新到达时间
                 //计算装货时间,不需要来货，到达之后直接装货
