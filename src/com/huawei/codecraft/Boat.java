@@ -42,7 +42,9 @@ public class Boat {
             this.lastArriveTargetId = targetId;
         }
         originStatus = status;
-
+        if (status != 0 && targetId != -1) {
+            Constants.boatWaitTime++;
+        }
 
         //计算泊位状态
         if (targetId == -1) {
