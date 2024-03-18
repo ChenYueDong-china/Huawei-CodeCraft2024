@@ -429,14 +429,14 @@ public class Strategy {
                 stat.add(new Stat(boat, berth, min(realCount, goodsNumList[berth.id]), totalWaitTime, profit));
             }
         }
-        if (stat.isEmpty()) {
-            return false;
+        if (!stat.isEmpty()) {
+            Collections.sort(stat);
+            //同一个目标不用管
+            boatRealDecision(goodsNumList, goodComingTimes, stat.get(0).berth
+                    , stat.get(0).boat, stat.get(0).updateTime, stat.get(0).count);
+            return true;
         }
-        Collections.sort(stat);
-        //同一个目标不用管
-        boatRealDecision(goodsNumList, goodComingTimes, stat.get(0).berth
-                , stat.get(0).boat, stat.get(0).updateTime, stat.get(0).count);
-        return true;
+        return false;
 
     }
 
