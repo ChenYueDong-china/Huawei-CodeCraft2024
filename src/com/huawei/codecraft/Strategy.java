@@ -432,8 +432,9 @@ public class Strategy {
                 int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
                 int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingSpeed);
                 int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
-                if (berth.id != boat.targetId && arriveWaitTime > 0) {
-                    continue;//不是同一个泊位，且到达之后需要等待，那么先不去先
+                if (berth.id != boat.targetId && arriveWaitTime > 0
+                        && remainTime > buyTime + berth.loadingSpeed * needCount) {//没时间了，就应该早点切换泊位
+                    continue;//不是同一个泊位，且到达之后需要等待，那么先不去先,有问题，最后还是不会切泊位的
                 }
                 double profit = realCount + 1.0 * realCount / (buyTime + max(arriveWaitTime, loadTime) + sellTime);
 
@@ -1366,16 +1367,16 @@ public class Strategy {
 
     private int getFastestCollectTime(int goodArriveTime, Berth berth) {
         //这个泊位这个物品到达的时候泊位的数量
-       // return goodArriveTime;
+        // return goodArriveTime;
         int estimateGoodsNums = berth.goodsNums;
-        for (Robot robot: robots) {
+        for (Robot robot : robots) {
             if (robot.assigned && robot.targetBerthId == berth.id) {
                 estimateGoodsNums++;
             }
         }
         estimateGoodsNums++;//加上这个货物时间
         int minDistance = Integer.MAX_VALUE;
-        for (Boat boat: boats) {
+        for (Boat boat : boats) {
             if (boat.estimateComingBerthId == berth.id) {
                 //来的是同一搜
                 int comingTime = getBoatToBerthDistance(berth, boat);
