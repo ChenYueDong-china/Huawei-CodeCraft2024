@@ -57,8 +57,8 @@ public class Strategy {
             String[] parts = s.trim().split(" ");
             int id = Integer.parseInt(parts[0]);
             berths[id] = new Berth();
-            berths[id].leftTopPos.y = Integer.parseInt(parts[1]);
-            berths[id].leftTopPos.x = Integer.parseInt(parts[2]);
+            berths[id].leftTopPos.x = Integer.parseInt(parts[1]);
+            berths[id].leftTopPos.y = Integer.parseInt(parts[2]);
             berths[id].transportTime = Integer.parseInt(parts[3]);
             berths[id].loadingSpeed = Integer.parseInt(parts[4]);
             berths[id].id = i;
@@ -1017,7 +1017,7 @@ public class Strategy {
                 this.p = p;
             }
         }
-        int[][] discreteCs = new int[MAP_DISCRETE_WIDTH][MAP_DISCRETE_HEIGHT]; //前面2位是距离，后面的位数是距离0xdistdir
+        int[][] discreteCs = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH]; //前面2位是距离，后面的位数是距离0xdistdir
         for (int[] discreteC : discreteCs) {
             Arrays.fill(discreteC, Integer.MAX_VALUE);
         }
@@ -1129,34 +1129,6 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
-        int[] needCounts = new int[BERTH_PER_PLAYER];//泊位目前需要的总个数
-        int[] totalCounts = new int[BERTH_PER_PLAYER];//泊位总共需要的个数
-        int[] estimateCounts = new int[BERTH_PER_PLAYER];
-        double goodsComingSpeed = avgPullGoodsTime * BERTH_PER_PLAYER;
-        for (Berth berth : berths) {
-            int needCount = 0;
-            estimateCounts[berth.id] = berth.goodsNums;
-            int estimateComingCount = 0;
-            for (int id : berth.comingBoats) {
-                assert boats[id].estimateComingBerthId == berth.id;
-                totalCounts[berth.id] += boats[id].capacity;
-                int cur = boats[id].targetId == -1 ? boats[id].capacity : boats[id].capacity - boats[id].num;
-                needCount += cur;
-                estimateComingCount = (int) (getBoatToBerthDistance(berth, boats[id]) / goodsComingSpeed);
-            }
-            estimateCounts[berth.id] += estimateComingCount;
-            needCounts[berth.id] = needCount;
-        }
-        for (Robot robot : robots) {
-            if (robot.assigned) {
-                estimateCounts[robot.targetBerthId] += 1;
-            }
-        }
-        for (int i = 0; i < needCounts.length; i++) {
-            //减去估计有的个数，就是目前缺的个数,全缺，则无价值,否则有价值
-            needCounts[i] = max(0, needCounts[i] - estimateCounts[i]);
-        }
-
 
         ArrayList<Stat> stat = new ArrayList<>();
         //选择折现价值最大的
@@ -1216,10 +1188,7 @@ public class Strategy {
             if (minDist > buyWorkbench.remainTime) {
                 continue;//去到货物就消失了,不去
             }
-
             int arriveBuyTime = buyWorkbench.getMinDistance(selectRobot.pos);
-
-
             double maxProfit = -GAME_FRAME;
             Berth selectSellBerth = null;
             for (Berth sellBerth : berths) {
@@ -1324,36 +1293,8 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
-        int[] needCounts = new int[BERTH_PER_PLAYER];//泊位目前需要的总个数
-        int[] totalCounts = new int[BERTH_PER_PLAYER];//泊位总共需要的个数
-        int[] estimateCounts = new int[BERTH_PER_PLAYER];
-        double goodsComingSpeed = avgPullGoodsTime * BERTH_PER_PLAYER;
-        for (Berth berth : berths) {
-            int needCount = 0;
-            estimateCounts[berth.id] = berth.goodsNums;
-            int estimateComingCount = 0;
-            for (int id : berth.comingBoats) {
-                assert boats[id].estimateComingBerthId == berth.id;
-                totalCounts[berth.id] += boats[id].capacity;
-                int cur = boats[id].targetId == -1 ? boats[id].capacity : boats[id].capacity - boats[id].num;
-                needCount += cur;
-                estimateComingCount = (int) (getBoatToBerthDistance(berth, boats[id]) / goodsComingSpeed);
-            }
-            estimateCounts[berth.id] += estimateComingCount;
-            needCounts[berth.id] = needCount;
-        }
-        for (Robot robot : robots) {
-            if (robot.assigned) {
-                estimateCounts[robot.targetBerthId] += 1;
-            }
-        }
-        for (int i = 0; i < needCounts.length; i++) {
-            //减去估计有的个数，就是目前缺的个数,全缺，则无价值,否则有价值
-            needCounts[i] = max(0, needCounts[i] - estimateCounts[i]);
-        }
 
         ArrayList<Stat> stat = new ArrayList<>();
-
         for (Robot robot : robots) {
             if (robot.assigned || !robot.carry) {
                 continue;
@@ -1379,8 +1320,6 @@ public class Strategy {
                     profit = -sellTime;
                 } else {
                     double value = robot.carryValue;
-//                    value += needCounts[sellBerth.id] == 0 ? 0 : 1.0 * (totalCounts[sellBerth.id] - needCounts[sellBerth.id])
-//                            / totalCounts[sellBerth.id] * avgPullGoodsValue * 50;
                     //value += estimateEraseValue(sellTime, robot, sellBerth);
                     //防止走的特别近马上切泊位了
                     profit = value / (arriveTime + fixTime);

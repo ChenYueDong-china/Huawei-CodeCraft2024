@@ -99,10 +99,10 @@ public class Utils {
     }
 
     public static final Point[] DIR = {
-            new Point(1, 0),//右移
-            new Point(-1, 0),//左移
-            new Point(0, -1),//上移
-            new Point(0, 1),//下移
+            new Point(0, 1),//右移
+            new Point(0, -1),//左移
+            new Point(-1, 0),//上移
+            new Point(1, 0),//下移
             new Point(-1, -1),
             new Point(1, 1),
             new Point(-1, 1),

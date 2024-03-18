@@ -38,8 +38,8 @@ public class Robot {
         printMOST(line);
         String[] parts = line.trim().split(" ");
         carry = Integer.parseInt(parts[0]) == 1;
-        pos.y = Integer.parseInt(parts[1]);
-        pos.x = Integer.parseInt(parts[2]);
+        pos.x = Integer.parseInt(parts[1]);
+        pos.y = Integer.parseInt(parts[2]);
         status = Integer.parseInt(parts[3]);
         assigned = false;
         if (!carry) {
