@@ -306,9 +306,7 @@ public class Strategy {
                 boats[pair.boatId].estimateComingBerthId = berth.id;
                 berth.comingBoats.offer(pair.boatId);
             }
-
         }
-
     }
 
     private boolean boatGreedyBuy2(int[] goodsNumList, int[] goodComingTimes) {
@@ -353,7 +351,7 @@ public class Strategy {
         }
         //第一种，在移动向泊位的，不切换目标，直接消耗
         for (Boat boat : oneTypesBoats) {
-            int needCount = boat.targetId == -1 ? boat.capacity : boat.capacity - boat.num;
+            int needCount = boat.capacity - boat.num;
             if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingSpeed, needCount))
                 return true;
         }
@@ -379,12 +377,25 @@ public class Strategy {
             if (frameId + minDistance + buyBerth.transportTime >= GAME_FRAME) {
                 continue;//货物装不满，则不管
             }
-            //只能装那么多，尽量去装吧
+
+//            int buyTime = minDistance;
+//            int sellTime = buyBerth.transportTime;
+//            int needCount = selectBoat.capacity;
+//            int remainTime = GAME_FRAME - buyTime - sellTime - frameId;
+//            int realCount = min(needCount, remainTime / buyBerth.loadingSpeed);//装货
+//            realCount = min(realCount, goodsNumList[buyBerth.id] + (int) (remainTime / goodsComingSpeed));//来货
+//            int loadTime = (int) ceil(1.0 * realCount / buyBerth.loadingSpeed);
+//            int totalWaitTime = goodComingTimes[buyBerth.id] + (int) ceil(max(0, realCount - goodsNumList[buyBerth.id]) * goodsComingSpeed);
+//            int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
+//            double profit = 1.0 * realCount / (buyTime + max(arriveWaitTime, loadTime) + sellTime);
+
+            //只能装那么多，尽量去装吧,可以切泊位可能上面决策好一点，不可以切泊位，还是看数量高分
+            int realCount = selectBoat.capacity;
             double profit = 1e10 + goodsNumList[buyBerth.id] * 1e10 - goodComingTimes[buyBerth.id] * 1e5 + minDistance;
             int totalWaitTime = goodComingTimes[buyBerth.id] +
                     (int) ceil(max(0, selectBoat.capacity - goodsNumList[buyBerth.id])
                             * goodsComingSpeed);
-            stat.add(new Stat(selectBoat, buyBerth, min(goodsNumList[buyBerth.id], selectBoat.capacity)
+            stat.add(new Stat(selectBoat, buyBerth, min(goodsNumList[buyBerth.id], realCount)
                     , totalWaitTime, profit));
         }
         if (!stat.isEmpty()) {
