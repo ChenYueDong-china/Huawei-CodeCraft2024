@@ -112,6 +112,8 @@ public class Robot {
         strategy.berths[targetBerthId].goods.offer(carryValue);
         strategy.berths[targetBerthId].totalValue += carryValue;
         strategy.pullScore += carryValue;
+        targetBerthId=-1;
+        targetWorkBenchId=-1;
         outStream.printf("pull %d\n", id);
     }
 }
