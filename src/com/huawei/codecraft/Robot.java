@@ -20,6 +20,7 @@ public class Robot {
     public boolean redundancy;//机器人是否有冗余时间去买，无的话最前面，第二携带物品的，最后看价值
 
     public boolean assigned;
+    public boolean buyAssign;
     public int targetBerthId = -1;//目标卖工作台id,这个是berth了，其实都一样
     public int targetWorkBenchId = -1;//目标买id，其实都一样
     public ArrayList<Point> path = new ArrayList<>();
@@ -47,9 +48,8 @@ public class Robot {
         }
         redundancy = true;//到目标点有冗余时间
         avoid = false;
-//        targetBerthId = -1;
-//        targetWorkBenchId = -1;
         path.clear();
+        buyAssign=false;
     }
 
     public void buy() {
@@ -112,8 +112,8 @@ public class Robot {
         strategy.berths[targetBerthId].goods.offer(carryValue);
         strategy.berths[targetBerthId].totalValue += carryValue;
         strategy.pullScore += carryValue;
-        targetBerthId=-1;
-        targetWorkBenchId=-1;
+        targetBerthId = -1;
+        targetWorkBenchId = -1;
         outStream.printf("pull %d\n", id);
     }
 }
