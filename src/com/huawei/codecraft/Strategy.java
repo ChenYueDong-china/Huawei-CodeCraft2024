@@ -1351,10 +1351,8 @@ public class Strategy {
             //贪心，选择最近的机器人
 
             //选距离最近的，如果是没到泊位的有好几个，选离泊位最近的
-            Robot selectRobot;
-            int minDist;
-            ArrayList<Robot> oneTypeRobots = new ArrayList<>();
-            ArrayList<Robot> twoTypeRobots = new ArrayList<>();
+            Robot selectRobot = null;
+            int minDist = Integer.MAX_VALUE;
             for (Robot robot : robots) {
                 if (robot.buyAssign) {
                     continue;
@@ -1365,58 +1363,27 @@ public class Strategy {
                 if (robotLock[robot.id].contains(buyWorkbench.id)) {
                     continue;
                 }
-                if (robot.carry || robot.targetBerthId == -1) {//到达泊位或者没到泊位的
-                    oneTypeRobots.add(robot);
-                } else {
-                    twoTypeRobots.add(robot);
-                }
-            }
-            Robot oneSelectRobot = null;
-            int oneMinDist = Integer.MAX_VALUE;
-            int oneToBerthDist = Integer.MAX_VALUE;
-            Robot twoSelectRobot = null;
-            int twoMinDist = Integer.MAX_VALUE;
-            for (Robot robot : oneTypeRobots) {
                 int dist = getRobotToWorkbenchDist(robot, buyWorkbench);
-                int toBerthsDist = 0;
-                if (robot.targetBerthId != -1) {
-                    toBerthsDist = berths[robot.targetBerthId].getMinDistance(robot.pos);
+                int toBerthTime = 0;
+                if (robot.carry) {
+                    toBerthTime = berths[robot.targetBerthId].getMinDistance(robot.pos);
                 }
-                int realDist = dist - toBerthsDist;
-                if (realDist < oneMinDist) {
-                    oneMinDist = realDist;
-                    oneSelectRobot = robot;
-                    oneToBerthDist = toBerthsDist;
-                    continue;
+                dist -= toBerthTime;
+                if (dist < minDist) {
+                    minDist = dist;
+                    selectRobot = robot;
                 }
-                if (realDist == oneMinDist && toBerthsDist < oneToBerthDist) {
-                    oneSelectRobot = robot;
-                    oneToBerthDist = toBerthsDist;
-                }
-            }
-            for (Robot robot : twoTypeRobots) {
-                int dist = getRobotToWorkbenchDist(robot, buyWorkbench);
-                if (dist < twoMinDist) {
-                    twoMinDist = dist;
-                    twoSelectRobot = robot;
-                }
-            }
-            if (oneMinDist <= twoMinDist) {
-                selectRobot = oneSelectRobot;
-                minDist = oneMinDist;
-            } else {
-                selectRobot = twoSelectRobot;
-                minDist = twoMinDist;
+
             }
             if (selectRobot == null) {
                 continue;
             }
-            int toBerthDistance = 0;
+            int toBerthTime = 0;
             if (selectRobot.carry) {
-                toBerthDistance = berths[selectRobot.targetBerthId].getMinDistance(selectRobot.pos);
+                toBerthTime = berths[selectRobot.targetBerthId].getMinDistance(selectRobot.pos);
             }
 
-            if (minDist > buyWorkbench.remainTime) {
+            if (toBerthTime + minDist > buyWorkbench.remainTime) {
                 continue;//去到货物就消失了,不去
             }
             int arriveBuyTime = minDist;
@@ -1427,18 +1394,18 @@ public class Strategy {
                     continue; //不能到达
                 }
                 int arriveSellTime = sellBerth.getMinDistance(buyWorkbench.pos);//机器人买物品的位置开始
-                int collectTime = getFastestCollectTime(toBerthDistance + arriveBuyTime + arriveSellTime, sellBerth);
+                int collectTime = getFastestCollectTime(toBerthTime + arriveBuyTime + arriveSellTime, sellBerth);
                 int sellTime = collectTime + sellBerth.transportTime;
 
                 double profit;
-                if (frameId + arriveSellTime + sellTime >= GAME_FRAME) {
+                if (frameId + toBerthTime + arriveSellTime + sellTime >= GAME_FRAME) {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
                 } else {
                     double value = buyWorkbench.value;
 //                    value += needCounts[sellBerth.id] == 0 ? 0 : 1.0 * (totalCounts[sellBerth.id] - needCounts[sellBerth.id])
 //                            / totalCounts[sellBerth.id] * avgPullGoodsValue * 50;
                     //消除价值计算,至少要一来一会才会出现消除价值
-                    //value += estimateEraseValue(arriveSellTime + sellTime, selectRobot, sellBerth);
+//                    value += estimateEraseValue(arriveSellTime + sellTime, selectRobot, sellBerth);
 
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
@@ -1675,7 +1642,7 @@ public class Strategy {
                     profit = -sellTime;
                 } else {
                     double value = robot.carryValue;
-                    //value += estimateEraseValue(sellTime, robot, sellBerth);
+//                    value += estimateEraseValue(sellTime, robot, sellBerth);
                     //防止走的特别近马上切泊位了
                     profit = value / (arriveTime + fixTime);
                     if (robot.targetBerthId == sellBerth.id) {//同一泊位
