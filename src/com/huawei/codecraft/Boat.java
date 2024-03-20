@@ -33,7 +33,7 @@ public class Boat {
 
     public void input() throws IOException {
         String line = inStream.readLine();
-        printMOST(line);
+        printMost(line);
         String[] parts = line.trim().split(" ");
         status = Integer.parseInt(parts[0]);
         targetId = Integer.parseInt(parts[1]);

@@ -5,11 +5,6 @@
 package com.huawei.codecraft;
 
 import java.io.IOException;
-import java.util.Random;
-import java.util.Scanner;
-
-import static com.huawei.codecraft.Utils.printERROR;
-import static com.huawei.codecraft.Utils.printMOST;
 
 /**
  * Main

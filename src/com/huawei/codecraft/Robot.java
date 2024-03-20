@@ -36,7 +36,7 @@ public class Robot {
 
     public void input() throws IOException {
         String line = inStream.readLine();
-        printMOST(line);
+        printMost(line);
         String[] parts = line.trim().split(" ");
         carry = Integer.parseInt(parts[0]) == 1;
         pos.x = Integer.parseInt(parts[1]);

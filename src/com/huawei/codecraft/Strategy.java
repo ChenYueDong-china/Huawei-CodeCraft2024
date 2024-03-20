@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN;
-import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN_BERTH;
 import static com.huawei.codecraft.BoatStatus.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.RobotAction.RA_BUY;
@@ -53,7 +52,7 @@ public class Strategy {
         //码头
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             String s = inStream.readLine();
-            printMOST(s);
+            printMost(s);
             String[] parts = s.trim().split(" ");
             int id = Integer.parseInt(parts[0]);
             berths[id] = new Berth();
@@ -66,7 +65,7 @@ public class Strategy {
 
         }
         String s = inStream.readLine().trim();
-        printMOST(s);
+        printMost(s);
         int boatCapacity = Integer.parseInt(s);
         //船
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
@@ -81,7 +80,7 @@ public class Strategy {
         }
 
         String okk = inStream.readLine();
-        printMOST(okk);
+        printMost(okk);
         outStream.print("OK\n");
     }
 
@@ -95,10 +94,10 @@ public class Strategy {
             dispatch();
             long e = System.currentTimeMillis();
             if (e - l > 15) {
-                printERROR("frameId:" + frameId + ",time:" + (e - l));
+                printError("frameId:" + frameId + ",time:" + (e - l));
             }
             if (frameId == 15000) {
-                printERROR("跳帧：" + count + ",pullScore:" + pullScore + ",boatWaitTime:" + boatWaitTime);
+                printError("跳帧：" + count + ",pullScore:" + pullScore + ",boatWaitTime:" + boatWaitTime);
             }
             outStream.print("OK\n");
             outStream.flush();
@@ -1074,7 +1073,7 @@ public class Strategy {
                     //原点不动，大概率有漏洞
                     robotsPredictPath[robot.id].add(robot.path.get(0));
                     robotsPredictPath[robot.id].add(robot.path.get(0));
-                    printERROR("error robot.path.size()==1");
+                    printError("error robot.path.size()==1");
                 }
                 //至少有未来一个格子，如果有两个也要预测，因为两个可以让他往旁边避让，预测前面3个格子，避让机器人要尽量躲开他的三个格子。
                 for (int j = 1; j <= min(6, robot.path.size() - 1); j++) {
@@ -1101,7 +1100,7 @@ public class Strategy {
             Arrays.fill(avoids, false);
             while (crashId != -1) {
                 if (count == ROBOTS_PER_PLAYER) {
-                    printERROR("the code is worst");
+                    printError("the code is worst");
                     assert false;
                     break;
                 }
@@ -1743,7 +1742,7 @@ public class Strategy {
 
     private boolean input() throws IOException {
         String line = inStream.readLine();
-        printMOST(line);
+        printMost(line);
         if (line == null) {
             return false;
         }
@@ -1757,7 +1756,7 @@ public class Strategy {
         money = Integer.parseInt(parts[1]);
 
         line = inStream.readLine();
-        printMOST(line);
+        printMost(line);
         parts = line.trim().split(" ");
 
 
@@ -1792,7 +1791,7 @@ public class Strategy {
             boats[i].input();
         }
         String okk = inStream.readLine();
-        printMOST(okk);
+        printMost(okk);
         return true;
     }
 }

@@ -21,7 +21,7 @@ public class Workbench {
 
     public void input(GameMap map) throws IOException {
         String line = inStream.readLine();
-        printMOST(line);
+        printMost(line);
         String[] parts = line.trim().split(" ");
         pos.x = Integer.parseInt(parts[0]);
         pos.y = Integer.parseInt(parts[1]);
