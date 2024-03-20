@@ -28,6 +28,7 @@ public class Robot {
     public Strategy strategy;
     public int forcePri;
     int beConflicted = 0;  // 被冲突
+    int priority = 0;
 
     public Robot(Strategy strategy) {
         this.strategy = strategy;

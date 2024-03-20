@@ -541,18 +541,7 @@ public class Strategy {
         //todo 选择路径，修复路径
         Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
         System.arraycopy(robots, 0, tmpRobots, 0, ROBOTS_PER_PLAYER);
-        Arrays.sort(tmpRobots, (o1, o2) -> {
-            if (o1.forcePri != o2.forcePri) {//暴力优先级最高
-                return o2.forcePri - o1.forcePri;
-            }
-            if (o1.redundancy ^ o2.redundancy) {//没冗余时间
-                return o2.redundancy ? -1 : 1;
-            }
-            if (o1.carry ^ o2.carry) {//携带物品高
-                return o1.carry ? -1 : 1;
-            }
-            return o1.carryValue - o2.carryValue;//看价值
-        });
+        sortRobots(tmpRobots);
         //1.选择路径,和修复路径
         for (int i = 0; i < tmpRobots.length; i++) {
             Robot robot = tmpRobots[i];
@@ -609,7 +598,6 @@ public class Strategy {
         }
 
         //2.碰撞避免
-        Arrays.fill(robotsPredictPath, null);
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
             //固定只预测未来一个格子，就是两个小格子，
             //预测他未来两个格子就行，四下，如果冲突，则他未来一个格子自己不能走，未来第二个格子自己尽量也不走
@@ -647,16 +635,9 @@ public class Strategy {
                 }
             }
             int avoidId = robot.id;
-            int count = 0;
-            //这个预测路径包含了起始点，不管了
-            boolean[] avoids = new boolean[ROBOTS_PER_PLAYER];
-            Arrays.fill(avoids, false);
-            while (crashId != -1) {
-                if (count == ROBOTS_PER_PLAYER) {
-                    printError("the code is worst");
-                    assert false;
-                    break;
-                }
+
+            if (crashId != -1) {
+
                 //看看自己是否可以避让，不可以的话就说明被夹住了,让冲突点去让,并且自己强制提高优先级50帧
                 robots[crashId].beConflicted = FPS;
                 ArrayList<Point> candidates = new ArrayList<>();
@@ -725,32 +706,10 @@ public class Strategy {
                 } else {
                     robots[avoidId].beConflicted = FPS;
                     robots[avoidId].forcePri = 1;
-                    //不可能没一个机器人没法避让，如果这样说明陷入了死锁，但是这个地图不可能思索
-                    avoids[avoidId] = true;//下次这个机器人不避让，避免死循环
-                    int tmp = avoidId;
-                    HashSet<Integer> crashIds = new HashSet<>();
-                    for (Robot  tmpRobot: tmpRobots) {
-                        if (tmpRobot.id == avoidId || robotsPredictPath[tmpRobot.id].isEmpty()) {
-                            continue;//后面的
-                        }
-                        for (int k = 0; k < 2; k++) {
-                            if (robotsPredictPath[avoidId].get(k).equal(robotsPredictPath[tmpRobot.id].get(k))) {
-                                crashIds.add(tmpRobot.id);
-                                break;
-                            }
-                        }
-                    }
-                    assert(!crashIds.isEmpty());//至少撞得拿个robot
-                    //寻找避让id
-                    for (Integer id : crashIds) {
-                        if (!avoids[id]) {
-                            avoidId = id;
-                            break;
-                        }
-                    }
-                    crashId = tmp;//撞到的让
+                    sortRobots(tmpRobots);
+                    i = -1;
                 }
-                count++;
+
             }
         }
 
@@ -769,6 +728,22 @@ public class Strategy {
                 robots[i].forcePri = 0;
             }
         }
+    }
+
+    private void sortRobots(Robot[] robots) {
+        Arrays.sort(robots, (o1, o2) -> {
+            if (o1.forcePri != o2.forcePri) {//暴力优先级最高
+                return o2.forcePri - o1.forcePri;
+            }
+            if (o1.redundancy ^ o2.redundancy) {//没冗余时间
+                return o2.redundancy ? -1 : 1;
+            }
+            if (o1.carryValue != o2.carryValue) {//携带物品高
+                return o2.carryValue - o1.carryValue;//看价值
+            }
+            return o1.priority != o2.priority ? o2.priority - o1.priority : o1.id - o2.id;
+        });
+        Arrays.fill(robotsPredictPath, null);
     }
 
 
@@ -1084,6 +1059,7 @@ public class Strategy {
                 robot.buy();
                 robot.buyAssign = false;
             }
+            robot.priority = workbench.value;
         } else {
             robot.redundancy = true;
             robot.estimateUnloadTime = frameId + berth.getMinDistance(robot.pos);
