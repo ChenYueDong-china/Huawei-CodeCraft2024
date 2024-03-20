@@ -195,7 +195,8 @@ public class Strategy {
                 } else {
                     //todo 有漏洞，可以去到装货再走
                     //没到目标,如果是船运过来，num一定为0
-                    minSellTime = berths[boat.lastArriveTargetId].transportTime;
+                    minSellTime = min(berths[boat.lastArriveTargetId].transportTime,
+                            boat.remainTime + berths[boat.targetId].transportTime);//去到之后再会来的时间
                 }
                 if (frameId + minSellTime >= GAME_FRAME - FPS / 5) {//会掉帧，预留10帧
                     //极限卖
@@ -629,12 +630,12 @@ public class Strategy {
 
                     int remainTime = GAME_FRAME - buyTime - sellTime - frameId;
                     int realCount = min(needCount, remainTime / berth.loadingSpeed);//装货
-                    realCount = min(realCount, goodsNumList[berth.id] + (int) ((remainTime - goodComingTimes[berth.id]) / goodsComingSpeed));//来货
+                    realCount = min(realCount, goodsNumList[berth.id] + (int) ((remainTime + buyTime - goodComingTimes[berth.id]) / goodsComingSpeed));//来货
                     int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
                     int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingSpeed);
                     int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
-                    if (berth.id != boat.targetId && arriveWaitTime > 0
-                            && remainTime > buyTime + berth.loadingSpeed * needCount) {//没时间了，就应该早点切换泊位
+                    if (berth.id != boat.targetId && arriveWaitTime > 0//留一半阈值
+                            && remainTime > 2 * berth.loadingSpeed * realCount) {//没时间了，就应该早点切换泊位
                         continue;//不是同一个泊位，且到达之后需要等待，那么先不去先,有问题，最后还是不会切泊位的
                     }
                     double profit = realCount + 1.0 * realCount / (buyTime + max(arriveWaitTime, loadTime) + sellTime);
