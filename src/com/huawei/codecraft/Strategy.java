@@ -694,7 +694,6 @@ public class Strategy {
                     }
                 }
                 if (!result.equal(-1, -1)) {
-                    crashId = -1;
                     //修改预测路径
                     robotsPredictPath[avoidId].clear();
                     robots[avoidId].avoid = true;
@@ -705,7 +704,7 @@ public class Strategy {
                     robotsPredictPath[avoidId].add(end);//下一个格子
                 } else {
                     robots[avoidId].beConflicted = FPS;
-                    robots[avoidId].forcePri = 1;
+                    robots[avoidId].forcePri += 1;
                     sortRobots(tmpRobots);
                     i = -1;
                 }
