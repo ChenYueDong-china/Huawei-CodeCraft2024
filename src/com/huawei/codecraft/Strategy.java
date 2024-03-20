@@ -193,6 +193,7 @@ public class Strategy {
                     //说明到达目标了
                     minSellTime = berths[boat.targetId].transportTime;
                 } else {
+                    //todo 有漏洞，可以去到装货再走
                     //没到目标,如果是船运过来，num一定为0
                     minSellTime = berths[boat.lastArriveTargetId].transportTime;
                 }
@@ -1398,10 +1399,11 @@ public class Strategy {
                 int sellTime = collectTime + sellBerth.transportTime;
 
                 double profit;
-                if (frameId + toBerthTime + arriveSellTime + sellTime >= GAME_FRAME) {
+                if (frameId + sellTime >= GAME_FRAME) {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
                 } else {
                     double value = buyWorkbench.value;
+                    value += 1.5 * value * (1000 - buyWorkbench.remainTime) / 1000;
 //                    value += needCounts[sellBerth.id] == 0 ? 0 : 1.0 * (totalCounts[sellBerth.id] - needCounts[sellBerth.id])
 //                            / totalCounts[sellBerth.id] * avgPullGoodsValue * 50;
                     //消除价值计算,至少要一来一会才会出现消除价值
@@ -1677,9 +1679,12 @@ public class Strategy {
             robot.buyAssign = true;
             workbenchesLock.add(workbench.id);//锁住，别人不准选择
             robot.targetWorkBenchId = workbench.id;
-            int toWorkbenchDist = getRobotToWorkbenchDist(robot, workbench);
-            robot.estimateUnloadTime = frameId + toWorkbenchDist + berth.getMinDistance(workbench.pos);
-            robot.redundancy = toWorkbenchDist != workbench.remainTime;
+            if (!robot.carry) {
+                //携带了物品不管
+                int toWorkbenchDist = getRobotToWorkbenchDist(robot, workbench);
+                robot.estimateUnloadTime = frameId + toWorkbenchDist + berth.getMinDistance(workbench.pos);
+                robot.redundancy = toWorkbenchDist != workbench.remainTime;
+            }
             if (!robot.carry && robot.pos.equal(workbench.pos)) {
                 //没带物品，且到目标，一定买，然后重新决策一个下一个目标买
                 robot.buy();
@@ -1693,45 +1698,46 @@ public class Strategy {
 
     private int getFastestCollectTime(int goodArriveTime, Berth berth) {
         //这个泊位这个物品到达的时候泊位的数量
-        return goodArriveTime;
-//        int estimateGoodsNums = berth.goodsNums;
-//        for (Robot robot : robots) {
-//            if (robot.assigned && robot.targetBerthId == berth.id) {
-//                estimateGoodsNums++;
-//            }
-//        }
-//        estimateGoodsNums++;//加上这个货物时间
-//        int minDistance = Integer.MAX_VALUE;
-//        for (Boat boat : boats) {
-//            if (boat.estimateComingBerthId == berth.id) {
-//                //来的是同一搜
-//                int comingTime = getBoatToBerthDistance(berth, boat);
-//                int remainSpace = boat.targetId == berth.id ? boat.capacity - boat.num : boat.capacity;
-//                if (remainSpace >= estimateGoodsNums) {
-//                    minDistance = min(minDistance, comingTime);
-//                } else {
-//                    minDistance = min(minDistance, comingTime + 2 * berth.transportTime);
-//                }
-//            } else {
-//                int remainSpace = boat.capacity;
-//                int id = boat.estimateComingBerthId == -1 ? 0 : boat.estimateComingBerthId;
-//                int comingTime = getBoatToBerthDistance(berths[id], boat);
-//                remainSpace -= berths[id].goodsNums;
-//                //去到估计的位置，在加一来一回
-//                if (remainSpace >= estimateGoodsNums) {
-//                    minDistance = min(minDistance, comingTime + berths[id].transportTime + berth.transportTime);
-//                } else {
-//                    //去另一个泊位装满，再回去，再去你这里
-//                    minDistance = min(minDistance, comingTime + berths[id].transportTime + 3 * berth.transportTime);
-//                }
-//
-//            }
-//        }
-//
-//
-//        //检查所有的船，找出这个泊位的这个物品最快被什么时候消费
-//        //没到达也没法消费
-//        return max(goodArriveTime, minDistance) + estimateGoodsNums / berth.loadingSpeed;
+//        return goodArriveTime;
+        int estimateGoodsNums = berth.goodsNums;
+        for (Robot robot : robots) {
+            if (robot.assigned && robot.targetBerthId == berth.id
+                    && robot.estimateUnloadTime < goodArriveTime + frameId) {
+                estimateGoodsNums++;
+            }
+        }
+        estimateGoodsNums++;//加上这个货物时间
+        int minDistance = Integer.MAX_VALUE;
+        for (Boat boat : boats) {
+            if (boat.estimateComingBerthId == berth.id) {
+                //来的是同一搜
+                int comingTime = getBoatToBerthDistance(berth, boat);
+                int remainSpace = boat.targetId == berth.id ? boat.capacity - boat.num : boat.capacity;
+                if (remainSpace >= estimateGoodsNums) {
+                    minDistance = min(minDistance, comingTime);
+                } else {
+                    minDistance = min(minDistance, comingTime + 2 * berth.transportTime);
+                }
+            } else {
+                int remainSpace = boat.capacity;
+                int id = boat.estimateComingBerthId == -1 ? 0 : boat.estimateComingBerthId;
+                int comingTime = getBoatToBerthDistance(berths[id], boat);
+                remainSpace -= berths[id].goodsNums;
+                //去到估计的位置，在加一来一回
+                if (remainSpace >= estimateGoodsNums) {
+                    minDistance = min(minDistance, comingTime + berths[id].transportTime + berth.transportTime);
+                } else {
+                    //去另一个泊位装满，再回去，再去你这里
+                    minDistance = min(minDistance, comingTime + berths[id].transportTime + 3 * berth.transportTime);
+                }
+
+            }
+        }
+
+
+        //检查所有的船，找出这个泊位的这个物品最快被什么时候消费
+        //没到达也没法消费
+        return max(goodArriveTime, minDistance) + estimateGoodsNums / berth.loadingSpeed;
     }
 
     private boolean input() throws IOException {
