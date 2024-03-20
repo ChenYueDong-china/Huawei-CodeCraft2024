@@ -94,7 +94,9 @@ public class Strategy {
                 printError("frameId:" + frameId + ",time:" + (e - l));
             }
             if (frameId == 15000) {
-                printError("跳帧：" + jumpCount + ",pullScore:" + pullScore + ",boatWaitTime:" + boatWaitTime);
+                printError("跳帧：" + jumpCount + ",totalValue:" + totalValue
+                        + ",pullScore:" + pullScore + ",money:"
+                        + money + ",boatWaitTime:" + boatWaitTime);
             }
             outStream.print("OK\n");
             outStream.flush();
@@ -664,7 +666,7 @@ public class Strategy {
                 }
                 Point result = new Point(-1, -1);
                 int bestDist = Integer.MAX_VALUE;
-                HashSet<Integer> crashIds = new HashSet<>();
+
                 for (Point candidate : candidates) {
                     if (!gameMap.canReach(candidate.x, candidate.y)) {
                         continue;
@@ -678,7 +680,6 @@ public class Strategy {
                         Point end = gameMap.posToDiscrete(candidate);
                         Point mid = start.add(end).div(2);
                         if (mid.equal(robotsPredictPath[tmpRobot.id].get(0)) || end.equal(robotsPredictPath[tmpRobot.id].get(1))) {
-                            crashIds.add(tmpRobot.id);
                             //去重全加进来
                             crash = true;
                             break;
@@ -687,7 +688,6 @@ public class Strategy {
                     if (crash) {
                         continue;
                     }
-
 
                     int dist;
                     if (!robots[avoidId].carry) {
@@ -728,6 +728,19 @@ public class Strategy {
                     //不可能没一个机器人没法避让，如果这样说明陷入了死锁，但是这个地图不可能思索
                     avoids[avoidId] = true;//下次这个机器人不避让，避免死循环
                     int tmp = avoidId;
+                    HashSet<Integer> crashIds = new HashSet<>();
+                    for (Robot  tmpRobot: tmpRobots) {
+                        if (tmpRobot.id == avoidId || robotsPredictPath[tmpRobot.id].isEmpty()) {
+                            continue;//后面的
+                        }
+                        for (int k = 0; k < 2; k++) {
+                            if (robotsPredictPath[avoidId].get(k).equal(robotsPredictPath[tmpRobot.id].get(k))) {
+                                crashIds.add(tmpRobot.id);
+                                break;
+                            }
+                        }
+                    }
+                    assert(!crashIds.isEmpty());//至少撞得拿个robot
                     //寻找避让id
                     for (Integer id : crashIds) {
                         if (!avoids[id]) {
@@ -956,11 +969,6 @@ public class Strategy {
                 } else {
                     double value = buyWorkbench.value;
                     value += 1.5 * value * (1000 - buyWorkbench.remainTime) / 1000;
-//                    value += needCounts[sellBerth.id] == 0 ? 0 : 1.0 * (totalCounts[sellBerth.id] - needCounts[sellBerth.id])
-//                            / totalCounts[sellBerth.id] * avgPullGoodsValue * 50;
-                    //消除价值计算,至少要一来一会才会出现消除价值
-//                    value += estimateEraseValue(arriveSellTime + sellTime, selectRobot, sellBerth);
-
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
                     if (selectRobot.targetWorkBenchId == buyWorkbench.id) {
