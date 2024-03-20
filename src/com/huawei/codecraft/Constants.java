@@ -5,6 +5,8 @@ package com.huawei.codecraft;
  */
 public class Constants {
 
+    public static final boolean GET_LAST_ONE = false;//是否拿倒数第一
+
     //调调超参数，打不过的话
     public static final double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
     public static final BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ORIGIN_BERTH;

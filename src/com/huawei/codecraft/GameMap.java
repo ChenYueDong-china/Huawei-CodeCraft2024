@@ -115,8 +115,4 @@ public class GameMap {
         return result;
     }
 
-    public boolean isBerth(Point target) {
-        assert target.x >= 0 && target.y >= 0 && target.x < MAP_FILE_ROW_NUMS && target.y <= MAP_FILE_COL_NUMS;
-        return mapData[target.x][target.y] == 'B';
-    }
 }

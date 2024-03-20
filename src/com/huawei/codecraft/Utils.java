@@ -2,9 +2,6 @@ package com.huawei.codecraft;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.function.Function;
-
-import static java.lang.Math.*;
 
 public class Utils {
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));

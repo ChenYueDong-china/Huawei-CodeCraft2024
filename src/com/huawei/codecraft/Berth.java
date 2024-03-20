@@ -17,8 +17,6 @@ public class Berth {
 
     Queue<Integer> goods = new LinkedList<>();
 
-    Queue<Integer> comingBoats = new LinkedList<>();//将要来的船id
-
     int totalValue = 0;//货物总价值
 
     public Dijkstra[][] dijkstras = new Dijkstra[BERTH_HEIGHT][BERTH_WIDTH];//berth有16个点,需要16次dij
@@ -76,10 +74,7 @@ public class Berth {
 
     public boolean inBerth(Point point) {
         //在berth范围内
-        if (point.x >= leftTopPos.x && point.x < leftTopPos.x + BERTH_WIDTH && point.y >= leftTopPos.y && point.y < leftTopPos.y + BERTH_HEIGHT) {
-            return true;
-        }
-        return false;
+        return point.x >= leftTopPos.x && point.x < leftTopPos.x + BERTH_WIDTH && point.y >= leftTopPos.y && point.y < leftTopPos.y + BERTH_HEIGHT;
     }
 
 
