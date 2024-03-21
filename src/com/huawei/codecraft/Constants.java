@@ -5,12 +5,16 @@ package com.huawei.codecraft;
  */
 public class Constants {
 
-    public static final boolean GET_LAST_ONE = false;//是否拿倒数第一
-
     //调调超参数，打不过的话
+    public static final boolean GET_LAST_ONE = false;//是否拿倒数第一
     public static final double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
+    public static final double DISAPPEAR_REWARD_FACTOR = 0.5; //消失因子
     public static final BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ORIGIN_BERTH;
     public static final boolean BOAT_NO_WAIT = false;//船最开始是否不等待
+
+
+
+
     public static final int FPS = 50;                   // 每秒运行帧数
     public static final int GAME_FRAME = 5 * 60 * FPS;
     public static final int WORKBENCH_EXIST_TIME = 20 * FPS;//1000帧

@@ -942,10 +942,10 @@ public class Strategy {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
                 } else {
                     double value = buyWorkbench.value;
-                    value += 1.5 * value * (1000 - buyWorkbench.remainTime) / 1000;
+                    value += (1 + DISAPPEAR_REWARD_FACTOR) * value * (WORKBENCH_EXIST_TIME- buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
-                    if (selectRobot.targetWorkBenchId == buyWorkbench.id&&selectRobot.carry) {
+                    if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {
                         profit *= (1 + SAME_TARGET_REWARD_FACTOR);
                     }
                 }
@@ -1070,8 +1070,7 @@ public class Strategy {
 //        return goodArriveTime;
         int estimateGoodsNums = berth.goodsNums;
         for (Robot robot : robots) {
-            if (robot.assigned && robot.targetBerthId == berth.id
-                    && robot.estimateUnloadTime < goodArriveTime + frameId) {
+            if (robot.assigned && robot.targetBerthId == berth.id) {
                 estimateGoodsNums++;
             }
         }
