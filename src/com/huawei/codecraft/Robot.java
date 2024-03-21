@@ -63,6 +63,9 @@ public class Robot {
     }
 
     public void finish() {
+        if (!assigned && !avoid) {
+            return;
+        }
         //按照path来看做什么操作
         if (path.size() <= 2) {
             printError("error");
