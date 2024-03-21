@@ -942,7 +942,7 @@ public class Strategy {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
                 } else {
                     double value = buyWorkbench.value;
-                    value += (1 + DISAPPEAR_REWARD_FACTOR) * value * (WORKBENCH_EXIST_TIME- buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
+                    value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME- buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
                     if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {
