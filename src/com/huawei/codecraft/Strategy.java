@@ -585,6 +585,7 @@ public class Strategy {
                 if (!result && !robot.redundancy) {
                     //去到很大概率会消失,锁住这个工作台,重新决策分配路径
                     robot.assigned = false;
+                    robot.buyAssign = false;
                     robotLock[robot.id].add(robot.targetBerthId);
                     greedyBuy();
                     i--;
