@@ -945,7 +945,7 @@ public class Strategy {
                     value += 1.5 * value * (1000 - buyWorkbench.remainTime) / 1000;
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
-                    if (selectRobot.targetWorkBenchId == buyWorkbench.id) {
+                    if (selectRobot.targetWorkBenchId == buyWorkbench.id&&selectRobot.carry) {
                         profit *= (1 + SAME_TARGET_REWARD_FACTOR);
                     }
                 }
