@@ -50,7 +50,7 @@ public class Robot {
         redundancy = true;//到目标点有冗余时间
         avoid = false;
         path.clear();
-        buyAssign=false;
+        buyAssign = false;
     }
 
     public void buy() {
@@ -64,11 +64,8 @@ public class Robot {
 
     public void finish() {
         //按照path来看做什么操作
-//        if (!assigned && !avoid) {
-//            return;
-//        }
         if (path.size() <= 2) {
-            //printERROR("error");
+            printError("error");
             return;
         }
         Point target = strategy.gameMap.discreteToPos(path.get(2));

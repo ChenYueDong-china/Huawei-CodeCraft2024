@@ -4,15 +4,16 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class Utils {
+    @SuppressWarnings("all")
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-//    static {
-//        try {
-//            inStream = new BufferedReader(new FileReader("in.txt"));
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    static {
+        try {
+            inStream = new BufferedReader(new FileReader("in.txt"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final boolean ERROR = true;
 
@@ -32,16 +33,14 @@ public class Utils {
 
     private static final boolean DEBUG = false;
 
-    public static void printDEBUG(String s) {
-        if (DEBUG
-        ) {
+    @SuppressWarnings("all")
+    public static void printDebug(String s) {
+        if (DEBUG) {
             System.err.println(s);
         }
     }
 
     public static final PrintStream outStream = System.out;
-
-    public static final double ALG_EPS = 0.000001;
 
 
     public static class Point {
@@ -60,6 +59,7 @@ public class Utils {
             this.y = y;
         }
 
+        @SuppressWarnings("all")
         Point div(int i) {
             return new Point(x / i, y / i);
         }
@@ -72,6 +72,7 @@ public class Utils {
             return new Point(x - v.x, y - v.y);
         }
 
+        @SuppressWarnings("all")
         Point addEquals(Point v) {
             x += v.x;
             y += v.y;

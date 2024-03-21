@@ -105,6 +105,7 @@ public class GameMap {
         return result;
     }
 
+    @SuppressWarnings("all")
     //细化路径转会普通路径
     public ArrayList<Point> toRealPath(ArrayList<Point> tmp) {
         assert tmp.size() % 2 == 1;//2倍的路径加个起始点

@@ -57,12 +57,10 @@ public class Berth {
                 }
             }
         }
-//        dijkstras[0][0].moveTo(new Point(4, 110));
-//        dijkstras[0][0].moveFrom(new Point(4, 110));
-//        System.out.println("111");
 
     }
 
+    @SuppressWarnings("all")
     public boolean canReach(Point pos) {
         return minDistance[pos.x][pos.y] != Integer.MAX_VALUE;
     }

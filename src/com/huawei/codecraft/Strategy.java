@@ -230,7 +230,13 @@ public class Strategy {
         int[] goodComingTimes = new int[BERTH_PER_PLAYER];//货物开始来泊位的最早时间
         Arrays.fill(goodComingTimes, 0);//这一帧开始到来
         //贪心切换找一个泊位
-        while (boatGreedyBuy(goodsNumList, goodComingTimes)) ;
+
+        while (true) {
+            if (!boatGreedyBuy(goodsNumList, goodComingTimes)) {
+                break;
+            }
+        }
+
 
         //装载货物
         for (Boat boat : boats) {
@@ -499,6 +505,7 @@ public class Strategy {
     }
 
 
+    @SuppressWarnings("all")
     private int getCanReachBerthsCount() {
         int count = 0;
         for (Berth berth : berths) {
@@ -532,13 +539,23 @@ public class Strategy {
     }
 
     private void robotDoAction() {
-        while (greedySell()) ; //决策
         workbenchesLock.clear();//动态需要解锁
         for (HashSet<Integer> set : robotLock) {
             set.clear();
         }
-        while (greedyBuy()) ;
-        //todo 选择路径，修复路径
+        while (true) {
+            if (!greedySell()) {
+                break;
+            }  //决策
+        }
+        while (true) {
+            if (!greedyBuy()) {
+                break;
+            }
+        }
+
+
+        //选择路径，碰撞避免
         Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
         System.arraycopy(robots, 0, tmpRobots, 0, ROBOTS_PER_PLAYER);
         sortRobots(tmpRobots);
@@ -943,7 +960,7 @@ public class Strategy {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
                 } else {
                     double value = buyWorkbench.value;
-                    value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME- buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
+                    value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
                     profit = value / (arriveSellTime + arriveBuyTime);
                     //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
                     if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {

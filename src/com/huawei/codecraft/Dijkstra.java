@@ -63,6 +63,7 @@ public class Dijkstra {
         return mGameMap.toDiscretePath(result);
     }
 
+    @SuppressWarnings("all")
     public ArrayList<Point> moveTo(Point target) {
         assert cs[target.x][target.y] != Integer.MAX_VALUE;
         if (cs[target.x][target.y] == Integer.MAX_VALUE) {
