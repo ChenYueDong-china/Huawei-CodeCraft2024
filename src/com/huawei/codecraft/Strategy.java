@@ -290,7 +290,7 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
-        double goodsComingSpeed = avgPullGoodsTime * BERTH_PER_PLAYER;
+        double goodsComingTime = avgPullGoodsTime * BERTH_PER_PLAYER;
         ArrayList<Boat> oneTypesBoats = new ArrayList<>();
         ArrayList<Boat> twoTypesBoats = new ArrayList<>();
         ArrayList<Boat> threeTypesBoats = new ArrayList<>();
@@ -309,7 +309,7 @@ public class Strategy {
         //第一种，在移动向泊位的，不切换目标，直接消耗
         for (Boat boat : oneTypesBoats) {
             int needCount = boat.capacity - boat.num;
-            if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingSpeed, needCount))
+            if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingTime, needCount))
                 return true;
         }
 
@@ -340,9 +340,9 @@ public class Strategy {
 //            int needCount = selectBoat.capacity;
 //            int remainTime = GAME_FRAME - buyTime - sellTime - frameId;
 //            int realCount = min(needCount, remainTime / buyBerth.loadingSpeed);//装货
-//            realCount = min(realCount, goodsNumList[buyBerth.id] + (int) (remainTime / goodsComingSpeed));//来货
+//            realCount = min(realCount, goodsNumList[buyBerth.id] + (int) (remainTime / goodsComingTime));//来货
 //            int loadTime = (int) ceil(1.0 * realCount / buyBerth.loadingSpeed);
-//            int totalWaitTime = goodComingTimes[buyBerth.id] + (int) ceil(max(0, realCount - goodsNumList[buyBerth.id]) * goodsComingSpeed);
+//            int totalWaitTime = goodComingTimes[buyBerth.id] + (int) ceil(max(0, realCount - goodsNumList[buyBerth.id]) * goodsComingTime);
 //            int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
 //            double profit = 1.0 * realCount / (buyTime + max(arriveWaitTime, loadTime) + sellTime);
 
@@ -351,7 +351,7 @@ public class Strategy {
             double profit = 1e10 + goodsNumList[buyBerth.id] * 1e10 - goodComingTimes[buyBerth.id] * 1e5 + minDistance;
             int totalWaitTime = goodComingTimes[buyBerth.id] +
                     (int) ceil(max(0, selectBoat.capacity - goodsNumList[buyBerth.id])
-                            * goodsComingSpeed);
+                            * goodsComingTime);
             stat.add(new Stat(selectBoat, buyBerth, min(goodsNumList[buyBerth.id], realCount)
                     , totalWaitTime, profit));
         }
@@ -371,7 +371,7 @@ public class Strategy {
                 //不可以切换泊位,
                 assert boat.estimateComingBerthId == boat.targetId;
                 if (!BOAT_NO_WAIT || frameId + berths[boat.targetId].transportTime * 3 > GAME_FRAME || berths[boat.targetId].goodsNums > 0) {
-                    if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingSpeed, needCount))
+                    if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingTime, needCount))
                         return true;
                 } else {
                     //回家
@@ -386,7 +386,7 @@ public class Strategy {
 
             if (BOAT_NO_WAIT && frameId + berths[boat.targetId].transportTime * 3 < GAME_FRAME) {
                 if (berths[boat.targetId].goodsNums > 0) {
-                    if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingSpeed, needCount))
+                    if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingTime, needCount))
                         return true;
                 }
                 //没货物了，选择切泊位买了走人，或者回家
@@ -407,9 +407,9 @@ public class Strategy {
                     }
                     int remainTime = GAME_FRAME - buyTime - sellTime - frameId;
                     int realCount = min(needCount, remainTime / berth.loadingSpeed);//装货
-                    realCount = min(realCount, goodsNumList[berth.id] + (int) ((buyTime - goodComingTimes[berth.id]) / goodsComingSpeed));//来货
+                    realCount = min(realCount, goodsNumList[berth.id] + (int) ((buyTime - goodComingTimes[berth.id]) / goodsComingTime));//来货
                     int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
-                    int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingSpeed);
+                    int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingTime);
                     double profit = 1.0 * (realCount + boat.num) / (berths[boat.targetId].transportTime + 1.0 * boat.num
                             / berths[boat.targetId].loadingSpeed + buyTime + loadTime + sellTime);
                     if (profit > maxProfit) {
@@ -424,12 +424,12 @@ public class Strategy {
                     stat.add(new Stat(boat, changeBerth, min(maxCount, goodsNumList[changeBerth.id]), maxWaitTime, maxProfit));
                 } else {
                     //回家
-                    if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingSpeed, needCount))
+                    if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingTime, needCount))
                         return true;
                 }
             } else {
                 //目前船所在的泊位的来货速度,如果来货速度实在太慢，不需要等，直接切目标
-                int curBerthComingSpeed = frameId / max(1, berths[boat.targetId].totalGoodsNums);
+                int curBerthGoodsComingTime = frameId / max(1, berths[boat.targetId].totalGoodsNums);
                 for (Berth berth : berths) {
                     int buyTime = boat.targetId == berth.id ? 0 : BERTH_CHANGE_TIME;
                     int sellTime = berth.transportTime;
@@ -442,12 +442,13 @@ public class Strategy {
 
                     int remainTime = GAME_FRAME - buyTime - sellTime - frameId;
                     int realCount = min(needCount, remainTime / berth.loadingSpeed);//装货
-                    realCount = min(realCount, goodsNumList[berth.id] + (int) ((remainTime + buyTime - goodComingTimes[berth.id]) / goodsComingSpeed));//来货
+                    realCount = min(realCount, goodsNumList[berth.id] + (int) ((remainTime + buyTime - goodComingTimes[berth.id]) / goodsComingTime));//来货
                     int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
-                    int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingSpeed);
+                    int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingTime);
                     int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
+                    //todo 可调参
                     if (berth.id != boat.targetId && arriveWaitTime > 0//留一半阈值,&&remainTime > 2 * berth.loadingSpeed * realCount
-                            && curBerthComingSpeed * 2 > goodsComingSpeed//来货速度的两倍小于平均来货速度，直接切目标
+                            && curBerthGoodsComingTime * 2 > goodsComingTime//来货速度的两倍小于平均来货速度，直接切目标
                             && remainTime > 2 * berth.transportTime - buyTime
                     ) {
                         continue;//不是同一个泊位，且到达之后需要等待，那么先不去先,有问题，最后还是不会切泊位的
