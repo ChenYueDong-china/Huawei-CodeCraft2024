@@ -19,7 +19,6 @@ public class Strategy {
     int lastSelectBerthId = -1;
     int lastValueThreshold = 1;
     boolean lastRobotDoAction = false;
-
     public int pullScore;//船把所有货物都收了的极限分
     @SuppressWarnings("all")
     private int money;
@@ -445,8 +444,9 @@ public class Strategy {
                     int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
                     int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingSpeed);
                     int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
-                    if (berth.id != boat.targetId && arriveWaitTime > 0//留一半阈值
-                            && remainTime > 2 * berth.loadingSpeed * realCount) {//没时间了，就应该早点切换泊位
+                    if (berth.id != boat.targetId && arriveWaitTime > 0//留一半阈值,&&remainTime > 2 * berth.loadingSpeed * realCount
+                                                                        //判断除了我没人能到，就赶紧切换过去，好像也不对，还是看运气吧
+                            && remainTime > 2 * berth.transportTime) {//没时间了，就应该早点切换泊位
                         continue;//不是同一个泊位，且到达之后需要等待，那么先不去先,有问题，最后还是不会切泊位的
                     }
                     double profit = realCount + 1.0 * realCount / (buyTime + max(arriveWaitTime, loadTime) + sellTime);
