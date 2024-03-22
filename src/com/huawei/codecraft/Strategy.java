@@ -428,6 +428,8 @@ public class Strategy {
                         return true;
                 }
             } else {
+                //目前船所在的泊位的来货速度,如果来货速度实在太慢，不需要等，直接切目标
+                int curBerthComingSpeed = frameId / max(1, berths[boat.targetId].totalGoodsNums);
                 for (Berth berth : berths) {
                     int buyTime = boat.targetId == berth.id ? 0 : BERTH_CHANGE_TIME;
                     int sellTime = berth.transportTime;
@@ -445,7 +447,7 @@ public class Strategy {
                     int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingSpeed);
                     int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
                     if (berth.id != boat.targetId && arriveWaitTime > 0//留一半阈值,&&remainTime > 2 * berth.loadingSpeed * realCount
-                                                                        //判断除了我没人能到，就赶紧切换过去，好像也不对，还是看运气吧
+                            && curBerthComingSpeed * 2 > goodsComingSpeed//来货速度的两倍小于平均来货速度，直接切目标
                             && remainTime > 2 * berth.transportTime) {//没时间了，就应该早点切换泊位
                         continue;//不是同一个泊位，且到达之后需要等待，那么先不去先,有问题，最后还是不会切泊位的
                     }

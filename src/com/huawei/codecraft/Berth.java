@@ -18,6 +18,7 @@ public class Berth {
     Queue<Integer> goods = new LinkedList<>();
 
     int totalValue = 0;//货物总价值
+    int totalGoodsNums;//来的总货，判断泊位好坏
 
     public Dijkstra[][] dijkstras = new Dijkstra[BERTH_HEIGHT][BERTH_WIDTH];//berth有16个点,需要16次dij
 

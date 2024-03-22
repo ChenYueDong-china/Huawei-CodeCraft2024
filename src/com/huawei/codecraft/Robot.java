@@ -109,6 +109,7 @@ public class Robot {
 
 
         //10帧一个
+        strategy.berths[targetBerthId].totalGoodsNums++;
         strategy.berths[targetBerthId].goodsNums++;
         strategy.berths[targetBerthId].goods.offer(carryValue);
         strategy.berths[targetBerthId].totalValue += carryValue;
