@@ -448,7 +448,8 @@ public class Strategy {
                     int arriveWaitTime = max(0, totalWaitTime - buyTime);//到达之后的等待时间
                     if (berth.id != boat.targetId && arriveWaitTime > 0//留一半阈值,&&remainTime > 2 * berth.loadingSpeed * realCount
                             && curBerthComingSpeed * 2 > goodsComingSpeed//来货速度的两倍小于平均来货速度，直接切目标
-                            && remainTime > 2 * berth.transportTime) {//没时间了，就应该早点切换泊位
+                            && remainTime > 2 * berth.transportTime - buyTime
+                    ) {
                         continue;//不是同一个泊位，且到达之后需要等待，那么先不去先,有问题，最后还是不会切泊位的
                     }
                     double profit = realCount + 1.0 * realCount / (buyTime + max(arriveWaitTime, loadTime) + sellTime);
