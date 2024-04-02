@@ -43,7 +43,7 @@ public class Dijkstra {
                     Point dir = DIR[dirIdx];
                     int dx = top.x + dir.x;
                     int dy = top.y + dir.y;//第一步
-                    if (!mGameMap.canReach(dx, dy) || cs[dx][dy] != Integer.MAX_VALUE) {
+                    if (!mGameMap.robotCanReach(dx, dy) || cs[dx][dy] != Integer.MAX_VALUE) {
                         continue; // 不可达或者访问过了
                     }
                     cs[dx][dy] = (deep << 2) + dirIdx;//第一步家的优先级大于移位

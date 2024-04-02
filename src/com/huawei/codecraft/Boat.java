@@ -11,7 +11,10 @@ public class Boat {
     //2.泊位之间移动中
     //3.泊位外面等待
     //4.进入泊位
+
+    Point corePoint = new Point(-1, -1);
     int id;
+    int direction;
     int status;//状态
     BoatStatus exactStatus;//状态
     int originStatus;//原始状态,因为可能会被变，导致上一个id不一样
@@ -35,43 +38,12 @@ public class Boat {
         String line = inStream.readLine();
         printMost(line);
         String[] parts = line.trim().split(" ");
-        status = Integer.parseInt(parts[0]);
-        targetId = Integer.parseInt(parts[1]);
-        if (originStatus == 0 && status != 0) {
-            //不到达变到达状态
-            this.lastArriveTargetId = targetId;
-        }
-        originStatus = status;
-        if (status != 0 && targetId != -1) {
-            Constants.boatWaitTime++;
-        }
-
-        //计算泊位状态
-        if (targetId == -1) {
-            if (status != 0) {
-                exactStatus = BoatStatus.IN_ORIGIN_POINT;
-            } else {
-                //虚拟点没有等待状态
-                exactStatus = BoatStatus.IN_ORIGIN_TO_BERTH;
-            }
-        } else {
-            if (status == 1) {
-                exactStatus = BoatStatus.IN_BERTH_INTER;
-            } else if (status == 2) {
-                exactStatus = BoatStatus.IN_BERTH_WAIT;
-            } else {
-                //运输中，可能是泊位到泊位，可能是虚拟点到泊位
-                if (lastArriveTargetId == -1) {
-                    exactStatus = BoatStatus.IN_ORIGIN_TO_BERTH;
-                } else {
-                    exactStatus = BoatStatus.IN_BERTH_TO_BERTH;
-                }
-            }
-        }
-        if (targetId == -1 && status == 1) {
-            num = 0;//空闲了，销货完毕
-            value = 0;
-        }
+        id = Integer.parseInt(parts[0]);
+        num = Integer.parseInt(parts[1]);
+        corePoint.x = Integer.parseInt(parts[2]);
+        corePoint.y = Integer.parseInt(parts[3]);
+        direction = Integer.parseInt(parts[4]);
+        status = Integer.parseInt(parts[5]);
         assigned = false;
     }
 

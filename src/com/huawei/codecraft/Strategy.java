@@ -26,11 +26,11 @@ public class Strategy {
     public static int workbenchId = 0;
     public final HashMap<Integer, Workbench> workbenches = new HashMap<>();
     public final HashSet<Integer> workbenchesLock = new HashSet<>();//锁住某些工作台
-    public final Robot[] robots = new Robot[ROBOTS_PER_PLAYER];
+    public final Robot[] robots = new Robot[MAX_ROBOTS_PER_PLAYER];
     @SuppressWarnings("unchecked")
-    public final HashSet<Integer>[] robotLock = new HashSet[ROBOTS_PER_PLAYER];
-    public final Berth[] berths = new Berth[BERTH_PER_PLAYER];
-    public final Boat[] boats = new Boat[BOATS_PER_PLAYER];
+    public final HashSet<Integer>[] robotLock = new HashSet[MAX_ROBOTS_PER_PLAYER];
+    public final Berth[] berths = new Berth[MAX_BERTH_PER_PLAYER];
+    public final Boat[] boats = new Boat[MAX_BOATS_PER_PLAYER];
     public int totalValue = 0;
     public int goodAvgValue = 0;
     public int totalPullGoodsValues = 0;//总的卖的货物价值
@@ -42,13 +42,76 @@ public class Strategy {
     public int curFrameDiff = 1;
     int jumpCount = 0;
 
+    //boat的闪现位置，闪现泊位不用算
+    public PointWithDirection[][] boatFlashMainChannelPoint = new PointWithDirection[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
+
+
+    static ArrayList<Point> robotPurchasePoint = new ArrayList<>();
+    static ArrayList<Point> boatPurchasePoint = new ArrayList<>();
+    static ArrayList<Point> deliveryPoint = new ArrayList<>();
+    private int boatCapacity;
+
     public void init() throws IOException {
         char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
         gameMap = new GameMap();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             fgets(mapData[i], inStream);
         }
+        for (int i = 0; i < mapData.length; i++) {
+            for (int j = 0; j < mapData[0].length; j++) {
+                if (mapData[i][j] == 'R')
+                    robotPurchasePoint.add(new Point(i, j));
+                else if (mapData[i][j] == 'S')
+                    boatPurchasePoint.add(new Point(i, j));
+                else if (mapData[i][j] == 'T')
+                    deliveryPoint.add(new Point(i, j));
+            }
+        }
         gameMap.setMap(mapData);
+
+        int[][] visits = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
+        for (int[] visit : visits) {
+            Arrays.fill(visit, 0);
+        }
+        int cur = 0;
+        //bfs，求出到所有点的闪现距离
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                if (gameMap.boatCanReach(i, j) && !gameMap.isMainChannel(i, j)) {
+                    //不是主航道，可以考虑传送,从当前位置开始搜，搜一个传送点
+                    cur++;
+                    boolean find = false;
+                    Point start = new Point(i, j);
+                    Queue<Point> queue = new LinkedList<>();
+                    queue.offer(start);
+                    while (!queue.isEmpty()) {
+                        Point top = queue.poll();
+                        for (int k = 0; k < DIR.length / 2; k++) {
+                            if (gameMap.isInMainChannel(top, k)) {
+                                //找到传送点
+                                boatFlashMainChannelPoint[i][j] = new PointWithDirection(top, k);
+                                find = true;
+                            }
+                        }
+                        if (find) {
+                            break;
+                        }
+                        for (int k = 0; k < DIR.length / 2; k++) {
+                            Point dir = DIR[k];
+                            int dx = top.x + dir.x;
+                            int dy = top.y + dir.y;//第一步
+                            if (gameMap.isLegalPoint(dx, dy) || visits[dx][dy] == cur) {
+                                continue; // 不可达或者访问过了
+                            }
+                            ++visits[dx][dy];
+                            queue.offer(new Point(dx, dy));
+                        }
+                    }
+                }
+            }
+        }
+
+        BERTH_PER_PLAYER = getIntInput();
         //码头
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             String s = inStream.readLine();
@@ -58,26 +121,12 @@ public class Strategy {
             berths[id] = new Berth();
             berths[id].leftTopPos.x = Integer.parseInt(parts[1]);
             berths[id].leftTopPos.y = Integer.parseInt(parts[2]);
-            berths[id].transportTime = Integer.parseInt(parts[3]);
-            berths[id].loadingSpeed = Integer.parseInt(parts[4]);
-            berths[id].id = i;
-            berths[id].init(gameMap);
-
+            berths[id].loadingSpeed = Integer.parseInt(parts[3]);
+            berths[id].id = id;
+            //暂时不管
+            //berths[id].init(gameMap);
         }
-        String s = inStream.readLine().trim();
-        printMost(s);
-        int boatCapacity = Integer.parseInt(s);
-        //船
-        for (int i = 0; i < BOATS_PER_PLAYER; i++) {
-            boats[i] = new Boat(boatCapacity);
-            boats[i].id = i;
-        }
-        //机器人
-        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-            robots[i] = new Robot(this);
-            robots[i].id = i;
-            robotLock[i] = new HashSet<>();
-        }
+        boatCapacity = getIntInput();
         String okk = inStream.readLine();
         printMost(okk);
         outStream.print("OK\n");
@@ -86,17 +135,12 @@ public class Strategy {
 
     public void mainLoop() throws IOException {
         while (input()) {
-            long l = System.currentTimeMillis();
-            dispatch();
-            long e = System.currentTimeMillis();
-            if (e - l > 15) {
-                printError("frameId:" + frameId + ",time:" + (e - l));
+
+            if (money >= BOAT_PRICE && BOATS_PER_PLAYER < 1) {
+                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                boats[BOATS_PER_PLAYER++] = new Boat(boatCapacity);
             }
-            if (frameId == 15000) {
-                printError("跳帧：" + jumpCount + ",totalValue:" + totalValue
-                        + ",pullScore:" + pullScore + ",money:"
-                        + money + ",boatWaitTime:" + boatWaitTime);
-            }
+
             outStream.print("OK\n");
             outStream.flush();
         }
@@ -104,79 +148,10 @@ public class Strategy {
 
 
     private void dispatch() {
-        if (!GET_LAST_ONE) {
-            robotDoAction();
-            boatDoAction();
-        } else {
-            //
-            if (lastSelectRobotId == -1) {
-                //寻找小于阈值的工作台和泊位
-                for (Workbench buyWorkbench : workbenches.values()) {
-                    if (buyWorkbench.value > lastValueThreshold) {
-                        continue;
-                    }
-                    //存在就一定有产品
-                    for (Robot robot : robots) {
-                        if (!buyWorkbench.canReach(robot.pos)) {
-                            continue; //不能到达
-                        }
-                        int buyTime = getRobotToWorkbenchDist(robot, buyWorkbench);
-                        if (buyTime + 5 > buyWorkbench.remainTime) {
-                            continue;
-                        }
-                        //随便找个卖家卖
-                        for (Berth berth : berths) {
-                            if (!berth.canReach(buyWorkbench.pos)) {
-                                continue; //不能到达
-                            }
-                            //ok,就这样
-                            lastSelectRobotId = robot.id;
-                            lastSelectWorkbenchId = buyWorkbench.id;
-                            lastSelectBerthId = berth.id;
-                            robot.targetWorkBenchId = lastSelectWorkbenchId;
-                            robot.targetBerthId = lastSelectBerthId;
-                            boats[0].ship(lastSelectBerthId);
-                            break;
-                        }
-                        if (lastSelectRobotId != -1) {
-                            break;
-                        }
-                    }
-                    if (lastSelectRobotId != -1) {
-                        break;
-                    }
-                }
-            } else {
-                //出发了
-                if (!lastRobotDoAction) {
-                    Robot robot = robots[lastSelectRobotId];
-                    if (!robot.carry) {
-                        robot.path = workbenches.get(lastSelectWorkbenchId).dijkstra.moveFrom(robot.pos);
-                        if (robot.path.size() <= 2) {
-                            //
-                            robot.buy();
-                        }
-                        robot.finish();
-                    } else {
-                        Point point = berths[lastSelectBerthId].minDistancePos[robot.pos.x][robot.pos.y].get(0);
-                        robot.path = berths[lastSelectBerthId].dijkstras[point.x][point.y].moveFrom(robot.pos);
-                        Point target = gameMap.discreteToPos(robot.path.get(2));
-                        if (berths[lastSelectBerthId].inBerth(target)) {
-                            //提前卖，移动完毕卖,货物这种时候可以增加
-                            lastRobotDoAction = true;
-                        }
-                        robot.assigned = true;
-                        robot.finish();
 
-                    }
-                }
+//            robotDoAction();
+//            boatDoAction();
 
-                if (frameId > 13000 && boats[0].targetId != -1) {
-                    boats[0].go();//回家
-                    boats[0].targetId = -1;
-                }
-            }
-        }
 
     }
 
@@ -671,7 +646,7 @@ public class Strategy {
                 int bestDist = Integer.MAX_VALUE;
 
                 for (Point candidate : candidates) {
-                    if (!gameMap.canReach(candidate.x, candidate.y)) {
+                    if (!gameMap.robotCanReach(candidate.x, candidate.y)) {
                         continue;
                     }
                     boolean crash = false;
@@ -808,10 +783,10 @@ public class Strategy {
                 Point dir = DIR[dirIdx];
                 int dx = top.x + dir.x;
                 int dy = top.y + dir.y;//第一步
-                if (!gameMap.canReachDiscrete(dx, dy) || discreteCs[dx][dy] != Integer.MAX_VALUE) {
+                if (!gameMap.robotCanReachDiscrete(dx, dy) || discreteCs[dx][dy] != Integer.MAX_VALUE) {
                     continue; // 下个点不可达
                 }
-                if (!gameMap.canReachDiscrete(dx + dir.x, dy + dir.y) || discreteCs[dx + dir.x][dy + dir.y] != Integer.MAX_VALUE) {
+                if (!gameMap.robotCanReachDiscrete(dx + dir.x, dy + dir.y) || discreteCs[dx + dir.x][dy + dir.y] != Integer.MAX_VALUE) {
                     continue;//下下个点
                 }
                 if (checkCrashInDeep(robotId, deep + 1, dx, dy)
@@ -1145,13 +1120,9 @@ public class Strategy {
         }
         money = Integer.parseInt(parts[1]);
 
-        line = inStream.readLine();
-        printMost(line);
-        parts = line.trim().split(" ");
-
 
         //新增工作台
-        int num = Integer.parseInt(parts[0]);
+        int num = getIntInput();
         ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
         for (Map.Entry<Integer, Workbench> entry : workbenches.entrySet()) {
             Workbench workbench = entry.getValue();
@@ -1163,21 +1134,36 @@ public class Strategy {
         for (Integer id : deleteIds) {
             workbenches.remove(id);
         }
+        deleteIds.clear();
         for (int i = 1; i <= num; i++) {
             Workbench workbench = new Workbench(workbenchId);
             workbench.input(gameMap);
+            if (workbench.value == 0) {
+                //不管，反正计算过了
+                continue;
+            }
             totalValue += workbench.value;
             workbenches.put(workbenchId, workbench);
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
 
+        ROBOTS_PER_PLAYER = getIntInput();
         //机器人
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
+//            if (robots[i] == null) {
+//                robots[i] = new Robot(this);
+//            }
             robots[i].input();
         }
+
+
+        BOATS_PER_PLAYER = getIntInput();
         //船
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
+//            if (boats[i] == null) {
+//                boats[i] = new Boat(boatCapacity);
+//            }
             boats[i].input();
         }
         String okk = inStream.readLine();

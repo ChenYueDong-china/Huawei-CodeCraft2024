@@ -7,13 +7,13 @@ public class Utils {
     @SuppressWarnings("all")
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-//    static {
-//        try {
-//            inStream = new BufferedReader(new FileReader("in.txt"));
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    static {
+        try {
+            inStream = new BufferedReader(new FileReader("in.txt"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final boolean ERROR = true;
 
@@ -90,6 +90,20 @@ public class Utils {
         public int mul(Point p) {
             return x * p.x + y * p.y;
         }
+
+        public Point mul(int i) {
+            return new Point(x * i, y * i);
+        }
+    }
+
+    public static class PointWithDirection {
+        public Point point;
+        public int direction;
+
+        public PointWithDirection(Point point, int direction) {
+            this.point = point;
+            this.direction = direction;
+        }
     }
 
     public static final Point[] DIR = {
@@ -103,6 +117,12 @@ public class Utils {
             new Point(1, -1),
 
     };
+
+    public static int getIntInput() throws IOException {
+        String line = inStream.readLine();
+        printMost(line);
+        return Integer.parseInt(line.trim().split(" ")[0]);
+    }
 
     public static ArrayList<Point> getPathByCs(int[][] cs, Point target) {
         ArrayList<Point> result = new ArrayList<>();

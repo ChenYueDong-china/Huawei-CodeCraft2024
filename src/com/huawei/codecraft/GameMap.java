@@ -12,12 +12,82 @@ public class GameMap {
 
 
     private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//列到行
-    private final boolean[][] discreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
+    private final boolean[][] robotDiscreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
 
 
-    public boolean canReachDiscrete(int x, int y) {
+    public boolean isLegalPoint(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS);
+    }
+
+    public boolean boatCanReach(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                (mapData[x][y] == '*'//海洋
+                        || mapData[x][y] == '~'//主航道
+                        || mapData[x][y] == 'S'//购买地块
+                        || mapData[x][y] == 'K'//靠泊区
+                        || mapData[x][y] == 'C'//交通地块
+                        || mapData[x][y] == 'c'//交通地块,加主航道
+                        || mapData[x][y] == 'T'//交货点
+                )
+        );
+    }
+
+    public boolean isMainChannel(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                (mapData[x][y] == '~'//主航道
+                        || mapData[x][y] == 'S'//购买地块
+                        || mapData[x][y] == 'K'//靠泊区
+                        || mapData[x][y] == 'c'//交通地块
+                        || mapData[x][y] == 'T'));//交货点
+    }
+
+    public boolean isInMainChannel(Point corePoint, int direction) {
+        //核心点和方向，求出是否整艘船都在主航道
+        //核心点一定在方向左下角
+        assert direction <= 3;
+        ArrayList<Point> boatPoints = getBoatPoints(corePoint, direction);
+        //都是主航道点
+        for (Point point : boatPoints) {
+            if (!isMainChannel(point.x, point.y)) {
+                return false;
+            }
+        }
+        return true;
+
+    }
+
+    public ArrayList<Point> getBoatPoints(Point corePoint, int direction) {
+        ArrayList<Point> points = new ArrayList<>();
+        for (int i = 0; i < BOAT_LENGTH; i++) {
+            points.add(corePoint.add(DIR[direction].mul(i)));
+        }
+        Point nextPoint = new Point(corePoint);
+        if (direction == 0) {
+            nextPoint.add(new Point(1, 0));
+        } else if (direction == 1) {
+            nextPoint.add(new Point(-1, 0));
+        } else if (direction == 2) {
+            nextPoint.add(new Point(0, 1));
+        } else {
+            nextPoint.add(new Point(0, -1));
+        }
+        for (int i = 0; i < BOAT_LENGTH; i++) {
+            points.add(nextPoint.add(DIR[direction].mul(i)));
+        }
+        return points;
+    }
+
+    public boolean robotCanReach(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                (mapData[x][y] == '.' || mapData[x][y] == '>' || mapData[x][y] == 'R'
+                        || mapData[x][y] == 'B'
+                        || mapData[x][y] == 'C'
+                        || mapData[x][y] == 'c'));//不是海洋或者障碍
+    }
+
+    public boolean robotCanReachDiscrete(int x, int y) {
         return (x > 0 && x < MAP_DISCRETE_HEIGHT - 1 && y > 0 && y < MAP_DISCRETE_WIDTH - 1 &&
-                (discreteMapData[x][y]));//0和最后一行或者列是墙，不判断
+                (robotDiscreteMapData[x][y]));//0和最后一行或者列是墙，不判断
     }
 
 
@@ -33,7 +103,7 @@ public class GameMap {
 //                this.mapData[j][i] = mapData[i][j];//颠倒一下
 //            }
 //        }
-        initDiscrete();
+        initRobotsDiscrete();
         return true;
     }
 
@@ -55,41 +125,40 @@ public class GameMap {
     }
 
 
-    private void initDiscrete() {
-        for (boolean[] data : discreteMapData) {
+    private void initRobotsDiscrete() {
+        for (boolean[] data : robotDiscreteMapData) {
             Arrays.fill(data, true);
         }
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                if (mapData[i][j] == '*' || mapData[i][j] == '#') {
+                if (mapData[i][j] == '*' || mapData[i][j] == '~' || mapData[i][j] == '#'
+                        || mapData[i][j] == 'S'
+                        || mapData[i][j] == 'K'
+                        || mapData[i][j] == 'T') {
                     //海洋或者障碍;
                     Point point = posToDiscrete(i, j);
-                    discreteMapData[point.x][point.y] = false;
+                    robotDiscreteMapData[point.x][point.y] = false;
                     //周围八个点和这个点都是不可达点
                     for (Point dir : DIR) {
                         Point tmp = point.add(dir);
-                        if (canReachDiscrete(tmp.x, tmp.y)) {
-                            discreteMapData[tmp.x][tmp.y] = false;//不可达
+                        if (robotCanReachDiscrete(tmp.x, tmp.y)) {
+                            robotDiscreteMapData[tmp.x][tmp.y] = false;//不可达
                         }
                     }
                 }
             }
         }
         //四条墙壁,不能走
-        Arrays.fill(discreteMapData[0], false);
-        Arrays.fill(discreteMapData[MAP_DISCRETE_WIDTH - 1], false);
+        Arrays.fill(robotDiscreteMapData[0], false);
+        Arrays.fill(robotDiscreteMapData[MAP_DISCRETE_WIDTH - 1], false);
         for (int i = 0; i < MAP_DISCRETE_HEIGHT; i++) {
-            discreteMapData[i][0] = false;
+            robotDiscreteMapData[i][0] = false;
         }
         for (int i = 0; i < MAP_DISCRETE_HEIGHT; i++) {
-            discreteMapData[i][MAP_DISCRETE_WIDTH - 1] = false;
+            robotDiscreteMapData[i][MAP_DISCRETE_WIDTH - 1] = false;
         }
     }
 
-    public boolean canReach(int x, int y) {
-        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
-                (mapData[x][y] != '*' && mapData[x][y] != '#'));//不是海洋或者障碍
-    }
 
     //普通路径转细化路径
     public ArrayList<Point> toDiscretePath(ArrayList<Point> tmp) {

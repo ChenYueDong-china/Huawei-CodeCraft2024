@@ -39,10 +39,10 @@ public class Robot {
         String line = inStream.readLine();
         printMost(line);
         String[] parts = line.trim().split(" ");
-        carry = Integer.parseInt(parts[0]) == 1;
-        pos.x = Integer.parseInt(parts[1]);
-        pos.y = Integer.parseInt(parts[2]);
-        status = Integer.parseInt(parts[3]);
+        id = Integer.parseInt(parts[1]);
+        carry = Integer.parseInt(parts[1]) == 1;
+        pos.x = Integer.parseInt(parts[2]);
+        pos.y = Integer.parseInt(parts[3]);
         assigned = false;
         if (!carry) {
             carryValue = 0;
@@ -72,7 +72,7 @@ public class Robot {
             return;
         }
         Point target = strategy.gameMap.discreteToPos(path.get(2));
-        assert strategy.gameMap.canReach(target.x, target.y);
+        assert strategy.gameMap.robotCanReach(target.x, target.y);
         if (target.equal(pos)) {
             return;
         }
