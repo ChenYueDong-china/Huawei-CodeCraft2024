@@ -118,12 +118,15 @@ public class BoatDijkstra {
                             next = getRotationPoint(top.pointWithDirection, false);
                         }
                         //合法性判断
-                        if ((cs[i][next.point.x][next.point.y][next.direction] >> 2) < deep + 2
+                        if (deep >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)
                                 || !mGameMap.boatCanReach(next.point, next.direction)) {
                             continue;
                         }
                         //是否到达之后需要恢复,有一个点进入了主航道
                         if (mGameMap.hasOneInMainChannel(next.point, next.direction)) {
+                            if (deep + 1 >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)) {
+                                continue;
+                            }
                             cs[i][next.point.x][next.point.y][next.direction]
                                     = ((deep + 1) << 2) + top.pointWithDirection.direction;
                             twoDistancesPoints.add(new SearchPoint(next, top.pointWithDirection.direction));
