@@ -48,7 +48,7 @@ public class Strategy {
 
     static ArrayList<Point> robotPurchasePoint = new ArrayList<>();
     static ArrayList<Point> boatPurchasePoint = new ArrayList<>();
-    static ArrayList<Point> deliveryPoint = new ArrayList<>();
+    static ArrayList<BoatSellPoint> boatSellPoints = new ArrayList<>();
     private int boatCapacity;
 
     public void init() throws IOException {
@@ -64,7 +64,7 @@ public class Strategy {
                 else if (mapData[i][j] == 'S')
                     boatPurchasePoint.add(new Point(i, j));
                 else if (mapData[i][j] == 'T')
-                    deliveryPoint.add(new Point(i, j));
+                    boatSellPoints.add(new BoatSellPoint(new Point(i, j)));
             }
         }
         gameMap.setMap(mapData);
@@ -77,7 +77,7 @@ public class Strategy {
         //bfs，求出到所有点的闪现距离
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                if (gameMap.boatCanReach(i, j) && !gameMap.isMainChannel(i, j)) {
+                if (gameMap.boatCanReach(i, j)) {
                     //不是主航道，可以考虑传送,从当前位置开始搜，搜一个传送点
                     cur++;
                     boolean find = false;
@@ -87,7 +87,7 @@ public class Strategy {
                     while (!queue.isEmpty()) {
                         Point top = queue.poll();
                         for (int k = 0; k < DIR.length / 2; k++) {
-                            if (gameMap.isInMainChannel(top, k)) {
+                            if (gameMap.isAllInMainChannel(top, k)) {
                                 //找到传送点
                                 boatFlashMainChannelPoint[i][j] = new PointWithDirection(top, k);
                                 find = true;
@@ -100,7 +100,7 @@ public class Strategy {
                             Point dir = DIR[k];
                             int dx = top.x + dir.x;
                             int dy = top.y + dir.y;//第一步
-                            if (gameMap.isLegalPoint(dx, dy) || visits[dx][dy] == cur) {
+                            if (!gameMap.isLegalPoint(dx, dy) || visits[dx][dy] == cur) {
                                 continue; // 不可达或者访问过了
                             }
                             ++visits[dx][dy];
@@ -109,6 +109,10 @@ public class Strategy {
                     }
                 }
             }
+        }
+
+        for (BoatSellPoint boatSellPoint : boatSellPoints) {
+            boatSellPoint.init(gameMap);
         }
 
         BERTH_PER_PLAYER = getIntInput();

@@ -32,6 +32,16 @@ public class GameMap {
         );
     }
 
+    public boolean boatCanReach(Point corePoint, int dir) {
+        ArrayList<Point> points = getBoatPoints(corePoint, dir);
+        for (Point point : points) {
+            if (!boatCanReach(point.x, point.y)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean isMainChannel(int x, int y) {
         return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '~'//主航道
@@ -41,7 +51,7 @@ public class GameMap {
                         || mapData[x][y] == 'T'));//交货点
     }
 
-    public boolean isInMainChannel(Point corePoint, int direction) {
+    public boolean isAllInMainChannel(Point corePoint, int direction) {
         //核心点和方向，求出是否整艘船都在主航道
         //核心点一定在方向左下角
         assert direction <= 3;
@@ -53,7 +63,20 @@ public class GameMap {
             }
         }
         return true;
+    }
 
+    public boolean hasOneInMainChannel(Point corePoint, int direction) {
+        //核心点和方向，求出是否整艘船都在主航道
+        //核心点一定在方向左下角
+        assert direction <= 3;
+        ArrayList<Point> boatPoints = getBoatPoints(corePoint, direction);
+        //都是主航道点
+        for (Point point : boatPoints) {
+            if (isMainChannel(point.x, point.y)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public ArrayList<Point> getBoatPoints(Point corePoint, int direction) {
