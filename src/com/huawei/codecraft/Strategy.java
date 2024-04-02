@@ -139,11 +139,26 @@ public class Strategy {
 
     public void mainLoop() throws IOException {
         while (input()) {
-
             if (money >= BOAT_PRICE && BOATS_PER_PLAYER < 1) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats[BOATS_PER_PLAYER++] = new Boat(boatCapacity);
             }
+
+            if (frameId > 1) {
+                Point corePoint = boats[0].corePoint;
+                int direction = boats[0].direction;
+                ArrayList<PointWithDirection> path = boatSellPoints.get(0).moveFrom(corePoint, direction);
+                if (path.size() > 1) {
+                    PointWithDirection pointWithDirection = path.get(1);
+                    if (pointWithDirection.direction == direction) {
+                        outStream.printf("ship %d\n", 0);
+                    } else {
+                        int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
+                        outStream.printf("rot %d %d\n", 0, rotaDir);
+                    }
+                }
+            }
+
 
             outStream.print("OK\n");
             outStream.flush();

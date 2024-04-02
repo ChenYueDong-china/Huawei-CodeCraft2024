@@ -28,7 +28,7 @@ public class BoatDijkstra {
         } else if (dir == 2) {
             return corePoint.add(new Point(-(BOAT_LENGTH - 1), BOAT_WIDTH - 1));
         } else {
-            return corePoint.add(new Point(-(BOAT_LENGTH - 1), BOAT_WIDTH - 1)).mul(-1);
+            return corePoint.add(new Point(-(BOAT_LENGTH - 1), BOAT_WIDTH - 1).mul(-1));
         }
     }
 
@@ -150,7 +150,7 @@ public class BoatDijkstra {
                                 deep += 1;//开始船不在主航道上，距离需要加一，因为到达目标点之后需要等待一帧
                             }
                             if (mGameMap.hasOneInMainChannel(new Point(i, j), k) && !mGameMap.hasOneInMainChannel(mTarget, l)) {
-                                deep -= 1;//开始船不在主航道上，距离需要加一，因为到达目标点之后需要等待一帧
+                                deep -= 1;
                             }
                             if (deep < minDis) {
                                 minDir = l;
@@ -161,7 +161,7 @@ public class BoatDijkstra {
                     if (minDir == -1) {
                         minDistanceDirection[i][j][k] = Integer.MAX_VALUE;
                     } else {
-                            minDistanceDirection[i][j][k] = (minDis << 2) + minDir;
+                        minDistanceDirection[i][j][k] = (minDis << 2) + minDir;
                     }
                 }
             }
@@ -171,24 +171,54 @@ public class BoatDijkstra {
     }
 
     //move to没有，因为没保存
-    public ArrayList<Point> moveFrom(Point source, int dir) {
+    public ArrayList<PointWithDirection> moveFrom(Point source, int dir) {
         Point start = map2RelativePoint(source, dir);
-         int curDir =dir^1 ;
+        dir ^= 1;
         ArrayList<PointWithDirection> result = new ArrayList<>();
-        int index = minDistanceDirection[start.x][start.y][curDir];
+        int index = minDistanceDirection[start.x][start.y][dir];
         assert index != Integer.MAX_VALUE;
         index = index & 3;
-        result.add(new PointWithDirection(start,curDir));
-        PointWithDirection t = new PointWithDirection(start,curDir);
-        while ((cs[index][t.point.x][t.point.y][curDir]>>2) != 0) {
-            int lastDir = cs[index][t.point.x][t.point.y][curDir] & 3;
-            if(lastDir==curDir){
+        PointWithDirection t = new PointWithDirection(start, dir);
+        result.add(t);
+        while ((cs[index][t.point.x][t.point.y][t.direction] >> 2) != 0) {
+            int lastDir = cs[index][t.point.x][t.point.y][t.direction] & 3;
+            Point lastPoint;
+            if (lastDir == t.direction) {
                 //前进
-            }else{
+                lastPoint = t.point.add(DIR[lastDir ^ 1]);
+            } else {
                 //旋转或者不旋转
+                lastPoint = getLastPoint(t.point, t.direction, lastDir);
             }
+            t = new PointWithDirection(lastPoint, lastDir);
+            result.add(t);
         }
 
+        //转为正常路径
+        for (PointWithDirection pointWithDirection : result) {
+            pointWithDirection.point = map2RelativePoint(pointWithDirection.point, pointWithDirection.direction);
+            pointWithDirection.direction ^= 1;
+        }
+        int deep = minDistanceDirection[start.x][start.y][dir] >> 2;
+        //验证深度对不对
+        int curDeep = 0;
+        for (int i = 1; i < result.size(); i++) {
+            if (mGameMap.hasOneInMainChannel(result.get(i).point, result.get(i).direction)) {
+                curDeep += 2;
+            } else {
+                curDeep += 1;
+            }
+        }
+        assert curDeep == deep;
+        return result;
+    }
+
+    private Point getLastPoint(Point curPoint, int curDir, int lastDir) {
+        //判断是否顺
+        boolean clockwise = mGameMap.getRotationDir(lastDir, curDir) == 0;
+        PointWithDirection pointWithDirection = getRotationPoint(new PointWithDirection(new Point(0, 0), lastDir), clockwise);
+        assert pointWithDirection.direction == curDir;
+        return curPoint.add(pointWithDirection.point.mul(-1));
     }
 
 

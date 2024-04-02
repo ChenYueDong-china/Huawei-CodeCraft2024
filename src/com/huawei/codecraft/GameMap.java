@@ -42,6 +42,18 @@ public class GameMap {
         return true;
     }
 
+    public int getRotationDir(int curDir, int nextDir) {
+        int[] data = {0, 3, 1, 2, 0};
+        boolean clockwise = false;
+        for (int i = 1; i < data.length; i++) {
+            if (data[i] == nextDir && data[i - 1] == curDir) {
+                clockwise = true;
+                break;
+            }
+        }
+        return clockwise ? 0 : 1;
+    }
+
     public boolean isMainChannel(int x, int y) {
         return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '~'//主航道
@@ -86,13 +98,13 @@ public class GameMap {
         }
         Point nextPoint = new Point(corePoint);
         if (direction == 0) {
-            nextPoint.add(new Point(1, 0));
+            nextPoint.addEquals(new Point(1, 0));
         } else if (direction == 1) {
-            nextPoint.add(new Point(-1, 0));
+            nextPoint.addEquals(new Point(-1, 0));
         } else if (direction == 2) {
-            nextPoint.add(new Point(0, 1));
+            nextPoint.addEquals(new Point(0, 1));
         } else {
-            nextPoint.add(new Point(0, -1));
+            nextPoint.addEquals(new Point(0, -1));
         }
         for (int i = 0; i < BOAT_LENGTH; i++) {
             points.add(nextPoint.add(DIR[direction].mul(i)));
