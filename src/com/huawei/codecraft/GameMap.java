@@ -13,6 +13,12 @@ public class GameMap {
 
     private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//列到行
     private final boolean[][] robotDiscreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
+    private final boolean[][][] boatCanReach_
+            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//船是否能到达
+    private final boolean[][][] boatIsAllInMainChannel_
+            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//整艘船都在主航道上
+    private final boolean[][][] boatHasOneInMainChannel_
+            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//有至少一个点在主航道上
 
 
     public boolean isLegalPoint(int x, int y) {
@@ -22,6 +28,7 @@ public class GameMap {
     public boolean boatCanReach(int x, int y) {
         return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '*'//海洋
+                        || mapData[x][y] == 'B'//泊位
                         || mapData[x][y] == '~'//主航道
                         || mapData[x][y] == 'S'//购买地块
                         || mapData[x][y] == 'K'//靠泊区
@@ -32,14 +39,22 @@ public class GameMap {
         );
     }
 
+    public boolean isBerthAround(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                (mapData[x][y] == 'K'//靠泊区
+                        || mapData[x][y] == 'B'//泊位
+                )
+        );
+    }
+
+    public boolean isBerth(int x, int y) {
+        return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                mapData[x][y] == 'B'//泊位
+        );
+    }
+
     public boolean boatCanReach(Point corePoint, int dir) {
-        ArrayList<Point> points = getBoatPoints(corePoint, dir);
-        for (Point point : points) {
-            if (!boatCanReach(point.x, point.y)) {
-                return false;
-            }
-        }
-        return true;
+        return boatCanReach_[corePoint.x][corePoint.y][dir];
     }
 
     public int getRotationDir(int curDir, int nextDir) {
@@ -59,36 +74,20 @@ public class GameMap {
                 (mapData[x][y] == '~'//主航道
                         || mapData[x][y] == 'S'//购买地块
                         || mapData[x][y] == 'K'//靠泊区
+                        || mapData[x][y] == 'B'//泊位
                         || mapData[x][y] == 'c'//交通地块
                         || mapData[x][y] == 'T'));//交货点
     }
 
-    public boolean isAllInMainChannel(Point corePoint, int direction) {
-        //核心点和方向，求出是否整艘船都在主航道
-        //核心点一定在方向左下角
-        assert direction <= 3;
-        ArrayList<Point> boatPoints = getBoatPoints(corePoint, direction);
-        //都是主航道点
-        for (Point point : boatPoints) {
-            if (!isMainChannel(point.x, point.y)) {
-                return false;
-            }
-        }
-        return true;
+
+    public boolean boatIsAllInMainChannel(Point corePoint, int direction) {
+        return boatIsAllInMainChannel_[corePoint.x][corePoint.y][direction];
     }
 
-    public boolean hasOneInMainChannel(Point corePoint, int direction) {
+    public boolean boatHasOneInMainChannel(Point corePoint, int direction) {
         //核心点和方向，求出是否整艘船都在主航道
         //核心点一定在方向左下角
-        assert direction <= 3;
-        ArrayList<Point> boatPoints = getBoatPoints(corePoint, direction);
-        //都是主航道点
-        for (Point point : boatPoints) {
-            if (isMainChannel(point.x, point.y)) {
-                return true;
-            }
-        }
-        return false;
+        return boatHasOneInMainChannel_[corePoint.x][corePoint.y][direction];
     }
 
     public ArrayList<Point> getBoatPoints(Point corePoint, int direction) {
@@ -139,6 +138,29 @@ public class GameMap {
 //            }
 //        }
         initRobotsDiscrete();
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                for (int k = 0; k < (DIR.length / 2); k++) {
+                    boolean canReach = true, oneIn = false, allIn = true;
+                    ArrayList<Point> boatPoints = getBoatPoints(new Point(i, j), k);
+                    //都是主航道点
+                    for (Point point : boatPoints) {
+                        if (isMainChannel(point.x, point.y)) {
+                            oneIn = true;
+                        } else {
+                            allIn = false;
+                        }
+                        if (!boatCanReach(point.x, point.y)) {
+                            canReach = false;
+                        }
+                    }
+                    boatCanReach_[i][j][k] = canReach;
+                    boatHasOneInMainChannel_[i][j][k] = oneIn;
+                    boatIsAllInMainChannel_[i][j][k] = allIn;
+                }
+            }
+        }
+
         return true;
     }
 

@@ -1,7 +1,5 @@
 package com.huawei.codecraft;
 
-import sun.security.util.Length;
-
 import java.util.*;
 
 import static com.huawei.codecraft.Constants.*;
@@ -80,6 +78,8 @@ public class BoatDijkstra {
             }
         }
         //从目标映射的四个点开始搜
+        int count = 0;
+        long l1 = System.currentTimeMillis();
         for (int i = 0; i < DIR.length / 2; i++) {
             //单向dfs搜就行
             // 求最短路径
@@ -87,7 +87,6 @@ public class BoatDijkstra {
             if (!mGameMap.boatCanReach(s, i ^ 1)) {
                 continue;//起始点直接不可达，没得玩
             }
-
             int deep = 0;
             Queue<SearchPoint> queue = new LinkedList<>();
             queue.offer(new SearchPoint(new PointWithDirection(s, i ^ 1), i ^ 1));
@@ -103,6 +102,7 @@ public class BoatDijkstra {
                     twoDistancesPoints.clear();
                 }
                 for (int j = 0; j < size; j++) {
+                    count++;
                     SearchPoint top = queue.poll();
                     assert top != null;
                     for (int k = 0; k < 3; k++) {
@@ -118,12 +118,12 @@ public class BoatDijkstra {
                             next = getRotationPoint(top.pointWithDirection, false);
                         }
                         //合法性判断
-                        if (deep >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)
+                        if (deep  >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)
                                 || !mGameMap.boatCanReach(next.point, next.direction)) {
                             continue;
                         }
                         //是否到达之后需要恢复,有一个点进入了主航道
-                        if (mGameMap.hasOneInMainChannel(next.point, next.direction)) {
+                        if (mGameMap.boatHasOneInMainChannel(next.point, next.direction)) {
                             if (deep + 1 >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)) {
                                 continue;
                             }
@@ -137,10 +137,11 @@ public class BoatDijkstra {
                         }
                     }
                 }
-
             }
         }
-
+        long r1 = System.currentTimeMillis();
+        long time1 = r1 - l1;
+        l1 = System.currentTimeMillis();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
                 for (int k = 0; k < DIR.length / 2; k++) {
@@ -149,10 +150,12 @@ public class BoatDijkstra {
                     for (int l = 0; l < DIR.length / 2; l++) {
                         if (cs[l][i][j][k] != Integer.MAX_VALUE) {
                             int deep = cs[l][i][j][k] >> 2;
-                            if (!mGameMap.hasOneInMainChannel(new Point(i, j), k) && mGameMap.hasOneInMainChannel(mTarget, l)) {
+                            if (!mGameMap.boatHasOneInMainChannel(new Point(i, j), k)
+                                    && mGameMap.boatHasOneInMainChannel(mTarget, l)) {
                                 deep += 1;//开始船不在主航道上，距离需要加一，因为到达目标点之后需要等待一帧
                             }
-                            if (mGameMap.hasOneInMainChannel(new Point(i, j), k) && !mGameMap.hasOneInMainChannel(mTarget, l)) {
+                            if (mGameMap.boatHasOneInMainChannel(new Point(i, j), k)
+                                    && !mGameMap.boatHasOneInMainChannel(mTarget, l)) {
                                 deep -= 1;
                             }
                             if (deep < minDis) {
@@ -169,13 +172,15 @@ public class BoatDijkstra {
                 }
             }
         }
-
-
+        r1 = System.currentTimeMillis();
+        long time2 = r1 - l1;
+        System.out.println("time1:" + time1 + ",time2:" + time2);
     }
 
     //move to没有，因为没保存
     public ArrayList<PointWithDirection> moveFrom(Point source, int dir) {
         Point start = map2RelativePoint(source, dir);
+
         dir ^= 1;
         ArrayList<PointWithDirection> result = new ArrayList<>();
         int index = minDistanceDirection[start.x][start.y][dir];
@@ -203,16 +208,19 @@ public class BoatDijkstra {
             pointWithDirection.direction ^= 1;
         }
         int deep = minDistanceDirection[start.x][start.y][dir] >> 2;
+        ArrayList<PointWithDirection> tmp = new ArrayList<>();
+        tmp.add(result.get(0));
         //验证深度对不对
         int curDeep = 0;
         for (int i = 1; i < result.size(); i++) {
-            if (mGameMap.hasOneInMainChannel(result.get(i).point, result.get(i).direction)) {
-                curDeep += 2;
-            } else {
-                curDeep += 1;
+            if (mGameMap.boatHasOneInMainChannel(result.get(i).point, result.get(i).direction)) {
+                tmp.add(result.get(i));
             }
+            tmp.add(result.get(i));
         }
-        assert curDeep == deep;
+        result.clear();
+        result.addAll(tmp);
+        assert tmp.size() - 1 == deep;
         return result;
     }
 
@@ -228,6 +236,9 @@ public class BoatDijkstra {
     //非细化目标到这里的移动时间
     public int getMoveDistance(Point target, int dir) {
         Point start = map2RelativePoint(target, dir);
+        if (!mGameMap.isLegalPoint(start.x, start.y)) {
+            return Integer.MAX_VALUE;
+        }
         dir ^= 1;
         return minDistanceDirection[start.x][start.y][dir] != Integer.MAX_VALUE ?
                 minDistanceDirection[start.x][start.y][dir] >> 2 :
