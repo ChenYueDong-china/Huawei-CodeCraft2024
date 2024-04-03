@@ -182,14 +182,14 @@ public class Strategy {
                 boats[BOATS_PER_PLAYER++] = new Boat(boatCapacity);
             }
 
-            if (frameId > 1) {
+            if (frameId > 1 && frameId < 100) {
                 Point corePoint = boats[0].corePoint;
                 int direction = boats[0].direction;
                 long l1 = System.currentTimeMillis();
 //                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
 //                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
                 ArrayList<PointWithDirection> path = moveTo(gameMap, new PointWithDirection(corePoint, direction)
-                        , new PointWithDirection(berths[0].corePoint, -1), 9999);
+                        , new PointWithDirection(new Point(94, 70), 1), 9999);
                 long l2 = System.currentTimeMillis();
 //                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
                 if (path != null && path.size() > 1) {
@@ -201,6 +201,51 @@ public class Strategy {
                         outStream.printf("rot %d %d\n", 0, rotaDir);
                     }
                 }
+            }
+            if (frameId == 100) {
+                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                boats[BOATS_PER_PLAYER++] = new Boat(boatCapacity);
+            }
+            if (frameId > 100 && frameId < 200) {
+                Point corePoint = boats[1].corePoint;
+                int direction = boats[1].direction;
+                long l1 = System.currentTimeMillis();
+//                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
+//                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
+                ArrayList<PointWithDirection> path = moveTo(gameMap, new PointWithDirection(corePoint, direction)
+                        , new PointWithDirection(new Point(93, 64), 0), 9999);
+                long l2 = System.currentTimeMillis();
+//                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
+                if (path != null && path.size() > 1) {
+                    PointWithDirection pointWithDirection = path.get(1);
+                    if (pointWithDirection.direction == direction) {
+                        outStream.printf("ship %d\n", 1);
+                    } else {
+                        int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
+                        outStream.printf("rot %d %d\n", 1, rotaDir);
+                    }
+                }
+            }
+            if (frameId == 200) {
+                outStream.printf("ship %d\n", 1);
+                outStream.printf("ship %d\n", 0);
+            }
+            if (frameId == 201) {
+                outStream.printf("ship %d\n", 1);
+                outStream.printf("ship %d\n", 0);
+
+            }
+            if (frameId == 202) {
+                outStream.printf("ship %d\n", 1);
+                outStream.printf("ship %d\n", 0);
+            }
+            if (frameId == 203) {
+                outStream.printf("ship %d\n", 1);
+                outStream.printf("ship %d\n", 0);
+            }
+            if (frameId == 204) {
+                outStream.printf("ship %d\n", 1);
+                outStream.printf("ship %d\n", 0);
             }
 
 
