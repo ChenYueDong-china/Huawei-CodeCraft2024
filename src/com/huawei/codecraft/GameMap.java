@@ -13,6 +13,7 @@ public class GameMap {
 
     private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//列到行
     private final boolean[][] robotDiscreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
+
     private final boolean[][][] boatCanReach_
             = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//船是否能到达
     private final boolean[][][] boatIsAllInMainChannel_
@@ -20,6 +21,18 @@ public class GameMap {
     private final boolean[][][] boatHasOneInMainChannel_
             = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//有至少一个点在主航道上
 
+    private final int[][] boatAroundBerthId = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//船闪现能到达得泊位,只有在靠泊区和泊位有值
+
+
+    public int boatGetFlashBerthId(int x, int y) {
+        return boatAroundBerthId[x][y];
+    }
+
+    public void updateBoatAroundBerthId(ArrayList<Point> points, int berthId) {
+        for (Point point : points) {
+            boatAroundBerthId[point.x][point.y] = berthId;
+        }
+    }
 
     public boolean isLegalPoint(int x, int y) {
         return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS);
@@ -159,6 +172,9 @@ public class GameMap {
                     boatIsAllInMainChannel_[i][j][k] = allIn;
                 }
             }
+        }
+        for (int[] around : boatAroundBerthId) {
+            Arrays.fill(around, -1);
         }
 
         return true;

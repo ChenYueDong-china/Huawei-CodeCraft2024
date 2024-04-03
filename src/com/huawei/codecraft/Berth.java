@@ -6,8 +6,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import static com.huawei.codecraft.Constants.*;
-import static com.huawei.codecraft.Utils.DIR;
-import static com.huawei.codecraft.Utils.Point;
+import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.abs;
 
 public class Berth {
@@ -93,7 +92,6 @@ public class Berth {
             }
         }
         //船路径
-        long l1 = System.currentTimeMillis();
         for (Point aroundPoint : berthAroundPoints) {
             commonDij.init(aroundPoint, gameMap);
             commonDij.update();
@@ -114,9 +112,7 @@ public class Berth {
                 break;
             }
         }
-        long r1 = System.currentTimeMillis();
-        long time1 = r1 - l1;
-        System.out.println("time1:" + time1);
+        gameMap.updateBoatAroundBerthId(berthAroundPoints, id);
     }
 
     @SuppressWarnings("all")
