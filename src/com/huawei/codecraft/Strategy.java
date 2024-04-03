@@ -7,6 +7,7 @@ import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN;
 import static com.huawei.codecraft.BoatStatus.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
+import static com.huawei.codecraft.BoatUtils.*;
 import static java.lang.Math.*;
 
 public class Strategy {
@@ -126,6 +127,7 @@ public class Strategy {
             }
         }
         System.gc();//主动gc一下，防止后面掉帧
+
         outStream.print("OK\n");
     }
 
@@ -183,8 +185,14 @@ public class Strategy {
             if (frameId > 1) {
                 Point corePoint = boats[0].corePoint;
                 int direction = boats[0].direction;
-                ArrayList<PointWithDirection> path = boatSellPoints.get(0).moveFrom(corePoint, direction);
-                if (path.size() > 1) {
+                long l1 = System.currentTimeMillis();
+//                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
+//                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
+                ArrayList<PointWithDirection> path = moveTo(gameMap, new PointWithDirection(corePoint, direction)
+                        , new PointWithDirection(berths[0].corePoint, -1), 9999);
+                long l2 = System.currentTimeMillis();
+//                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
+                if (path != null && path.size() > 1) {
                     PointWithDirection pointWithDirection = path.get(1);
                     if (pointWithDirection.direction == direction) {
                         outStream.printf("ship %d\n", 0);

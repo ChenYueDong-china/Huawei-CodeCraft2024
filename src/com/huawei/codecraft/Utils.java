@@ -2,6 +2,7 @@ package com.huawei.codecraft;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Utils {
     @SuppressWarnings("all")
@@ -81,6 +82,10 @@ public class Utils {
 
         boolean equal(Point point) {
             return point.x == x && point.y == y;
+        }
+
+        public boolean equals(Point point) {
+            return x == point.x && y == point.y;
         }
 
         boolean equal(int x, int y) {

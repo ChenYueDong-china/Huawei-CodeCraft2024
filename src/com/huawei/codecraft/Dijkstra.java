@@ -26,7 +26,7 @@ public class Dijkstra {
         }
         //单向dfs搜就行
         int deep = 0;
-        Queue<Point> queue = new LinkedList<>();
+        Queue<Point> queue = new ArrayDeque<>();
         queue.offer(s);
         cs[s.x][s.y] = 0;
         while (!queue.isEmpty()) {

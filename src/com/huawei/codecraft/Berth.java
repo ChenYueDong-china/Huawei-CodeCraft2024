@@ -1,9 +1,6 @@
 package com.huawei.codecraft;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
@@ -17,7 +14,7 @@ public class Berth {
     int loadingSpeed;
     int goodsNums;//泊位目前没装的货物数量
 
-    Queue<Integer> goods = new LinkedList<>();
+    Queue<Integer> goods = new ArrayDeque<>();
 
     int totalValue = 0;//货物总价值
     int totalGoodsNums;//来的总货，判断泊位好坏
@@ -36,7 +33,7 @@ public class Berth {
 
     public void init(GameMap gameMap, boolean littleTime) {
         Point start = new Point(corePoint);
-        Queue<Point> queue = new LinkedList<>();
+        Queue<Point> queue = new ArrayDeque<>();
         queue.offer(start);
         berthAroundPoints.add(start);
         berthPoints.add(start);
@@ -45,6 +42,7 @@ public class Berth {
             Arrays.fill(visit, false);
         }
         visits[start.x][start.y] = true;
+        int count=0;
         while (!queue.isEmpty()) {
             Point top = queue.poll();
             for (int k = 0; k < DIR.length / 2; k++) {
@@ -57,6 +55,7 @@ public class Berth {
                 if (gameMap.isBerth(dx, dy)) {
                     berthPoints.add(new Point(dx, dy));
                 }
+                count++;
                 visits[dx][dy] = true;
                 berthAroundPoints.add(new Point(dx, dy));
                 queue.offer(new Point(dx, dy));
@@ -122,6 +121,14 @@ public class Berth {
 
     public int getRobotMinDistance(Point pos) {
         return robotMinDistance[pos.x][pos.y];
+    }
+
+    public boolean boatCanReach(Point pos, int dir) {
+        return boatMinDistance[pos.x][pos.y][dir] != Integer.MAX_VALUE;
+    }
+
+    public int getBoatMinDistance(Point pos, int dir) {
+        return boatMinDistance[pos.x][pos.y][dir];
     }
 
 

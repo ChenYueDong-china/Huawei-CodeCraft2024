@@ -22,6 +22,8 @@ public class GameMap {
             = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//有至少一个点在主航道上
 
     private final int[][] boatAroundBerthId = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//船闪现能到达得泊位,只有在靠泊区和泊位有值
+    public final int[][][] commonCs
+            = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//寻路得时候复用cs
 
 
     public int boatGetFlashBerthId(int x, int y) {

@@ -4,6 +4,7 @@ import java.util.*;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
+import static com.huawei.codecraft.BoatUtils.*;
 import static java.lang.Math.min;
 
 public class BoatDijkstra {
@@ -30,46 +31,9 @@ public class BoatDijkstra {
         }
     }
 
-    public PointWithDirection getRotationPoint(PointWithDirection pointWithDirection, boolean clockwise) {
-        Point corePint = pointWithDirection.point;
-        int originDir = pointWithDirection.direction;
-        int[] data;
-        if (clockwise) {
-            data = new int[]{0, 3, 1, 2, 0};
-        } else {
-            data = new int[]{0, 2, 1, 3, 0};
-        }
-        int nextDir = -1;
-        for (int i = 0; i < DIR.length / 2; i++) {
-            if (originDir == data[i]) {
-                nextDir = data[i + 1];
-                break;
-            }
-        }
-        //位置
-        Point[] data2;
-        if (clockwise) {
-            data2 = new Point[]{new Point(0, 0), new Point(2, 2), new Point(2, 0), new Point(0, 2)};
-        } else {
-            data2 = new Point[]{new Point(0, 0), new Point(0, 2), new Point(1, 1), new Point(-1, 1)};
-        }
-        Point nextPoint = corePint.add(data2[nextDir]).sub(data2[originDir]);
-        return new PointWithDirection(nextPoint, nextDir);
-
-    }
-
 
     void update() {
 
-        class SearchPoint {
-            final PointWithDirection pointWithDirection;
-            final int comingDir;
-
-            public SearchPoint(PointWithDirection pointWithDirection, int comingDir) {
-                this.pointWithDirection = pointWithDirection;
-                this.comingDir = comingDir;
-            }
-        }
         for (int[][][] c1 : cs) {
             for (int[][] c2 : c1) {
                 for (int[] c3 : c2) {
@@ -88,10 +52,10 @@ public class BoatDijkstra {
                 continue;//起始点直接不可达，没得玩
             }
             int deep = 0;
-            Queue<SearchPoint> queue = new LinkedList<>();
-            queue.offer(new SearchPoint(new PointWithDirection(s, i ^ 1), i ^ 1));
+            Queue<PointWithDirection> queue = new ArrayDeque<>();
+            queue.offer(new PointWithDirection(s, i ^ 1));
             cs[i][s.x][s.y][i ^ 1] = i ^ 1;
-            ArrayList<SearchPoint> twoDistancesPoints = new ArrayList<>();
+            ArrayList<PointWithDirection> twoDistancesPoints = new ArrayList<>();
             while (!queue.isEmpty() || !twoDistancesPoints.isEmpty()) {
                 deep += 1;
                 //2距离的下一个点,先保存起来，后面直接插进去
@@ -103,22 +67,12 @@ public class BoatDijkstra {
                 }
                 for (int j = 0; j < size; j++) {
                     count++;
-                    SearchPoint top = queue.poll();
+                    PointWithDirection top = queue.poll();
                     assert top != null;
                     for (int k = 0; k < 3; k++) {
-                        PointWithDirection next;
-                        if (k == 0) {
-                            Point dir = DIR[top.pointWithDirection.direction];
-                            int dx = top.pointWithDirection.point.x + dir.x;
-                            int dy = top.pointWithDirection.point.y + dir.y;//第一步
-                            next = new PointWithDirection(new Point(dx, dy), top.pointWithDirection.direction);
-                        } else if (k == 1) {
-                            next = getRotationPoint(top.pointWithDirection, true);
-                        } else {
-                            next = getRotationPoint(top.pointWithDirection, false);
-                        }
+                        PointWithDirection next = getNextPoint(top, k);
                         //合法性判断
-                        if (deep  >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)
+                        if (deep >= (cs[i][next.point.x][next.point.y][next.direction] >> 2)
                                 || !mGameMap.boatCanReach(next.point, next.direction)) {
                             continue;
                         }
@@ -128,12 +82,12 @@ public class BoatDijkstra {
                                 continue;
                             }
                             cs[i][next.point.x][next.point.y][next.direction]
-                                    = ((deep + 1) << 2) + top.pointWithDirection.direction;
-                            twoDistancesPoints.add(new SearchPoint(next, top.pointWithDirection.direction));
+                                    = ((deep + 1) << 2) + top.direction;
+                            twoDistancesPoints.add(next);
                         } else {
                             cs[i][next.point.x][next.point.y][next.direction]
-                                    = (deep << 2) + top.pointWithDirection.direction;
-                            queue.offer(new SearchPoint(next, top.pointWithDirection.direction));
+                                    = (deep << 2) + top.direction;
+                            queue.offer(next);
                         }
                     }
                 }
@@ -190,16 +144,7 @@ public class BoatDijkstra {
         result.add(t);
         while ((cs[index][t.point.x][t.point.y][t.direction] >> 2) != 0) {
             int lastDir = cs[index][t.point.x][t.point.y][t.direction] & 3;
-            Point lastPoint;
-            if (lastDir == t.direction) {
-                //前进
-                lastPoint = t.point.add(DIR[lastDir ^ 1]);
-            } else {
-                //旋转或者不旋转
-                lastPoint = getLastPoint(t.point, t.direction, lastDir);
-            }
-            t = new PointWithDirection(lastPoint, lastDir);
-            result.add(t);
+            t = getLastPointWithDirection(mGameMap, result, t, lastDir);
         }
 
         //转为正常路径
@@ -222,14 +167,6 @@ public class BoatDijkstra {
         result.addAll(tmp);
         assert tmp.size() - 1 == deep;
         return result;
-    }
-
-    private Point getLastPoint(Point curPoint, int curDir, int lastDir) {
-        //判断是否顺
-        boolean clockwise = mGameMap.getRotationDir(lastDir, curDir) == 0;
-        PointWithDirection pointWithDirection = getRotationPoint(new PointWithDirection(new Point(0, 0), lastDir), clockwise);
-        assert pointWithDirection.direction == curDir;
-        return curPoint.add(pointWithDirection.point.mul(-1));
     }
 
 
