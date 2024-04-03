@@ -28,12 +28,12 @@ public class GameMap {
     public boolean boatCanReach(int x, int y) {
         return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '*'//海洋
-                        || mapData[x][y] == 'B'//泊位
                         || mapData[x][y] == '~'//主航道
-                        || mapData[x][y] == 'S'//购买地块
                         || mapData[x][y] == 'K'//靠泊区
+                        || mapData[x][y] == 'B'//泊位
                         || mapData[x][y] == 'C'//交通地块
                         || mapData[x][y] == 'c'//交通地块,加主航道
+                        || mapData[x][y] == 'S'//购买地块
                         || mapData[x][y] == 'T'//交货点
                 )
         );

@@ -35,7 +35,7 @@ public class Berth {
     public ArrayList<Point> berthAroundPoints = new ArrayList<>();//也包含berths
 
 
-    public void init(GameMap gameMap) {
+    public void init(GameMap gameMap, boolean littleTime) {
         Point start = new Point(corePoint);
         Queue<Point> queue = new LinkedList<>();
         queue.offer(start);
@@ -110,10 +110,13 @@ public class Berth {
                     }
                 }
             }
+            if (littleTime) {//更新一次就行
+                break;
+            }
         }
         long r1 = System.currentTimeMillis();
         long time1 = r1 - l1;
-        System.out.println("tim1:" + time1);
+        System.out.println("time1:" + time1);
     }
 
     @SuppressWarnings("all")

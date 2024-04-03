@@ -41,15 +41,20 @@ public class Strategy {
     int jumpCount = 0;
 
     //boat的闪现位置，闪现泊位不用算
+
+    public ArrayList<Point> boatFlashCandidates;
     public PointWithDirection[][] boatFlashMainChannelPoint = new PointWithDirection[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
 
 
-    static ArrayList<Point> robotPurchasePoint = new ArrayList<>();
-    static ArrayList<Point> boatPurchasePoint = new ArrayList<>();
-    static ArrayList<BoatSellPoint> boatSellPoints = new ArrayList<>();
+    public ArrayList<Point> robotPurchasePoint = new ArrayList<>();
+    public ArrayList<Point> boatPurchasePoint = new ArrayList<>();
+    public ArrayList<BoatSellPoint> boatSellPoints = new ArrayList<>();
+
+
     private int boatCapacity;
 
     public void init() throws IOException {
+        long startTime = System.currentTimeMillis();
         char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
         gameMap = new GameMap();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
@@ -66,55 +71,13 @@ public class Strategy {
             }
         }
         gameMap.setMap(mapData);
-
-        int[][] visits = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
-        for (int[] visit : visits) {
-            Arrays.fill(visit, 0);
-        }
-        int cur = 0;
-        //bfs，求出到所有点的闪现距离
-        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                if (gameMap.boatCanReach(i, j)) {
-                    //不是主航道，可以考虑传送,从当前位置开始搜，搜一个传送点
-                    cur++;
-                    boolean find = false;
-                    Point start = new Point(i, j);
-                    Queue<Point> queue = new LinkedList<>();
-                    queue.offer(start);
-                    while (!queue.isEmpty()) {
-                        Point top = queue.poll();
-                        for (int k = 0; k < DIR.length / 2; k++) {
-                            if (gameMap.boatIsAllInMainChannel(top, k)) {
-                                //找到传送点
-                                boatFlashMainChannelPoint[i][j] = new PointWithDirection(top, k);
-                                find = true;
-                            }
-                        }
-                        if (find) {
-                            break;
-                        }
-                        for (int k = 0; k < DIR.length / 2; k++) {
-                            Point dir = DIR[k];
-                            int dx = top.x + dir.x;
-                            int dy = top.y + dir.y;//第一步
-                            if (!gameMap.isLegalPoint(dx, dy) || visits[dx][dy] == cur) {
-                                continue; // 不可达或者访问过了
-                            }
-                            ++visits[dx][dy];
-                            queue.offer(new Point(dx, dy));
-                        }
-                    }
-                }
-            }
-        }
-
         for (BoatSellPoint boatSellPoint : boatSellPoints) {
             boatSellPoint.init(gameMap);
         }
 
         BERTH_PER_PLAYER = getIntInput();
         //码头
+        long maxUpdateTime = 0;
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             String s = inStream.readLine();
             printMost(s);
@@ -125,13 +88,88 @@ public class Strategy {
             berths[id].corePoint.y = Integer.parseInt(parts[2]);
             berths[id].loadingSpeed = Integer.parseInt(parts[3]);
             berths[id].id = id;
-            berths[id].init(gameMap);
+            long curTime = System.currentTimeMillis();
+            if (curTime - startTime + maxUpdateTime > 1000 * 4 + 800) {
+                berths[id].init(gameMap, true);
+                continue;
+            }
+            berths[id].init(gameMap, false);
+            long r = System.currentTimeMillis();
+            maxUpdateTime = max(maxUpdateTime, r - curTime);
         }
         boatCapacity = getIntInput();
         String okk = inStream.readLine();
         printMost(okk);
+
+        //闪现点
+        boatFlashCandidates = new ArrayList<>();
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                for (int k = 0; k < DIR.length / 2; k++) {
+                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
+                        boatFlashCandidates.add(new Point(i, j));
+                        break;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                if (gameMap.boatCanReach(i, j)) {
+                    //留200ms阈值,超时不更新，到时候再更新
+                    long curTime = System.currentTimeMillis();
+                    if (curTime - startTime > 1000 * 4 + 800) {
+                        break;
+                    }
+                    boatUpdateFlashPoint(i, j);
+                }
+            }
+        }
         System.gc();//主动gc一下，防止后面掉帧
         outStream.print("OK\n");
+    }
+
+    private void boatUpdateFlashPoint(int i, int j) {
+        int[] bestFactors = {Integer.MAX_VALUE, 0, 0, 0, 0};//距离，右，左，上，下
+        Point bestPoint = null;
+        for (Point candidate : boatFlashCandidates) {
+            int[] curFactors = new int[5];
+            curFactors[0] = abs(candidate.x - i) + abs(candidate.y - j);
+            curFactors[1] = max(candidate.y - j, 0);
+            curFactors[2] = max(j - candidate.y, 0);
+            curFactors[3] = max(i - candidate.x, 0);
+            curFactors[4] = max(candidate.x - i, 0);
+            boolean better = false;
+            for (int k = 0; k < bestFactors.length; k++) {
+                if (k == 0) {
+                    if (curFactors[k] < bestFactors[k]) {
+                        better = true;
+                        break;
+                    } else if (curFactors[k] > bestFactors[k]) {
+                        break;//大的话说明不会更好
+                    }
+                } else {
+                    if (curFactors[k] > bestFactors[k]) {
+                        better = true;
+                        break;
+                    } else if (curFactors[k] < bestFactors[k]) {
+                        break;//小的话说明不会更好
+                    }
+                }
+            }
+            if (better) {
+                bestPoint = candidate;
+                bestFactors = curFactors;
+            }
+        }
+        // 找到最好的点
+        assert bestPoint != null;
+        for (int k = 0; k < DIR.length / 2; k++) {
+            if (gameMap.boatIsAllInMainChannel(bestPoint, k)) {
+                //找到传送点
+                boatFlashMainChannelPoint[i][j] = new PointWithDirection(bestPoint, k);
+            }
+        }
     }
 
 

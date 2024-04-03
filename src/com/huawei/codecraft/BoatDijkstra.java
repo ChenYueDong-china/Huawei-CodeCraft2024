@@ -174,7 +174,7 @@ public class BoatDijkstra {
         }
         r1 = System.currentTimeMillis();
         long time2 = r1 - l1;
-        System.out.println("time1:" + time1 + ",time2:" + time2);
+        //System.out.println("time1:" + time1 + ",time2:" + time2);
     }
 
     //move to没有，因为没保存
