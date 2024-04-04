@@ -111,7 +111,7 @@ public class BoatUtils {
 
     public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
             , int maxDeep, int recoveryTime) {
-        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null,recoveryTime);
+        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null, recoveryTime);
     }
 
     public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
@@ -120,6 +120,7 @@ public class BoatUtils {
         if (start.point.equal(end.point) && (start.direction == end.direction || end.direction == -1)) {
             //输出路径
             ArrayList<PointWithDirection> result = new ArrayList<>();
+            result.add(start);//加两个，说明不动
             result.add(start);
             return result;
         }
@@ -153,8 +154,7 @@ public class BoatUtils {
                 assert top != null;
                 if (top.point.equal(end.point) && (top.direction == end.direction || end.direction == -1)) {
                     //输出路径
-
-                    return backTrackPath(gameMap, top, cs,recoveryTime);
+                    return backTrackPath(gameMap, top, cs, recoveryTime);
                 }
                 nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPath);
             }
@@ -234,7 +234,7 @@ public class BoatUtils {
             return null;
         }
         //回溯路径
-        ArrayList<PointWithDirection> path = backTrackPath(gameMap, minMidPoint, cs,recoveryTime);
+        ArrayList<PointWithDirection> path = backTrackPath(gameMap, minMidPoint, cs, recoveryTime);
         //结束点添加
         PointWithDirection end = new PointWithDirection(berthCorePoint, 0);
         PointWithDirection lastTwoPoint = path.get(path.size() - 1);
@@ -285,7 +285,7 @@ public class BoatUtils {
     }
 
 
-    public static ArrayList<PointWithDirection> backTrackPath(GameMap gameMap, PointWithDirection top, int[][][] cs,int recoveryTime) {
+    public static ArrayList<PointWithDirection> backTrackPath(GameMap gameMap, PointWithDirection top, int[][][] cs, int recoveryTime) {
         ArrayList<PointWithDirection> result = new ArrayList<>();
         PointWithDirection t = top;
         result.add(t);

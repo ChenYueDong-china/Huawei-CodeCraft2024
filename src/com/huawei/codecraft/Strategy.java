@@ -181,7 +181,7 @@ public class Strategy {
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep) {
-        return BoatUtils.boatMoveToPoint(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+        return boatMoveToPoint(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
                 , pointWithDirection, maxDeep
                 , boat.remainRecoveryTime);
     }
@@ -221,8 +221,9 @@ public class Strategy {
             if (frameId > 1 && frameId < 500) {
                 Boat boat = boats[0];
                 Berth berth = berths[4];
-                boat.targetBerthId = berth.id;
-                boat.path = boatToBerth(boat, berth, 9999);
+//                boat.targetBerthId = berth.id;
+//                boat.path = boatToBerth(boat, berth, 9999);
+                boat.path = boatToPoint(boat, new PointWithDirection(new Point(94, 70), 1), 9999);
                 boat.finish();
             }
 //            if (frameId == 2 || frameId == 3) {
