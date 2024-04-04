@@ -7,6 +7,7 @@ import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN;
 import static com.huawei.codecraft.BoatStatus.*;
 import static com.huawei.codecraft.BoatUtils.*;
 import static com.huawei.codecraft.Constants.*;
+import static com.huawei.codecraft.RobotUtils.*;
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.*;
 
@@ -192,111 +193,140 @@ public class Strategy {
         );
     }
 
+    public ArrayList<Point> robotToBerth(Robot robot, Berth berth, int maxDeep) {
+        return robotMoveToBerth(gameMap, robot.pos, berth.id, maxDeep, null);
+    }
+
+    public ArrayList<Point> robotToBerth(Robot robot, Berth berth, int maxDeep, ArrayList<ArrayList<Point>> otherPaths) {
+        return robotMoveToBerth(gameMap, robot.pos, berth.id, maxDeep, otherPaths);
+    }
+
+    public ArrayList<Point> robotToPoint(Robot robot, Point end, int maxDeep) {
+        return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, null);
+    }
+
+    public ArrayList<Point> robotToPoint(Robot robot, Point end, int maxDeep
+            , ArrayList<ArrayList<Point>> otherPaths) {
+        return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, otherPaths);
+    }
+
+    public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end, int maxDeep
+            , ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
+        return robotMoveToPointHeuristic(gameMap, robot.pos, end, maxDeep, otherPaths, heuristicCs);
+    }
+
 
     public void mainLoop() throws IOException {
         while (input()) {
 
-            if (frameId > 1 && frameId < 100) {
-                Boat boat = boats[0];
-                boat.path = boatToPoint(boat, new PointWithDirection(new Point(94, 70), 1), 9999);
-                boat.finish();
-            }
-            if (frameId > 100 && frameId < 200) {
-                Boat boat = boats[1];
-                boat.path = boatToPoint(boat, new PointWithDirection(new Point(93, 60), 0), 9999);
-                boat.finish();
-            }
-
-            if (frameId > 200 && frameId < 500) {
-                PointWithDirection boat0Target = new PointWithDirection(new Point(94, 55), 1);
-                PointWithDirection boat1Target = new PointWithDirection(new Point(93, 75), 0);
-                Boat boat = boats[0];
-                boat.path = boatToPoint(boat, boat0Target, 9999);
-                Boat boat1 = boats[1];
-                boat1.path = boatToPoint(boat1, boat1Target, 9999);
-                ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
-                ArrayList<Integer> otherIds = new ArrayList<>();
-                for (int i = 0; i < 2; i++) {
-                    ArrayList<PointWithDirection> myPath = new ArrayList<>();
-                    for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boats[i].path.size()); j++) {
-                        myPath.add(boats[i].path.get(j));
-                    }
-                    int crashId = boatCheckCrash(gameMap, i, myPath, otherPaths, otherIds, BOAT_AVOID_DISTANCE);
-                    if (crashId != -1 && boats[i].status != 1) {
-                        //避让
-                        for (boolean[] conflictPoint : gameMap.commonConflictPoints) {
-                            Arrays.fill(conflictPoint, false);
-                        }
-                        for (boolean[] commonNoResultPoint : gameMap.commonNoResultPoints) {
-                            Arrays.fill(commonNoResultPoint, false);
-                        }
-                        for (ArrayList<PointWithDirection> otherPath : otherPaths) {
-                            PointWithDirection pointWithDirection = otherPath.get(0);
-                            ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
-                            for (Point point : points) {
-                                gameMap.commonConflictPoints[point.x][point.y] = true;
-                            }
-                        }
-                        for (int j = 0; j < otherPaths.size(); j++) {
-                            if (otherIds.get(j) == crashId) {
-                                ArrayList<PointWithDirection> pointWithDirections = otherPaths.get(j);
-                                for (PointWithDirection pointWithDirection : pointWithDirections) {
-                                    ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
-                                    for (Point point : points) {
-                                        gameMap.commonNoResultPoints[point.x][point.y] = true;
-                                    }
-                                }
-                            }
-                        }
-                        ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.commonCs, myPath.get(0), gameMap.commonConflictPoints, gameMap.commonNoResultPoints, 25);
-                        boats[i].path = backTrackPath(gameMap, result.get(0), gameMap.commonCs, 0);
-                        myPath.clear();
-                        for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boats[i].path.size()); j++) {
-                            myPath.add(boats[i].path.get(i));
-                        }
-                    }
-
-                    //高优先级的撞到你，则不动
-                    for (int j = 0; j < otherPaths.size(); j++) {
-                        if (otherPaths.get(j).size() <= 1) {
-                            continue;
-                        }
-                        PointWithDirection otherNext = otherPaths.get(j).get(1);
-                        boolean crash = false;
-                        if (otherIds.get(j) < i) {
-                            if (boatCheckCrash(gameMap, otherNext, myPath.get(0))) {
-                                crash = true;
-                            }
-                        } else {
-                            if (boatCheckCrash(gameMap, otherNext, myPath.get(1))) {
-                                crash = true;
-                            }
-                        }
-                        if (crash) {
-                            PointWithDirection start = otherPaths.get(j).get(0);
-                            otherPaths.get(j).clear();
-                            for (int k = 0; k < 2; k++) {
-                                otherPaths.get(j).add(start);
-                            }
-                            boats[otherIds.get(j)].path = new ArrayList<>(otherPaths.get(j));
-                            //选择不动去避让
-                        }
-                    }
-                    otherPaths.add(myPath);
-                    otherIds.add(i);
-                }
-                boat.finish();
-                boat1.finish();
-            }
+//            if (frameId > 1 && frameId < 100) {
+//                Boat boat = boats[0];
+//                boat.path = boatToPoint(boat, new PointWithDirection(new Point(94, 70), 1), 9999);
+//                boat.finish();
+//            }
+//            if (frameId > 100 && frameId < 200) {
+//                Boat boat = boats[1];
+//                boat.path = boatToPoint(boat, new PointWithDirection(new Point(93, 60), 0), 9999);
+//                boat.finish();
+//            }
+//
+//            if (frameId > 200 && frameId < 500) {
+//                PointWithDirection boat0Target = new PointWithDirection(new Point(94, 55), 1);
+//                PointWithDirection boat1Target = new PointWithDirection(new Point(93, 75), 0);
+//                Boat boat = boats[0];
+//                boat.path = boatToPoint(boat, boat0Target, 9999);
+//                Boat boat1 = boats[1];
+//                boat1.path = boatToPoint(boat1, boat1Target, 9999);
+//                ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
+//                ArrayList<Integer> otherIds = new ArrayList<>();
+//                for (int i = 0; i < 2; i++) {
+//                    ArrayList<PointWithDirection> myPath = new ArrayList<>();
+//                    for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boats[i].path.size()); j++) {
+//                        myPath.add(boats[i].path.get(j));
+//                    }
+//                    int crashId = boatCheckCrash(gameMap, i, myPath, otherPaths, otherIds, BOAT_AVOID_DISTANCE);
+//                    if (crashId != -1 && boats[i].status != 1) {
+//                        //避让
+//                        for (boolean[] conflictPoint : gameMap.commonConflictPoints) {
+//                            Arrays.fill(conflictPoint, false);
+//                        }
+//                        for (boolean[] commonNoResultPoint : gameMap.commonNoResultPoints) {
+//                            Arrays.fill(commonNoResultPoint, false);
+//                        }
+//                        for (ArrayList<PointWithDirection> otherPath : otherPaths) {
+//                            PointWithDirection pointWithDirection = otherPath.get(0);
+//                            ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
+//                            for (Point point : points) {
+//                                gameMap.commonConflictPoints[point.x][point.y] = true;
+//                            }
+//                        }
+//                        for (int j = 0; j < otherPaths.size(); j++) {
+//                            if (otherIds.get(j) == crashId) {
+//                                ArrayList<PointWithDirection> pointWithDirections = otherPaths.get(j);
+//                                for (PointWithDirection pointWithDirection : pointWithDirections) {
+//                                    ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
+//                                    for (Point point : points) {
+//                                        gameMap.commonNoResultPoints[point.x][point.y] = true;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.commonCs, myPath.get(0), gameMap.commonConflictPoints, gameMap.commonNoResultPoints, 25);
+//                        boats[i].path = backTrackPath(gameMap, result.get(0), gameMap.commonCs, 0);
+//                        myPath.clear();
+//                        for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boats[i].path.size()); j++) {
+//                            myPath.add(boats[i].path.get(i));
+//                        }
+//                    }
+//
+//                    //高优先级的撞到你，则不动
+//                    for (int j = 0; j < otherPaths.size(); j++) {
+//                        if (otherPaths.get(j).size() <= 1) {
+//                            continue;
+//                        }
+//                        PointWithDirection otherNext = otherPaths.get(j).get(1);
+//                        boolean crash = false;
+//                        if (otherIds.get(j) < i) {
+//                            if (boatCheckCrash(gameMap, otherNext, myPath.get(0))) {
+//                                crash = true;
+//                            }
+//                        } else {
+//                            if (boatCheckCrash(gameMap, otherNext, myPath.get(1))) {
+//                                crash = true;
+//                            }
+//                        }
+//                        if (crash) {
+//                            PointWithDirection start = otherPaths.get(j).get(0);
+//                            otherPaths.get(j).clear();
+//                            for (int k = 0; k < 2; k++) {
+//                                otherPaths.get(j).add(start);
+//                            }
+//                            boats[otherIds.get(j)].path = new ArrayList<>(otherPaths.get(j));
+//                            //选择不动去避让
+//                        }
+//                    }
+//                    otherPaths.add(myPath);
+//                    otherIds.add(i);
+//                }
+//                boat.finish();
+//                boat1.finish();
+//            }
 
 
             if (frameId == 1) {
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
-
+                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
+                robots[ROBOTS_PER_PLAYER++] = new Robot(this);
             }
+            if (frameId > 1 && frameId < 300) {
+                Robot robot = robots[0];
+//                long l1 = System.nanoTime();
+                robot.path = robotMoveToBerth(gameMap, robot.pos, 0, 9999, null);
+//                long r1 = System.nanoTime();
+//                System.out.println("time:" + (r1 - l1));
+                robot.finish();
+            }
+
+
             outStream.print("OK\n");
             outStream.flush();
         }

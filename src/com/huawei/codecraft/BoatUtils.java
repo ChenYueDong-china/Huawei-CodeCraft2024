@@ -132,7 +132,7 @@ public class BoatUtils {
             result.add(start);
             return result;
         }
-        int[][][] cs = gameMap.commonCs;
+        int[][][] cs = gameMap.boatCommonCs;
         for (int[][] c1 : cs) {
             for (int[] c2 : c1) {
                 Arrays.fill(c2, Integer.MAX_VALUE);
@@ -147,7 +147,7 @@ public class BoatUtils {
         ArrayList<PointWithDirection> twoDistancesPoints = new ArrayList<>();
         while (!queue.isEmpty() || !twoDistancesPoints.isEmpty()) {
             if (deep > maxDeep) {
-                return null;
+                break;
             }
             deep += 1;
             //2距离的下一个点,先保存起来，后面直接插进去
@@ -167,7 +167,7 @@ public class BoatUtils {
                 nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPath, otherIds);
             }
         }
-        return null;
+        return new ArrayList<>();
     }
 
     public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, Point berthCorePoint
@@ -188,7 +188,7 @@ public class BoatUtils {
             result.add(end);
             return result;
         }
-        int[][][] cs = gameMap.commonCs;
+        int[][][] cs = gameMap.boatCommonCs;
         for (int[][] c1 : cs) {
             for (int[] c2 : c1) {
                 Arrays.fill(c2, Integer.MAX_VALUE);
@@ -239,7 +239,7 @@ public class BoatUtils {
             }
         }
         if (minMidPoint == null) {
-            return null;
+            return new ArrayList<>();
         }
         //回溯路径
         ArrayList<PointWithDirection> path = backTrackPath(gameMap, minMidPoint, cs, recoveryTime);
@@ -341,7 +341,6 @@ public class BoatUtils {
             //检测碰撞。
             if (boatId != -1 && otherPaths != null) {
                 boolean crash = false;
-                assert otherPaths.size() == BOATS_PER_PLAYER;//船多少，path多少
                 for (int i = 0; i < otherPaths.size(); i++) {
                     int otherId = otherIds.get(i);
                     ArrayList<PointWithDirection> otherPath = otherPaths.get(otherId);

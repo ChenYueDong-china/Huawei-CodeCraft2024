@@ -13,29 +13,38 @@ public class GameMap {
 
     private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//列到行
     private final boolean[][] robotDiscreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
-
+    public final int[][] robotCommonDiscreteCs
+            = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//寻路得时候复用cs
+    public final boolean[][] robotDiscreteMainChannel
+            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//robot离散化之后是不是主干道
     private final boolean[][][] boatCanReach_
-            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//船是否能到达
+            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//船是否能到达
     private final boolean[][][] boatIsAllInMainChannel_
-            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//整艘船都在主航道上
+            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//整艘船都在主航道上
     private final boolean[][][] boatHasOneInMainChannel_
-            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//有至少一个点在主航道上
+            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//有至少一个点在主航道上
 
-    private final int[][] boatAroundBerthId = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//船闪现能到达得泊位,只有在靠泊区和泊位有值
-    public final int[][][] commonCs
-            = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH][DIR.length / 2];//寻路得时候复用cs
+    private final int[][] boatAroundBerthId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//船闪现能到达得泊位,只有在靠泊区和泊位有值
+    private final int[][] partOfBerthId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//这个点如果是泊位，那么id是啥
+
+    public final int[][][] boatCommonCs
+            = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//寻路得时候复用cs
     public final boolean[][] commonConflictPoints
-            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//寻路得时候复用cs
+            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
 
     public final boolean[][] commonNoResultPoints
-            = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//寻路得时候复用cs
+            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
+
     public int boatGetFlashBerthId(int x, int y) {
         return boatAroundBerthId[x][y];
     }
 
-    public void updateBoatAroundBerthId(ArrayList<Point> points, int berthId) {
+    public void updateBerthAndAround(ArrayList<Point> points, int berthId) {
         for (Point point : points) {
             boatAroundBerthId[point.x][point.y] = berthId;
+            if (isBerth(point.x, point.y)) {
+                partOfBerthId[point.x][point.y] = berthId;
+            }
         }
     }
 
@@ -97,6 +106,11 @@ public class GameMap {
                         || mapData[x][y] == 'T'));//交货点
     }
 
+    public int getDiscreteBelongToBerthId(int x, int y) {
+        assert x % 2 == 1 && y % 2 == 1;//偶数点是额外添加的点，不是真实点
+        return partOfBerthId[x / 2][y / 2];
+    }
+
 
     public boolean boatIsAllInMainChannel(Point corePoint, int direction) {
         return boatIsAllInMainChannel_[corePoint.x][corePoint.y][direction];
@@ -137,6 +151,20 @@ public class GameMap {
                         || mapData[x][y] == 'c'));//不是海洋或者障碍
     }
 
+    public boolean isRobotMainChannel(int x, int y) {
+        return x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
+                (mapData[x][y] == '>'//陆地主干道
+                        || mapData[x][y] == 'R'//机器人购买处
+                        || mapData[x][y] == 'B'//泊位
+                        || mapData[x][y] == 'c');//海陆
+    }
+
+    public boolean isDiscreteRobotMainChannel(int x, int y) {
+        //最外层是墙壁
+        return (x > 0 && x < MAP_DISCRETE_HEIGHT - 1 && y > 0 && y < MAP_DISCRETE_WIDTH - 1 &&
+                (robotDiscreteMainChannel[x][y]));//海陆
+    }
+
     public boolean robotCanReachDiscrete(int x, int y) {
         return (x > 0 && x < MAP_DISCRETE_HEIGHT - 1 && y > 0 && y < MAP_DISCRETE_WIDTH - 1 &&
                 (robotDiscreteMapData[x][y]));//0和最后一行或者列是墙，不判断
@@ -150,11 +178,6 @@ public class GameMap {
                 this.mapData[i][j] = mapData[i][j];//颠倒一下
             }
         }
-//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                this.mapData[j][i] = mapData[i][j];//颠倒一下
-//            }
-//        }
         initRobotsDiscrete();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
@@ -177,6 +200,9 @@ public class GameMap {
                     boatIsAllInMainChannel_[i][j][k] = allIn;
                 }
             }
+        }
+        for (int[] part : partOfBerthId) {
+            Arrays.fill(part, -1);
         }
         for (int[] around : boatAroundBerthId) {
             Arrays.fill(around, -1);
@@ -204,36 +230,35 @@ public class GameMap {
 
 
     private void initRobotsDiscrete() {
+        for (boolean[] mainChannel : robotDiscreteMainChannel) {
+            Arrays.fill(mainChannel, true);
+        }
         for (boolean[] data : robotDiscreteMapData) {
             Arrays.fill(data, true);
         }
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                if (mapData[i][j] == '*' || mapData[i][j] == '~' || mapData[i][j] == '#'
-                        || mapData[i][j] == 'S'
-                        || mapData[i][j] == 'K'
-                        || mapData[i][j] == 'T') {
+                if (!isRobotMainChannel(i, j)) {
+                    //其他东西
+                    Point point = posToDiscrete(i, j);
+                    robotDiscreteMainChannel[point.x][point.y] = false;
+                    //周围八个点和这个点都是不可达点,其实只需要四个点，因为其他四个不可达
+                    for (Point dir : DIR) {
+                        Point tmp = point.add(dir);
+                        robotDiscreteMainChannel[tmp.x][tmp.y] = false;//不是主干道，需要检测
+                    }
+                }
+                if (!robotCanReach(i, j)) {
                     //海洋或者障碍;
                     Point point = posToDiscrete(i, j);
                     robotDiscreteMapData[point.x][point.y] = false;
                     //周围八个点和这个点都是不可达点
                     for (Point dir : DIR) {
                         Point tmp = point.add(dir);
-                        if (robotCanReachDiscrete(tmp.x, tmp.y)) {
-                            robotDiscreteMapData[tmp.x][tmp.y] = false;//不可达
-                        }
+                        robotDiscreteMapData[tmp.x][tmp.y] = false;//不可达
                     }
                 }
             }
-        }
-        //四条墙壁,不能走
-        Arrays.fill(robotDiscreteMapData[0], false);
-        Arrays.fill(robotDiscreteMapData[MAP_DISCRETE_WIDTH - 1], false);
-        for (int i = 0; i < MAP_DISCRETE_HEIGHT; i++) {
-            robotDiscreteMapData[i][0] = false;
-        }
-        for (int i = 0; i < MAP_DISCRETE_HEIGHT; i++) {
-            robotDiscreteMapData[i][MAP_DISCRETE_WIDTH - 1] = false;
         }
     }
 

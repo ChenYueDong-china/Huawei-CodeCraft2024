@@ -111,7 +111,7 @@ public class Berth {
                 break;
             }
         }
-        gameMap.updateBoatAroundBerthId(berthAroundPoints, id);
+        gameMap.updateBerthAndAround(berthAroundPoints, id);
     }
 
     @SuppressWarnings("all")

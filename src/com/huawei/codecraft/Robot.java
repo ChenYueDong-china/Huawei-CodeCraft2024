@@ -63,9 +63,6 @@ public class Robot {
     }
 
     public void finish() {
-        if (!assigned && !avoid) {
-            return;
-        }
         //按照path来看做什么操作
         if (path.size() <= 2) {
             printError("error");
@@ -78,27 +75,27 @@ public class Robot {
         }
         int dir = getDir(target.sub(pos));
         outStream.printf("move %d %d\n", id, dir);
-        if (!assigned) {
-            //没任务，但是避让了
-            return;
-        }
-        //此时是移动后，可以提前做一些事情
-        if (carry) {
-            //要去卖
-            assert targetBerthId != -1;
-            //在他这个berth范围内
-            if (strategy.berths[targetBerthId].inBerth(target)) {
-                //提前卖，移动完毕卖,货物这种时候可以增加
-                pull();
-            }
-        } else {
-            //要去买
-            assert targetWorkBenchId != -1;
-            if (strategy.workbenches.get(targetWorkBenchId).pos.equal(target)) {
-                //提前买，移动完毕买,机器人可以移动后立即取货
-                buy();
-            }
-        }
+//        if (!assigned) {
+//            //没任务，但是避让了
+//            return;
+//        }
+//        //此时是移动后，可以提前做一些事情
+//        if (carry) {
+//            //要去卖
+//            assert targetBerthId != -1;
+//            //在他这个berth范围内
+//            if (strategy.berths[targetBerthId].inBerth(target)) {
+//                //提前卖，移动完毕卖,货物这种时候可以增加
+//                pull();
+//            }
+//        } else {
+//            //要去买
+//            assert targetWorkBenchId != -1;
+//            if (strategy.workbenches.get(targetWorkBenchId).pos.equal(target)) {
+//                //提前买，移动完毕买,机器人可以移动后立即取货
+//                buy();
+//            }
+//        }
     }
 
     private void pull() {
