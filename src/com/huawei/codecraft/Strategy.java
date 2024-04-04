@@ -316,14 +316,22 @@ public class Strategy {
             if (frameId == 1) {
                 outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
                 robots[ROBOTS_PER_PLAYER++] = new Robot(this);
+                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
+                robots[ROBOTS_PER_PLAYER++] = new Robot(this);
             }
-            if (frameId > 1 && frameId < 300) {
+            if (frameId > 1 && frameId < 200) {
                 Robot robot = robots[0];
-//                long l1 = System.nanoTime();
-                robot.path = robotMoveToBerth(gameMap, robot.pos, 0, 9999, null);
-//                long r1 = System.nanoTime();
-//                System.out.println("time:" + (r1 - l1));
+                robot.path = robotToPoint(robot, new Point(93, 73), 9999);
                 robot.finish();
+            }
+            if (frameId > 200 && frameId < 400) {
+                Robot robot = robots[1];
+                robot.path = robotToPoint(robot, new Point(92, 73), 9999);
+                robot.finish();
+            }
+            if (frameId == 401) {
+//                outStream.printf("move %d %d\n", 0, 2);
+                outStream.printf("move %d %d\n", 1, 3);
             }
 
 

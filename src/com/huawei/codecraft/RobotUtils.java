@@ -74,7 +74,7 @@ public class RobotUtils {
         //已经在了，直接返回，防止cs消耗
         start = gameMap.posToDiscrete(start);
         end = gameMap.posToDiscrete(end);
-        if ((berthId == -1 && start.equal(end)) || (gameMap.getDiscreteBelongToBerthId(start.x, start.y) == berthId)) {
+        if ((berthId == -1 && start.equal(end)) || (berthId != -1 && gameMap.getDiscreteBelongToBerthId(start.x, start.y) == berthId)) {
             //输出路径
             ArrayList<Point> result = new ArrayList<>();
             for (int i = 0; i < 3; i++) {
@@ -92,7 +92,7 @@ public class RobotUtils {
         queue.offer(s);
         cs[s.x][s.y] = 0;
         int deep = 0;
-        int count=0;
+        int count = 0;
         while (!queue.isEmpty()) {
             if (deep > maxDeep) {
                 break;
@@ -102,7 +102,7 @@ public class RobotUtils {
                 count++;
                 Point top = queue.poll();
                 assert top != null;
-                if ((berthId == -1 && top.equal(end)) || (gameMap.getDiscreteBelongToBerthId(top.x, top.y) == berthId)) {
+                if ((berthId == -1 && top.equal(end)) || (berthId != -1 && gameMap.getDiscreteBelongToBerthId(top.x, top.y) == berthId)) {
                     //回溯路径
                     ArrayList<Point> result = getRobotPathByCs(cs, top);
                     Collections.reverse(result);

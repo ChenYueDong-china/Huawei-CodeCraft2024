@@ -39,7 +39,7 @@ public class Robot {
         String line = inStream.readLine();
         printMost(line);
         String[] parts = line.trim().split(" ");
-        id = Integer.parseInt(parts[1]);
+        id = Integer.parseInt(parts[0]);
         carry = Integer.parseInt(parts[1]) == 1;
         pos.x = Integer.parseInt(parts[2]);
         pos.y = Integer.parseInt(parts[3]);
