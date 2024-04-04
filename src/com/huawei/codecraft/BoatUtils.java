@@ -8,15 +8,20 @@ import static java.lang.Math.abs;
 
 public class BoatUtils {
 
-    public static void boatGetSafePoints(GameMap gameMap, int[][][] cs, PointWithDirection start, boolean[][] conflictPoints, boolean[][] noResultPoints
-            , ArrayList<PointWithDirection> result, int maxResultCount) {
+    public static ArrayList<PointWithDirection> boatGetSafePoints(GameMap gameMap, int[][][] cs, PointWithDirection start, boolean[][] conflictPoints, boolean[][] noResultPoints
+            , int maxResultCount) {
         //从目标映射的四个点开始搜
         //主航道点解除冲突和非结果
+        for (int[][] c1 : cs) {
+            for (int[] c2 : c1) {
+                Arrays.fill(c2, Integer.MAX_VALUE);
+            }
+        }
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_ROW_NUMS; j++) {
                 if (gameMap.isBoatMainChannel(i, j)) {
                     conflictPoints[i][j] = false;
-                    noResultPoints[i][j] = true;
+                    noResultPoints[i][j] = false;
                 }
             }
         }
@@ -26,6 +31,7 @@ public class BoatUtils {
         int deep = 0;
         cs[s.point.x][s.point.y][s.direction] = s.direction;
         ArrayList<PointWithDirection> twoDistancesPoints = new ArrayList<>();
+        ArrayList<PointWithDirection> result = new ArrayList<>();
         while (!queue.isEmpty() || !twoDistancesPoints.isEmpty()) {
             deep += 1;
             //2距离的下一个点,先保存起来，后面直接插进去
@@ -37,7 +43,7 @@ public class BoatUtils {
             }
             for (int j = 0; j < size; j++) {
                 if (result.size() > maxResultCount) {
-                    return;
+                    return result;
                 }
                 PointWithDirection top = queue.poll();
                 assert top != null;
@@ -51,6 +57,7 @@ public class BoatUtils {
                 nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, conflictPoints);
             }
         }
+        return result;
     }
 
     private static boolean checkIfExcludePoint(GameMap gameMap, boolean[][] conflictPoints, PointWithDirection top) {
@@ -391,7 +398,7 @@ public class BoatUtils {
         }
     }
 
-    private static boolean boatCheckCrash(GameMap gameMap, PointWithDirection myPoint, PointWithDirection otherPoint) {
+    public static boolean boatCheckCrash(GameMap gameMap, PointWithDirection myPoint, PointWithDirection otherPoint) {
         //是否有点重合
         ArrayList<Point> myPoints = gameMap.getBoatPoints(myPoint.point, myPoint.direction);
         ArrayList<Point> othersPoints = gameMap.getBoatPoints(otherPoint.point, otherPoint.direction);
