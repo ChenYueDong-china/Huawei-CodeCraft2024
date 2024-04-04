@@ -206,30 +206,16 @@ public class Strategy {
 //                }
 //            }
 
-            if (frameId > 1 && frameId < 100) {
+            if (frameId > 1 && frameId < 500) {
                 Boat boat = boats[0];
                 Point corePoint = boat.corePoint;
                 int direction = boat.direction;
-                boat.targetBerthId = 0;
+                boat.targetBerthId = 1;
                 long l1 = System.currentTimeMillis();
-                ArrayList<PointWithDirection> path = boatMoveToBerth(gameMap, new PointWithDirection(corePoint, direction)
-                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size(), boat.remainRecoveryTime);
-                if (path != null && path.size() > 1) {
-                    PointWithDirection pointWithDirection = path.get(1);
-                    if (pointWithDirection.point.equal(berths[0].corePoint)) {
-                        //下一个点就是最终点
-                        if (boat.status == 0) {
-                            boat.flashBerth();
-                        }
-                    } else if (pointWithDirection.point.equal(corePoint)) {
-                        //不动
-                    } else if (!pointWithDirection.point.equal(corePoint) && pointWithDirection.direction == direction) {
-                        boat.ship();
-                    } else {
-                        int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
-                        boat.rota(rotaDir);
-                    }
-                }
+                boat.path = boatMoveToBerth(gameMap, new PointWithDirection(corePoint, direction)
+                        , 1, berths[1].corePoint, 9999, berths[1].berthAroundPoints.size(), boat.remainRecoveryTime);
+                boat.finish();
+
             }
 //            if (frameId == 2 || frameId == 3) {
 //                outStream.printf("ship %d\n", 0);
