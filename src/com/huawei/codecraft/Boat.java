@@ -78,7 +78,7 @@ public class Boat {
             flashBerth();//去泊位
         }
         if (next.point.equal(corePoint)) {
-            assert next.direction == direction;//避让
+            assert next.direction == direction;//避让或者已经在目标了
             return;
         }
 

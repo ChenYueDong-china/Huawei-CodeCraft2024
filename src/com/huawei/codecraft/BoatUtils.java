@@ -64,8 +64,9 @@ public class BoatUtils {
     }
 
 
-    public static int boatCheckCrash(GameMap gameMap, int myId, ArrayList<PointWithDirection> myPaths, ArrayList<Integer> otherIds
-            , ArrayList<ArrayList<PointWithDirection>> otherPaths, int maxDetectDistance) {
+    public static int boatCheckCrash(GameMap gameMap, int myId, ArrayList<PointWithDirection> myPaths
+            , ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds
+            , int maxDetectDistance) {
         for (int i = 0; i < otherPaths.size(); i++) {
             ArrayList<PointWithDirection> otherPath = otherPaths.get(i);
             int otherId = otherIds.get(i);
@@ -73,7 +74,7 @@ public class BoatUtils {
             int curDistance = 0;
             for (int deep = 1; deep < myPaths.size(); deep++) {
                 //从我的移动后的点开始
-                PointWithDirection pointWithDirection = myPaths.get(i);
+                PointWithDirection pointWithDirection = myPaths.get(deep);
                 if (deep < otherPath.size()) {
                     boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep));
                     if (crash) {
@@ -98,7 +99,7 @@ public class BoatUtils {
                     }
                 }
 
-                PointWithDirection last = myPaths.get(i - 1);
+                PointWithDirection last = myPaths.get(deep - 1);
                 curDistance += abs(pointWithDirection.point.x - last.point.x) + abs(pointWithDirection.point.y - last.point.y);
                 if (2 * curDistance > maxDetectDistance) {
                     //假设一人走一步，则需要乘以两倍
@@ -111,11 +112,11 @@ public class BoatUtils {
 
     public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
             , int maxDeep, int recoveryTime) {
-        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null, recoveryTime);
+        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null, null, recoveryTime);
     }
 
     public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
-            , int maxDeep, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPath, int recoveryTime) {
+            , int maxDeep, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds, int recoveryTime) {
         //已经在了，直接返回，防止cs消耗
         if (start.point.equal(end.point) && (start.direction == end.direction || end.direction == -1)) {
             //输出路径
@@ -156,7 +157,7 @@ public class BoatUtils {
                     //输出路径
                     return backTrackPath(gameMap, top, cs, recoveryTime);
                 }
-                nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPath);
+                nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPath, otherIds);
             }
         }
         return null;
@@ -164,11 +165,11 @@ public class BoatUtils {
 
     public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, Point berthCorePoint
             , int maxDeep, int aroundPointsCount, int recoveryTime) {
-        return boatMoveToBerth(gameMap, start, berthId, berthCorePoint, maxDeep, aroundPointsCount, -1, null, recoveryTime);
+        return boatMoveToBerth(gameMap, start, berthId, berthCorePoint, maxDeep, aroundPointsCount, -1, null, null, recoveryTime);
     }
 
     public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, Point berthCorePoint
-            , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, int recoveryTime) {
+            , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, int recoveryTime) {
         if (start.point.equals(berthCorePoint)) {
             //直接返回
             ArrayList<PointWithDirection> result = new ArrayList<>();
@@ -227,7 +228,7 @@ public class BoatUtils {
                         minMidPoint = top;
                     }
                 }
-                nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPaths);
+                nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPaths, otherIds);
             }
         }
         if (minMidPoint == null) {
@@ -311,18 +312,18 @@ public class BoatUtils {
 
     private static void nextEnterQueue(GameMap gameMap, int[][][] cs, int deep, Queue<PointWithDirection> queue
             , ArrayList<PointWithDirection> twoDistancesPoints, PointWithDirection top, boolean[][] conflictPoints) {
-        nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, -1, null, conflictPoints);
+        nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, -1, null, null, conflictPoints);
     }
 
     private static void nextEnterQueue(GameMap gameMap, int[][][] cs, int deep, Queue<PointWithDirection> queue
             , ArrayList<PointWithDirection> twoDistancesPoints, PointWithDirection top, int boatId
-            , ArrayList<ArrayList<PointWithDirection>> otherPaths) {
-        nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPaths, null);
+            , ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds) {
+        nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPaths, otherIds, null);
     }
 
     private static void nextEnterQueue(GameMap gameMap, int[][][] cs, int deep, Queue<PointWithDirection> queue
             , ArrayList<PointWithDirection> twoDistancesPoints, PointWithDirection top, int boatId
-            , ArrayList<ArrayList<PointWithDirection>> otherPaths, boolean[][] conflictPoints) {
+            , ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, boolean[][] conflictPoints) {
         for (int k = 0; k < 3; k++) {
             PointWithDirection next = getNextPoint(top, k);
             //合法性判断
@@ -334,17 +335,14 @@ public class BoatUtils {
             if (boatId != -1 && otherPaths != null) {
                 boolean crash = false;
                 assert otherPaths.size() == BOATS_PER_PLAYER;//船多少，path多少
-                for (int otherId = 0; otherId < otherPaths.size(); otherId++) {
-                    if (otherPaths.get(otherId) == null || otherPaths.get(otherId).isEmpty() || boatId == otherId) {
-                        continue;
-                    }
+                for (int i = 0; i < otherPaths.size(); i++) {
+                    int otherId = otherIds.get(i);
                     ArrayList<PointWithDirection> otherPath = otherPaths.get(otherId);
                     if (deep < otherPath.size()) {
                         crash = boatCheckCrash(gameMap, next, otherPath.get(deep));
                         if (crash) {
                             break;
                         }
-
                     }
                     if (otherId < boatId) {
                         //我的这帧撞他的这帧，他的下一位置撞我的这位置

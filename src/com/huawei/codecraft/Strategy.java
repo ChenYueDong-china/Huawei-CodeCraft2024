@@ -5,8 +5,7 @@ import java.util.*;
 
 import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN;
 import static com.huawei.codecraft.BoatStatus.*;
-import static com.huawei.codecraft.BoatUtils.boatMoveToPoint;
-import static com.huawei.codecraft.BoatUtils.boatMoveToBerth;
+import static com.huawei.codecraft.BoatUtils.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.*;
@@ -186,97 +185,57 @@ public class Strategy {
                 , boat.remainRecoveryTime);
     }
 
+    public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep
+            , ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
+        return boatMoveToPoint(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+                , pointWithDirection, maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime
+        );
+    }
+
 
     public void mainLoop() throws IOException {
         while (input()) {
-            if (money >= BOAT_PRICE && BOATS_PER_PLAYER < 1) {
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
-            }
 
-
-//            if (frameId > 1 && frameId < 100) {
-//                Point corePoint = boat.corePoint;
-//                int direction = boat.direction;
-//
-//                long l1 = System.currentTimeMillis();
-////                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
-////                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
-//                ArrayList<PointWithDirection> path = boatMoveTo(gameMap, new PointWithDirection(corePoint, direction)
-//                        , new PointWithDirection(new Point(94, 70), 1), 9999
-//                        , boat.remainRecoveryTime);
-//                long l2 = System.currentTimeMillis();
-////                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
-//                if (path != null && path.size() > 1) {
-//                    PointWithDirection pointWithDirection = path.get(1);
-//                    if (pointWithDirection.direction == direction) {
-//                        boat.ship();
-//                    } else {
-//                        int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
-//                        boat.rota(rotaDir);
-//                    }
-//                }
-//            }
-
-            if (frameId > 1 && frameId < 500) {
+            if (frameId > 1 && frameId < 100) {
                 Boat boat = boats[0];
-                Berth berth = berths[4];
-//                boat.targetBerthId = berth.id;
-//                boat.path = boatToBerth(boat, berth, 9999);
                 boat.path = boatToPoint(boat, new PointWithDirection(new Point(94, 70), 1), 9999);
                 boat.finish();
             }
-//            if (frameId == 2 || frameId == 3) {
-//                outStream.printf("ship %d\n", 0);
-//            }
-//            if (frameId == 101) {
-//                outStream.printf("ship %d\n", 0);
-//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-//                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
-//            }
-//            if (frameId > 100 && frameId < 200) {
-//                Point corePoint = boats[1].corePoint;
-//                int direction = boats[1].direction;
-//                long l1 = System.currentTimeMillis();
-////                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
-////                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
-//                ArrayList<PointWithDirection> path = moveTo(gameMap, new PointWithDirection(corePoint, direction)
-//                        , new PointWithDirection(new Point(93, 64), 0), 9999);
-//                long l2 = System.currentTimeMillis();
-////                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
-//                if (path != null && path.size() > 1) {
-//                    PointWithDirection pointWithDirection = path.get(1);
-//                    if (pointWithDirection.direction == direction) {
-//                        outStream.printf("ship %d\n", 1);
-//                    } else {
-//                        int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
-//                        outStream.printf("rot %d %d\n", 1, rotaDir);
-//                    }
-//                }
-//            }
-//            if (frameId == 200) {
-//                outStream.printf("ship %d\n", 1);
-//                outStream.printf("ship %d\n", 0);
-//            }
-//            if (frameId == 201) {
-//                outStream.printf("ship %d\n", 1);
-//                outStream.printf("ship %d\n", 0);
-//
-//            }
-//            if (frameId == 202) {
-//                outStream.printf("ship %d\n", 1);
-//                outStream.printf("ship %d\n", 0);
-//            }
-//            if (frameId == 203) {
-//                outStream.printf("ship %d\n", 1);
-//                outStream.printf("ship %d\n", 0);
-//            }
-//            if (frameId == 204) {
-//                outStream.printf("ship %d\n", 1);
-//                outStream.printf("ship %d\n", 0);
-//            }
+            if (frameId > 100 && frameId < 200) {
+                Boat boat = boats[1];
+                boat.path = boatToPoint(boat, new PointWithDirection(new Point(93, 60), 0), 9999);
+                boat.finish();
+            }
+
+            if (frameId > 200 && frameId < 500) {
+                PointWithDirection boat0Target = new PointWithDirection(new Point(94, 55), 1);
+                PointWithDirection boat1Target = new PointWithDirection(new Point(93, 75), 0);
+                Boat boat = boats[0];
+                boat.path = boatToPoint(boat, boat0Target, 9999);
+                Boat boat1 = boats[1];
+                ArrayList<PointWithDirection> myPath = boatToPoint(boat, boat1Target, 9999);
+                ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
+                ArrayList<Integer> otherIds = new ArrayList<>();
+                otherIds.add(0);
+                otherPaths.add(boat.path);
+                if (boatCheckCrash(gameMap, 1, myPath, otherPaths, otherIds
+                        , 9999) != -1) {
+                    boat1.path = boatToPoint(boat1, boat1Target, 9999, otherPaths, otherIds);
+                } else {
+                    boat1.path = myPath;
+                }
+                boat.finish();
+                boat1.finish();
+            }
 
 
+            if (frameId == 1) {
+                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
+                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
+
+            }
             outStream.print("OK\n");
             outStream.flush();
         }
