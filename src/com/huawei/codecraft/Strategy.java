@@ -5,9 +5,10 @@ import java.util.*;
 
 import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN;
 import static com.huawei.codecraft.BoatStatus.*;
+import static com.huawei.codecraft.BoatUtils.boatMoveToPoint;
+import static com.huawei.codecraft.BoatUtils.boatMoveToBerth;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
-import static com.huawei.codecraft.BoatUtils.*;
 import static java.lang.Math.*;
 
 public class Strategy {
@@ -174,6 +175,17 @@ public class Strategy {
         }
     }
 
+    public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep) {
+        return boatMoveToBerth(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+                , berth.id, berth.corePoint, maxDeep, berth.berthAroundPoints.size(), boat.remainRecoveryTime);
+    }
+
+    public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep) {
+        return BoatUtils.boatMoveToPoint(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+                , pointWithDirection, maxDeep
+                , boat.remainRecoveryTime);
+    }
+
 
     public void mainLoop() throws IOException {
         while (input()) {
@@ -208,14 +220,10 @@ public class Strategy {
 
             if (frameId > 1 && frameId < 500) {
                 Boat boat = boats[0];
-                Point corePoint = boat.corePoint;
-                int direction = boat.direction;
-                boat.targetBerthId = 1;
-                long l1 = System.currentTimeMillis();
-                boat.path = boatMoveToBerth(gameMap, new PointWithDirection(corePoint, direction)
-                        , 1, berths[1].corePoint, 9999, berths[1].berthAroundPoints.size(), boat.remainRecoveryTime);
+                Berth berth = berths[4];
+                boat.targetBerthId = berth.id;
+                boat.path = boatToBerth(boat, berth, 9999);
                 boat.finish();
-
             }
 //            if (frameId == 2 || frameId == 3) {
 //                outStream.printf("ship %d\n", 0);

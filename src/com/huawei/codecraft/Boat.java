@@ -74,7 +74,6 @@ public class Boat {
             return;//恢复状态，啥都干不了
         }
         PointWithDirection next = path.get(1);
-
         if (targetBerthId != -1 && next.point.equal(strategy.berths[targetBerthId].corePoint)) {
             flashBerth();//去泊位
         }

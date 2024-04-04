@@ -109,12 +109,12 @@ public class BoatUtils {
         return -1;
     }
 
-    public static ArrayList<PointWithDirection> boatMoveTo(GameMap gameMap, PointWithDirection start, PointWithDirection end
+    public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
             , int maxDeep, int recoveryTime) {
-        return boatMoveTo(gameMap, start, end, maxDeep, -1, null,recoveryTime);
+        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null,recoveryTime);
     }
 
-    public static ArrayList<PointWithDirection> boatMoveTo(GameMap gameMap, PointWithDirection start, PointWithDirection end
+    public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
             , int maxDeep, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPath, int recoveryTime) {
         //已经在了，直接返回，防止cs消耗
         if (start.point.equal(end.point) && (start.direction == end.direction || end.direction == -1)) {
