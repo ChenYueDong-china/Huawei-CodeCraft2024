@@ -84,7 +84,7 @@ public class GameMap {
         return clockwise ? 0 : 1;
     }
 
-    public boolean isMainChannel(int x, int y) {
+    public boolean isBoatMainChannel(int x, int y) {
         return (x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '~'//主航道
                         || mapData[x][y] == 'S'//购买地块
@@ -160,7 +160,7 @@ public class GameMap {
                     ArrayList<Point> boatPoints = getBoatPoints(new Point(i, j), k);
                     //都是主航道点
                     for (Point point : boatPoints) {
-                        if (isMainChannel(point.x, point.y)) {
+                        if (isBoatMainChannel(point.x, point.y)) {
                             oneIn = true;
                         } else {
                             allIn = false;
