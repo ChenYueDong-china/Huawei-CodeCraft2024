@@ -2,7 +2,6 @@ package com.huawei.codecraft;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class Utils {
     @SuppressWarnings("all")
@@ -123,13 +122,41 @@ public class Utils {
 
     };
 
+    public static PointWithDirection getBoatRotationPoint(PointWithDirection pointWithDirection, boolean clockwise) {
+        Point corePint = pointWithDirection.point;
+        int originDir = pointWithDirection.direction;
+        int[] data;
+        if (clockwise) {
+            data = new int[]{0, 3, 1, 2, 0};
+        } else {
+            data = new int[]{0, 2, 1, 3, 0};
+        }
+        int nextDir = -1;
+        for (int i = 0; i < DIR.length / 2; i++) {
+            if (originDir == data[i]) {
+                nextDir = data[i + 1];
+                break;
+            }
+        }
+        //位置
+        Point[] data2;
+        if (clockwise) {
+            data2 = new Point[]{new Point(0, 0), new Point(2, 2), new Point(2, 0), new Point(0, 2)};
+        } else {
+            data2 = new Point[]{new Point(0, 0), new Point(0, 2), new Point(1, 1), new Point(-1, 1)};
+        }
+        Point nextPoint = corePint.add(data2[nextDir]).sub(data2[originDir]);
+        return new PointWithDirection(nextPoint, nextDir);
+
+    }
+
     public static int getIntInput() throws IOException {
         String line = inStream.readLine();
         printMost(line);
         return Integer.parseInt(line.trim().split(" ")[0]);
     }
 
-    public static ArrayList<Point> getPathByCs(int[][] cs, Point target) {
+    public static ArrayList<Point> getRobotPathByCs(int[][] cs, Point target) {
         ArrayList<Point> result = new ArrayList<>();
         Point t = new Point(target);
         result.add(new Point(t));

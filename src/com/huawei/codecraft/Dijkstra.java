@@ -58,7 +58,7 @@ public class Dijkstra {
         if (cs[source.x][source.y] == Integer.MAX_VALUE) {
             return new ArrayList<>();
         }
-        ArrayList<Point> result = getPathByCs(cs, source);
+        ArrayList<Point> result = getRobotPathByCs(cs, source);
         //细化，转成精细坐标
         return mGameMap.toDiscretePath(result);
     }
@@ -69,7 +69,7 @@ public class Dijkstra {
         if (cs[target.x][target.y] == Integer.MAX_VALUE) {
             return new ArrayList<>();
         }
-        ArrayList<Point> result = getPathByCs(cs, target);
+        ArrayList<Point> result = getRobotPathByCs(cs, target);
         Collections.reverse(result);
         //细化，转成精细坐标
         return mGameMap.toDiscretePath(result);

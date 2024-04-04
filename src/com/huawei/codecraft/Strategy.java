@@ -179,37 +179,66 @@ public class Strategy {
         while (input()) {
             if (money >= BOAT_PRICE && BOATS_PER_PLAYER < 1) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                boats[BOATS_PER_PLAYER++] = new Boat(boatCapacity);
+                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
             }
 
+
+//            if (frameId > 1 && frameId < 100) {
+//                Point corePoint = boat.corePoint;
+//                int direction = boat.direction;
+//
+//                long l1 = System.currentTimeMillis();
+////                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
+////                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
+//                ArrayList<PointWithDirection> path = boatMoveTo(gameMap, new PointWithDirection(corePoint, direction)
+//                        , new PointWithDirection(new Point(94, 70), 1), 9999
+//                        , boat.remainRecoveryTime);
+//                long l2 = System.currentTimeMillis();
+////                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
+//                if (path != null && path.size() > 1) {
+//                    PointWithDirection pointWithDirection = path.get(1);
+//                    if (pointWithDirection.direction == direction) {
+//                        boat.ship();
+//                    } else {
+//                        int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
+//                        boat.rota(rotaDir);
+//                    }
+//                }
+//            }
+
             if (frameId > 1 && frameId < 100) {
-                Point corePoint = boats[0].corePoint;
-                int direction = boats[0].direction;
+                Boat boat = boats[0];
+                Point corePoint = boat.corePoint;
+                int direction = boat.direction;
+                boat.targetBerthId = 0;
                 long l1 = System.currentTimeMillis();
-//                ArrayList<PointWithDirection> path = moveToBerth(gameMap, new PointWithDirection(corePoint, direction)
-//                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size());
-                ArrayList<PointWithDirection> path = boatMoveTo(gameMap, new PointWithDirection(corePoint, direction)
-                        , new PointWithDirection(new Point(94, 70), 1), 9999);
-                long l2 = System.currentTimeMillis();
-//                System.out.println("frameId:" + frameId + ",runTime:" + (l2 - l1));
+                ArrayList<PointWithDirection> path = boatMoveToBerth(gameMap, new PointWithDirection(corePoint, direction)
+                        , 0, berths[0].corePoint, 9999, berths[0].berthAroundPoints.size(), boat.remainRecoveryTime);
                 if (path != null && path.size() > 1) {
                     PointWithDirection pointWithDirection = path.get(1);
-                    if (pointWithDirection.direction == direction) {
-                        outStream.printf("ship %d\n", 0);
+                    if (pointWithDirection.point.equal(berths[0].corePoint)) {
+                        //下一个点就是最终点
+                        if (boat.status == 0) {
+                            boat.flashBerth();
+                        }
+                    } else if (pointWithDirection.point.equal(corePoint)) {
+                        //不动
+                    } else if (!pointWithDirection.point.equal(corePoint) && pointWithDirection.direction == direction) {
+                        boat.ship();
                     } else {
                         int rotaDir = gameMap.getRotationDir(direction, pointWithDirection.direction);
-                        outStream.printf("rot %d %d\n", 0, rotaDir);
+                        boat.rota(rotaDir);
                     }
                 }
             }
-            if(frameId==2||frameId==3){
-                outStream.printf("ship %d\n", 0);
-            }
-            if (frameId == 101) {
-                outStream.printf("ship %d\n", 0);
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                boats[BOATS_PER_PLAYER++] = new Boat(boatCapacity);
-            }
+//            if (frameId == 2 || frameId == 3) {
+//                outStream.printf("ship %d\n", 0);
+//            }
+//            if (frameId == 101) {
+//                outStream.printf("ship %d\n", 0);
+//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+//                boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
+//            }
 //            if (frameId > 100 && frameId < 200) {
 //                Point corePoint = boats[1].corePoint;
 //                int direction = boats[1].direction;
@@ -267,90 +296,90 @@ public class Strategy {
 
     }
 
-    private void boatDoAction() {
-        //船只选择回家
-        for (Boat boat : boats) {
-            if (boat.targetId != -1 && boat.num == boat.capacity) {//满了回家
-                boat.go();
-                boat.remainTime = berths[boat.targetId].transportTime;
-                boat.status = 0;//移动中
-                boat.targetId = -1;
-                boat.estimateComingBerthId = -1;
-                boat.exactStatus = IN_ORIGIN_TO_BERTH;
-            } else if (boat.num > 0 && boat.targetId != -1) {
-                int minSellTime;
-                if (boat.status != 0) {
-                    //说明到达目标了
-                    minSellTime = berths[boat.targetId].transportTime;
-                } else {
-                    minSellTime = min(berths[boat.lastArriveTargetId].transportTime,
-                            boat.remainTime + berths[boat.targetId].transportTime);//去到之后再会来的时间
-                }
-                if (frameId + minSellTime >= GAME_FRAME - FPS / 10) {//会掉帧，预留10帧
-                    //极限卖
-                    boat.go();
-                    boat.remainTime = minSellTime;
-                    boat.status = 0;//移动中
-                    boat.targetId = -1;
-                    boat.assigned = true;
-                    boat.estimateComingBerthId = -1;
-                    boat.exactStatus = IN_ORIGIN_TO_BERTH;
-                }
-            }
-        }
-        //船只贪心去买卖，跟机器人做一样的决策
-        //先保存一下泊位的价值列表
-        //1当前价值列表+机器人运过来的未来价值列表
-        int[] goodsNumList = new int[BERTH_PER_PLAYER];
-        for (int i = 0; i < goodsNumList.length; i++) {
-            goodsNumList[i] = berths[i].goodsNums;
-        }
-        for (Robot robot : robots) {
-            if (!robot.assigned) {
-                continue;
-            }
-            if (robot.targetBerthId != -1) {
-                goodsNumList[robot.targetBerthId]++;
-            }
-        }
-        int[] goodComingTimes = new int[BERTH_PER_PLAYER];//货物开始来泊位的最早时间
-        Arrays.fill(goodComingTimes, 0);//这一帧开始到来
-        //贪心切换找一个泊位
-
-        while (true) {
-            if (!boatGreedyBuy(goodsNumList, goodComingTimes)) {
-                break;
-            }
-        }
-
-
-        //装载货物
-        for (Boat boat : boats) {
-            //移动立即生效
-            if (boat.remainTime > 0) {
-                boat.remainTime--;
-            }
-            //移动完之后的下一帧才能开始装货
-            if (boat.status == 1 && boat.targetId != -1 && berths[boat.targetId].goodsNums > 0) {
-                //正常运行,开始装货，如果跳帧，什么时候到达已经不知道了
-                //如果remainTime不为0，说明中间跳帧了，多装几次货就好了
-                for (int i = 0; i < (boat.remainTime + 1); i++) {
-                    int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
-                    load = min(load, boat.capacity - boat.num);//剩余空间
-                    boat.num += load;
-                    berths[boat.targetId].goodsNums -= load;
-                    for (int j = 0; j < load; j++) {
-                        assert !berths[boat.targetId].goods.isEmpty();
-                        Integer value = berths[boat.targetId].goods.poll();
-                        assert value != null;
-                        boat.value += value;
-                        berths[boat.targetId].totalValue -= value;
-                    }
-                }
-                boat.remainTime = 0;
-            }
-        }
-    }
+//    private void boatDoAction() {
+//        //船只选择回家
+//        for (Boat boat : boats) {
+//            if (boat.targetId != -1 && boat.num == boat.capacity) {//满了回家
+//                boat.go();
+//                boat.remainTime = berths[boat.targetId].transportTime;
+//                boat.status = 0;//移动中
+//                boat.targetId = -1;
+//                boat.estimateComingBerthId = -1;
+//                boat.exactStatus = IN_ORIGIN_TO_BERTH;
+//            } else if (boat.num > 0 && boat.targetId != -1) {
+//                int minSellTime;
+//                if (boat.status != 0) {
+//                    //说明到达目标了
+//                    minSellTime = berths[boat.targetId].transportTime;
+//                } else {
+//                    minSellTime = min(berths[boat.lastArriveTargetId].transportTime,
+//                            boat.remainTime + berths[boat.targetId].transportTime);//去到之后再会来的时间
+//                }
+//                if (frameId + minSellTime >= GAME_FRAME - FPS / 10) {//会掉帧，预留10帧
+//                    //极限卖
+//                    boat.go();
+//                    boat.remainTime = minSellTime;
+//                    boat.status = 0;//移动中
+//                    boat.targetId = -1;
+//                    boat.assigned = true;
+//                    boat.estimateComingBerthId = -1;
+//                    boat.exactStatus = IN_ORIGIN_TO_BERTH;
+//                }
+//            }
+//        }
+//        //船只贪心去买卖，跟机器人做一样的决策
+//        //先保存一下泊位的价值列表
+//        //1当前价值列表+机器人运过来的未来价值列表
+//        int[] goodsNumList = new int[BERTH_PER_PLAYER];
+//        for (int i = 0; i < goodsNumList.length; i++) {
+//            goodsNumList[i] = berths[i].goodsNums;
+//        }
+//        for (Robot robot : robots) {
+//            if (!robot.assigned) {
+//                continue;
+//            }
+//            if (robot.targetBerthId != -1) {
+//                goodsNumList[robot.targetBerthId]++;
+//            }
+//        }
+//        int[] goodComingTimes = new int[BERTH_PER_PLAYER];//货物开始来泊位的最早时间
+//        Arrays.fill(goodComingTimes, 0);//这一帧开始到来
+//        //贪心切换找一个泊位
+//
+//        while (true) {
+//            if (!boatGreedyBuy(goodsNumList, goodComingTimes)) {
+//                break;
+//            }
+//        }
+//
+//
+//        //装载货物
+//        for (Boat boat : boats) {
+//            //移动立即生效
+//            if (boat.remainTime > 0) {
+//                boat.remainTime--;
+//            }
+//            //移动完之后的下一帧才能开始装货
+//            if (boat.status == 1 && boat.targetId != -1 && berths[boat.targetId].goodsNums > 0) {
+//                //正常运行,开始装货，如果跳帧，什么时候到达已经不知道了
+//                //如果remainTime不为0，说明中间跳帧了，多装几次货就好了
+//                for (int i = 0; i < (boat.remainTime + 1); i++) {
+//                    int load = min(berths[boat.targetId].loadingSpeed, berths[boat.targetId].goodsNums);
+//                    load = min(load, boat.capacity - boat.num);//剩余空间
+//                    boat.num += load;
+//                    berths[boat.targetId].goodsNums -= load;
+//                    for (int j = 0; j < load; j++) {
+//                        assert !berths[boat.targetId].goods.isEmpty();
+//                        Integer value = berths[boat.targetId].goods.poll();
+//                        assert value != null;
+//                        boat.value += value;
+//                        berths[boat.targetId].totalValue -= value;
+//                    }
+//                }
+//                boat.remainTime = 0;
+//            }
+//        }
+//    }
 
 
     private boolean boatGreedyBuy(int[] goodsNumList, int[] goodComingTimes) {
@@ -445,8 +474,8 @@ public class Strategy {
         if (!stat.isEmpty()) {
             Collections.sort(stat);
             //同一个目标不用管
-            boatRealDecision(goodsNumList, goodComingTimes, stat.get(0).berth
-                    , stat.get(0).boat, stat.get(0).updateTime, stat.get(0).count);
+//            boatRealDecision(goodsNumList, goodComingTimes, stat.get(0).berth
+//                    , stat.get(0).boat, stat.get(0).updateTime, stat.get(0).count);
             return true;
         }
 
@@ -549,34 +578,34 @@ public class Strategy {
         if (!stat.isEmpty()) {
             Collections.sort(stat);
             //同一个目标不用管
-            boatRealDecision(goodsNumList, goodComingTimes, stat.get(0).berth
-                    , stat.get(0).boat, stat.get(0).updateTime, stat.get(0).count);
+//            boatRealDecision(goodsNumList, goodComingTimes, stat.get(0).berth
+//                    , stat.get(0).boat, stat.get(0).updateTime, stat.get(0).count);
             return true;
         }
         return false;
 
     }
 
-    private static void boatRealDecision(int[] goodsNumList, int[] goodComingTimes, Berth berth, Boat boat, int updateTime, int count) {
-        goodsNumList[berth.id] -= count;
-        goodComingTimes[berth.id] = updateTime;
-        //boat去移动
-        if (boat.targetId != berth.id && (!(boat.status == 0 && boat.targetId == -1))) {
-            boat.ship(berth.id);//不在往原点运输中
-            if (boat.lastArriveTargetId == -1) {
-                //在虚拟点，或者虚拟点到泊位
-                boat.remainTime = berth.transportTime;
-            } else {
-                boat.remainTime = BERTH_CHANGE_TIME;
-            }
-            //printERROR("boat:" + boat.id + ",原来目标:" + boat.targetId + ",现在目标:" + berth.id + ",time:" + boat.remainTime);
-            boat.targetId = berth.id;
-            boat.status = 0;
-        }
-        boat.assigned = true;
-        //更新泊位的货物列表和前缀和,说明这个船消耗了这么多货物
-        boat.estimateComingBerthId = berth.id;
-    }
+//    private static void boatRealDecision(int[] goodsNumList, int[] goodComingTimes, Berth berth, Boat boat, int updateTime, int count) {
+//        goodsNumList[berth.id] -= count;
+//        goodComingTimes[berth.id] = updateTime;
+//        //boat去移动
+//        if (boat.targetId != berth.id && (!(boat.status == 0 && boat.targetId == -1))) {
+//            boat.ship(berth.id);//不在往原点运输中
+//            if (boat.lastArriveTargetId == -1) {
+//                //在虚拟点，或者虚拟点到泊位
+//                boat.remainTime = berth.transportTime;
+//            } else {
+//                boat.remainTime = BERTH_CHANGE_TIME;
+//            }
+//            //printERROR("boat:" + boat.id + ",原来目标:" + boat.targetId + ",现在目标:" + berth.id + ",time:" + boat.remainTime);
+//            boat.targetId = berth.id;
+//            boat.status = 0;
+//        }
+//        boat.assigned = true;
+//        //更新泊位的货物列表和前缀和,说明这个船消耗了这么多货物
+//        boat.estimateComingBerthId = berth.id;
+//    }
 
 
     private boolean updateSumTimes(int[] goodsNumList, int[] goodComingTimes, Boat boat, double goodsComingSpeed, int needCount) {
@@ -880,7 +909,7 @@ public class Strategy {
             Point top = stack.peek().p;
             if (top.equal(end)) {
                 //回溯路径
-                ArrayList<Point> result = getPathByCs(discreteCs, top);
+                ArrayList<Point> result = getRobotPathByCs(discreteCs, top);
                 Collections.reverse(result);
                 path.clear();
                 path.addAll(result);
