@@ -39,12 +39,12 @@ public class GameMap {
         return boatAroundBerthId[x][y];
     }
 
-    public void updateBerthAndAround(ArrayList<Point> points, int berthId) {
-        for (Point point : points) {
+    public void updateBerthAndAround(ArrayList<Point> AroundPoints, ArrayList<Point> corePoints, int berthId) {
+        for (Point point : AroundPoints) {
             boatAroundBerthId[point.x][point.y] = berthId;
-            if (isBerth(point.x, point.y)) {
-                partOfBerthId[point.x][point.y] = berthId;
-            }
+        }
+        for (Point corePoint : corePoints) {
+            partOfBerthId[corePoint.x][corePoint.y] = berthId;
         }
     }
 

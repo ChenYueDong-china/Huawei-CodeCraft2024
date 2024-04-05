@@ -131,7 +131,7 @@ public class Berth {
                 break;
             }
         }
-        gameMap.updateBerthAndAround(berthAroundPoints, id);
+        gameMap.updateBerthAndAround(berthAroundPoints,berthPoints, id);
     }
 
     @SuppressWarnings("all")
