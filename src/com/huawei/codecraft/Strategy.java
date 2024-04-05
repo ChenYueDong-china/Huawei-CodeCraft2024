@@ -36,11 +36,11 @@ public class Strategy {
     public double avgPullGoodsValue = 150;//总的卖的货物价值
     public double avgPullGoodsTime = 15;//10个泊位平均卖货时间
 
-    public final Robot[] robots = new Robot[MAX_ROBOTS_PER_PLAYER];
+    public final ArrayList<Robot> robots = new ArrayList<>();
     @SuppressWarnings("unchecked")
     public final HashSet<Integer>[] robotLock = new HashSet[MAX_ROBOTS_PER_PLAYER];
-    public final Berth[] berths = new Berth[MAX_BERTH_PER_PLAYER];
-    public final Boat[] boats = new Boat[MAX_BOATS_PER_PLAYER];
+    public final ArrayList<Berth> berths = new ArrayList<>();
+    public final ArrayList<Boat> boats = new ArrayList<Boat>();
     @SuppressWarnings("unchecked")
     public ArrayList<Point>[] robotsPredictPath = new ArrayList[MAX_ROBOTS_PER_PLAYER];
 
@@ -86,21 +86,23 @@ public class Strategy {
         //码头
         long maxUpdateTime = 0;
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
+            berths.add(new Berth());
+        }
+        for (Berth berth : berths) {
             String s = inStream.readLine();
             printMost(s);
             String[] parts = s.trim().split(" ");
             int id = Integer.parseInt(parts[0]);
-            berths[id] = new Berth();
-            berths[id].corePoint.x = Integer.parseInt(parts[1]);
-            berths[id].corePoint.y = Integer.parseInt(parts[2]);
-            berths[id].loadingSpeed = Integer.parseInt(parts[3]);
-            berths[id].id = id;
+            berth.corePoint.x = Integer.parseInt(parts[1]);
+            berth.corePoint.y = Integer.parseInt(parts[2]);
+            berth.loadingSpeed = Integer.parseInt(parts[3]);
+            berth.id = id;
             long curTime = System.currentTimeMillis();
             if (curTime - startTime + maxUpdateTime > 1000 * 4 + 800) {
-                berths[id].init(gameMap, true);
+                berth.init(gameMap, true);
                 continue;
             }
-            berths[id].init(gameMap, false);
+            berth.init(gameMap, false);
             long r = System.currentTimeMillis();
             maxUpdateTime = max(maxUpdateTime, r - curTime);
         }
@@ -185,7 +187,7 @@ public class Strategy {
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep) {
         boat.targetBerthId = berth.id;
         return boatMoveToBerth(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
-                , berth.id, new PointWithDirection(berth.corePoint,berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.remainRecoveryTime);
+                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep) {
@@ -218,15 +220,16 @@ public class Strategy {
         return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, otherPaths);
     }
 
-    public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end, int maxDeep
+    long totalTime = 0;
+
+    public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end
             , ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
-        return robotMoveToPointHeuristic(gameMap, robot.pos, end, maxDeep, otherPaths, heuristicCs);
+        return robotMoveToPointHeuristic(gameMap, robot.pos, end, otherPaths, heuristicCs);
     }
 
 
     public void mainLoop() throws IOException {
         while (input()) {
-
             dispatch();
 
 //            if (frameId > 1 && frameId < 100) {
@@ -352,28 +355,25 @@ public class Strategy {
 
 
     private void dispatch() {
-
         robotDoAction();
-//            boatDoAction();
+
 
         if (frameId == 1) {
-            outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-            robots[ROBOTS_PER_PLAYER++] = new Robot(this);
-            outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-            robots[ROBOTS_PER_PLAYER++] = new Robot(this);
-            outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
-            boats[BOATS_PER_PLAYER++] = new Boat(this, boatCapacity);
+            for (int i = 0; i < 12; i++) {
+                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
+                robots.add(new Robot(this));
+            }
         }
-        if (frameId > 1 && frameId < 100) {
-            Boat boat = boats[0];
-            boat.path = boatToPoint(boat,new PointWithDirection(new Point(101,52),3), 9999);
-            boat.finish();
-        }
-        if(frameId>100&&frameId<200){
-            Boat boat = boats[0];
-            boat.path = boatToBerth(boat, berths[2], 9999);
-            boat.finish();
-        }
+//        if (frameId > 1 && frameId < 100) {
+//            Boat boat = boats[0];
+//            boat.path = boatToPoint(boat,new PointWithDirection(new Point(101,52),3), 9999);
+//            boat.finish();
+//        }
+//        if(frameId>100&&frameId<200){
+//            Boat boat = boats[0];
+//            boat.path = boatToBerth(boat, berths[2], 9999);
+//            boat.finish();
+//        }
     }
 
 //    private void boatDoAction() {
@@ -566,12 +566,12 @@ public class Strategy {
             if (boatDecisionType == DECISION_ON_ORIGIN) {
                 //不可以切换泊位,
                 assert boat.estimateComingBerthId == boat.targetId;
-                if (!BOAT_NO_WAIT || frameId + berths[boat.targetId].transportTime * 3 > GAME_FRAME || berths[boat.targetId].goodsNums > 0) {
+                if (!BOAT_NO_WAIT || frameId + berths.get(boat.targetId).transportTime * 3 > GAME_FRAME || berths.get(boat.targetId).goodsNums > 0) {
                     if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingTime, needCount))
                         return true;
                 } else {
                     //回家
-                    boat.remainTime = berths[boat.targetId].transportTime;
+                    boat.remainTime = berths.get(boat.targetId).transportTime;
                     boat.status = 0;//移动中
                     boat.targetId = -1;
                     boat.estimateComingBerthId = -1;
@@ -580,13 +580,13 @@ public class Strategy {
                 }
             }
 
-            if (BOAT_NO_WAIT && frameId + berths[boat.targetId].transportTime * 3 < GAME_FRAME) {
-                if (berths[boat.targetId].goodsNums > 0) {
+            if (BOAT_NO_WAIT && frameId + berths.get(boat.targetId).transportTime * 3 < GAME_FRAME) {
+                if (berths.get(boat.targetId).goodsNums > 0) {
                     if (updateSumTimes(goodsNumList, goodComingTimes, boat, goodsComingTime, needCount))
                         return true;
                 }
                 //没货物了，选择切泊位买了走人，或者回家
-                double maxProfit = 1.0 * boat.num / berths[boat.targetId].transportTime / 2;
+                double maxProfit = 1.0 * boat.num / berths.get(boat.targetId).transportTime / 2;
                 Berth changeBerth = null;
                 int maxWaitTime = -1;
                 int maxCount = 0;
@@ -606,8 +606,8 @@ public class Strategy {
                     realCount = min(realCount, goodsNumList[berth.id] + (int) ((buyTime - goodComingTimes[berth.id]) / goodsComingTime));//来货
                     int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
                     int totalWaitTime = goodComingTimes[berth.id] + (int) ceil(max(0, realCount - goodsNumList[berth.id]) * goodsComingTime);
-                    double profit = 1.0 * (realCount + boat.num) / (berths[boat.targetId].transportTime + 1.0 * boat.num
-                            / berths[boat.targetId].loadingSpeed + buyTime + loadTime + sellTime);
+                    double profit = 1.0 * (realCount + boat.num) / (berths.get(boat.targetId).transportTime + 1.0 * boat.num
+                            / berths.get(boat.targetId).loadingSpeed + buyTime + loadTime + sellTime);
                     if (profit > maxProfit) {
                         changeBerth = berth;
                         maxProfit = profit;
@@ -625,14 +625,14 @@ public class Strategy {
                 }
             } else {
                 //目前船所在的泊位的来货速度,如果来货速度实在太慢，不需要等，直接切目标
-                int curBerthGoodsComingTime = frameId / max(1, berths[boat.targetId].totalGoodsNums);
+                int curBerthGoodsComingTime = frameId / max(1, berths.get(boat.targetId).totalGoodsNums);
                 for (Berth berth : berths) {
                     int buyTime = boat.targetId == berth.id ? 0 : BERTH_CHANGE_TIME;
                     int sellTime = berth.transportTime;
                     if (frameId + buyTime + sellTime >= GAME_FRAME) {
                         continue;//不干
                     }
-                    if (berth.id != boat.targetId && berths[boat.targetId].goodsNums > 0) {
+                    if (berth.id != boat.targetId && berths.get(boat.targetId).goodsNums > 0) {
                         continue;//有货物了，船只能选择这个泊位不变
                     }
 
@@ -740,6 +740,9 @@ public class Strategy {
 
     private void robotDoAction() {
         workbenchesLock.clear();//动态需要解锁
+        for (HashSet<Integer> set : robotLock) {
+            set.clear();
+        }
         while (true) {
             if (!greedySell()) {
                 break;
@@ -754,9 +757,12 @@ public class Strategy {
 
         //选择路径，碰撞避免
         Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
-        System.arraycopy(robots, 0, tmpRobots, 0, ROBOTS_PER_PLAYER);
+        for (int i = 0; i < tmpRobots.length; i++) {
+            tmpRobots[i] = robots.get(i);
+        }
         sortRobots(tmpRobots);
         //1.选择路径,和修复路径
+        ArrayList<ArrayList<Point>> otherPaths = new ArrayList<>();
         for (int i = 0; i < tmpRobots.length; i++) {
             Robot robot = tmpRobots[i];
             if (!robot.assigned) {
@@ -766,37 +772,38 @@ public class Strategy {
             ArrayList<Point> path;
             int[][] heuristicPoints;
             if (robot.carry) {
-                ArrayList<Integer> candidate = berths[robot.targetBerthId].robotMinDistanceIndexes[robot.pos.x][robot.pos.y];
+                ArrayList<Integer> candidate = berths.get(robot.targetBerthId).robotMinDistanceIndexes[robot.pos.x][robot.pos.y];
                 //找到一条路径不与之前的路径相撞,找不到，选择第一条路径
-                path = berths[robot.targetBerthId].robotDijkstra.get(candidate.get(0)).moveFrom(robot.pos);
-
+                path = berths.get(robot.targetBerthId).robotDijkstra.get(candidate.get(0)).moveFrom(robot.pos);
                 for (int j = 1; j < candidate.size(); j++) {
                     int index = candidate.get(j);
-                    ArrayList<Point> candidatePath = berths[robot.targetBerthId].robotDijkstra.get(index).moveFrom(robot.pos);
-                    if (!checkCrash(candidatePath, robot.id)) {
+                    ArrayList<Point> candidatePath = berths.get(robot.targetBerthId).robotDijkstra.get(index).moveFrom(robot.pos);
+                    if (!robotCheckCrash(gameMap, candidatePath, otherPaths)) {
                         path = candidatePath;
                         break;
                     } else {
                         //尝试找不撞的
-                        heuristicPoints = berths[robot.targetBerthId].robotDijkstra.get(index).cs;
-                        boolean result = findABestPath(candidatePath, heuristicPoints, robot.id);
-                        if (result) {
+                        Point end = berths.get(robot.targetBerthId).berthPoints.get(index);
+                        heuristicPoints = berths.get(robot.targetBerthId).robotDijkstra.get(index).cs;
+                        ArrayList<Point> avoidPath = robotToPointHeuristic(robot, end, otherPaths, heuristicPoints);
+                        if (!avoidPath.isEmpty()) {
                             path = candidatePath;
                             break;
                         }
                     }
                 }
-                heuristicPoints = berths[robot.targetBerthId].robotDijkstra.get(0).cs;
+                heuristicPoints = berths.get(robot.targetBerthId).robotDijkstra.get(0).cs;
             } else {
                 path = workbenches.get(robot.targetWorkBenchId).dijkstra.moveFrom(robot.pos);
                 heuristicPoints = workbenches.get(robot.targetWorkBenchId).dijkstra.cs;
             }
             //检查是否与前面机器人相撞，如果是，则重新搜一条到目标点的路径，极端情况，去到物品消失不考虑
-            if (checkCrash(path, robot.id)) {
+            if (robotCheckCrash(gameMap, path, otherPaths)) {
                 //尝试搜一条不撞的路径
                 assert !path.isEmpty();
-                boolean result = findABestPath(path, heuristicPoints, robot.id);
-                if (!result && !robot.redundancy) {
+                Point end = gameMap.discreteToPos(path.get(path.size() - 1));
+                ArrayList<Point> avoidPath = robotToPointHeuristic(robot, end, otherPaths, heuristicPoints);
+                if (avoidPath.isEmpty() && !robot.redundancy) {
                     //去到很大概率会消失,锁住这个工作台,重新决策分配路径
                     robot.assigned = false;
                     robot.buyAssign = false;
@@ -810,6 +817,7 @@ public class Strategy {
             }
             robot.path.clear();
             robot.path.addAll(path);
+            otherPaths.add(path);
         }
 
         //2.碰撞避免
@@ -820,11 +828,12 @@ public class Strategy {
             robotsPredictPath[robot.id] = new ArrayList<>();
             if (!robot.assigned) {
                 //未来一格子在这里不动，如果别人撞过来，则自己避让
+                robot.path.add(gameMap.posToDiscrete(robot.pos));
                 for (int j = 1; j <= 2; j++) {
                     robotsPredictPath[robot.id].add(gameMap.posToDiscrete(robot.pos));
+                    robot.path.add(gameMap.posToDiscrete(robot.pos));
                 }
             } else {
-//                assert robot.path.size() >= 3;//包含起始点
                 if (robot.path.size() == 1) {
                     //原点不动，大概率有漏洞
                     robotsPredictPath[robot.id].add(robot.path.get(0));
@@ -841,7 +850,7 @@ public class Strategy {
                 //一个格子之内撞不撞
                 for (int k = 0; k < 2; k++) {
                     Point point = robotsPredictPath[robot.id].get(k);
-                    if (point.equal(robotsPredictPath[tmpRobots[j].id].get(k)) && !gameMap.isRobotMainChannel(point.x, point.y)) {
+                    if (point.equal(robotsPredictPath[tmpRobots[j].id].get(k)) && !gameMap.isRobotDiscreteMainChannel(point.x, point.y)) {
                         crashId = tmpRobots[j].id;
                         break;
                     }
@@ -850,16 +859,14 @@ public class Strategy {
                     break;
                 }
             }
-            int avoidId = robot.id;
 
             if (crashId != -1) {
-
                 //看看自己是否可以避让，不可以的话就说明被夹住了,让冲突点去让,并且自己强制提高优先级50帧
-                robots[crashId].beConflicted = FPS;
+                robots.get(crashId).beConflicted = FPS;
                 ArrayList<Point> candidates = new ArrayList<>();
-                candidates.add(robots[avoidId].pos);
+                candidates.add(robot.pos);
                 for (int j = 0; j < DIR.length / 2; j++) {
-                    candidates.add(robots[avoidId].pos.add(DIR[j]));
+                    candidates.add(robot.pos.add(DIR[j]));
                 }
                 Point result = new Point(-1, -1);
                 int bestDist = Integer.MAX_VALUE;
@@ -870,14 +877,14 @@ public class Strategy {
                     }
                     boolean crash = false;
                     for (Robot tmpRobot : tmpRobots) {
-                        if (tmpRobot.id == avoidId || robotsPredictPath[tmpRobot.id] == null) {
+                        if (tmpRobot.id == robot.id || robotsPredictPath[tmpRobot.id] == null) {
                             continue;//后面的
                         }
-                        Point start = gameMap.posToDiscrete(robots[avoidId].pos);
+                        Point start = gameMap.posToDiscrete(robot.pos);
                         Point end = gameMap.posToDiscrete(candidate);
                         Point mid = start.add(end).div(2);
-                        if ((mid.equal(robotsPredictPath[tmpRobot.id].get(0)) && !gameMap.isRobotMainChannel(mid.x, mid.y))
-                                || (end.equal(robotsPredictPath[tmpRobot.id].get(1)) && !gameMap.isRobotMainChannel(end.x, end.y))) {
+                        if ((mid.equal(robotsPredictPath[tmpRobot.id].get(0)) && !gameMap.isRobotDiscreteMainChannel(mid.x, mid.y))
+                                || (end.equal(robotsPredictPath[tmpRobot.id].get(1)) && !gameMap.isRobotDiscreteMainChannel(end.x, end.y))) {
                             //去重全加进来
                             crash = true;
                             break;
@@ -888,19 +895,20 @@ public class Strategy {
                     }
 
                     int dist;
-                    if (!robots[avoidId].carry) {
-                        if (robots[avoidId].targetWorkBenchId == -1) {
-                            assert !robots[avoidId].assigned;
+                    if (!robot.carry) {
+                        if (robot.targetWorkBenchId == -1) {
+                            assert !robot.assigned;
                             dist = MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
                         } else {
-                            dist = workbenches.get(robots[avoidId].targetWorkBenchId).getMinDistance(candidate);
+                            dist = workbenches.get(robot.targetWorkBenchId).getMinDistance(candidate);
                         }
                     } else {
-                        dist = berths[robots[avoidId].targetBerthId].getRobotMinDistance(candidate);
+                        dist = berths.get(robot.targetBerthId).getRobotMinDistance(candidate);
                     }
                     assert dist != Integer.MAX_VALUE;
+                    Point tmp = gameMap.posToDiscrete(candidate);
                     for (Point point : robotsPredictPath[crashId]) {
-                        if (candidate.equal(point) && !gameMap.isRobotMainChannel(candidate.x, candidate.y)) {
+                        if (tmp.equal(point) && !gameMap.isRobotDiscreteMainChannel(candidate.x, candidate.y)) {
                             dist += 2;//在别人路径上惩罚增大
                             break;
                         }
@@ -912,16 +920,16 @@ public class Strategy {
                 }
                 if (!result.equal(-1, -1)) {
                     //修改预测路径
-                    robotsPredictPath[avoidId].clear();
-                    robots[avoidId].avoid = true;
-                    Point start = gameMap.posToDiscrete(robots[avoidId].pos);
+                    robotsPredictPath[robot.id].clear();
+                    robots.get(robot.id).avoid = true;
+                    Point start = gameMap.posToDiscrete(robot.pos);
                     Point end = gameMap.posToDiscrete(result);
                     Point mid = start.add(end).div(2);
-                    robotsPredictPath[avoidId].add(mid);//中间
-                    robotsPredictPath[avoidId].add(end);//下一个格子
+                    robotsPredictPath[robot.id].add(mid);//中间
+                    robotsPredictPath[robot.id].add(end);//下一个格子
                 } else {
-                    robots[avoidId].beConflicted = FPS;
-                    robots[avoidId].forcePri += 1;
+                    robot.beConflicted = FPS;
+                    robot.forcePri += 1;
                     sortRobots(tmpRobots);
                     i = -1;
                 }
@@ -929,21 +937,21 @@ public class Strategy {
             }
         }
 
-
-        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-            if (robots[i].avoid) {
-                Point start = gameMap.posToDiscrete(robots[i].pos);
-                robots[i].path.clear();
-                robots[i].path.add(start);
-                robots[i].path.add(robotsPredictPath[robots[i].id].get(0));
-                robots[i].path.add(robotsPredictPath[robots[i].id].get(1));
+        for (Robot robot : robots) {
+            if (robot.avoid) {
+                Point start = gameMap.posToDiscrete(robot.pos);
+                robot.path.clear();
+                robot.path.add(start);
+                robot.path.add(robotsPredictPath[robot.id].get(0));
+                robot.path.add(robotsPredictPath[robot.id].get(1));
                 //在避让，所以路径改变了，稍微改一下好看一点
             }
-            robots[i].finish();
-            if (robots[i].beConflicted-- < 0 && robots[i].forcePri != 0) {
-                robots[i].forcePri = 0;
+            robot.finish();
+            if (robot.beConflicted-- < 0 && robot.forcePri != 0) {
+                robot.forcePri = 0;
             }
         }
+
     }
 
     private void sortRobots(Robot[] robots) {
@@ -960,123 +968,18 @@ public class Strategy {
             return o1.priority != o2.priority ? o2.priority - o1.priority : o1.id - o2.id;
         });
         Arrays.fill(robotsPredictPath, null);
+        for (Robot robot : robots) {
+            robot.avoid = false;
+        }
     }
 
-
-    private boolean findABestPath(ArrayList<Point> path, int[][] cs, int robotId) {
-        //发现一条更好的路径,启发式搜
-        class Pair {
-            final int deep;
-            final Point p;
-
-            public Pair(int deep, Point p) {
-                this.deep = deep;
-                this.p = p;
-            }
-        }
-        int[][] discreteCs = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH]; //前面2位是距离，后面的位数是距离0xdistdir
-        for (int[] discreteC : discreteCs) {
-            Arrays.fill(discreteC, Integer.MAX_VALUE);
-        }
-
-        Point start = path.get(0);
-        Point end = path.get(path.size() - 1);
-        Stack<Pair> stack = new Stack<>();
-        stack.push(new Pair(0, start));
-        discreteCs[start.x][start.y] = 0;
-        while (!stack.empty()) {
-            Point top = stack.peek().p;
-            if (top.equal(end)) {
-                //回溯路径
-                ArrayList<Point> result = getRobotPathByCs(discreteCs, top);
-                Collections.reverse(result);
-                path.clear();
-                path.addAll(result);
-                return true;
-            }
-            int deep = stack.peek().deep;
-            stack.pop();
-            for (int i = 0; i < DIR.length / 2; i++) {
-                //四方向的
-                int lastDirIdx = discreteCs[top.x][top.y] & 3;
-                int dirIdx = i ^ lastDirIdx; // 优先遍历上一次过来的方向
-                Point dir = DIR[dirIdx];
-                int dx = top.x + dir.x;
-                int dy = top.y + dir.y;//第一步
-                if (!gameMap.robotCanReachDiscrete(dx, dy) || discreteCs[dx][dy] != Integer.MAX_VALUE) {
-                    continue; // 下个点不可达
-                }
-                if (!gameMap.robotCanReachDiscrete(dx + dir.x, dy + dir.y) || discreteCs[dx + dir.x][dy + dir.y] != Integer.MAX_VALUE) {
-                    continue;//下下个点
-                }
-                if (checkCrashInDeep(robotId, deep + 1, dx, dy)
-                        || checkCrashInDeep(robotId, deep + 2, dx + dir.x, dy + dir.y)) {
-                    continue;
-                }
-                Point cur = gameMap.discreteToPos(top.x, top.y);
-                Point next = gameMap.discreteToPos(dx + dir.x, dy + dir.y);
-                if ((cs[cur.x][cur.y] >> 2) != (cs[next.x][next.y] >> 2) + 1) {
-                    //启发式剪枝，不是距离更近则直接结束
-                    continue;
-                }
-                discreteCs[dx][dy] = ((deep + 1) << 2) + dirIdx;//第一步
-                dx += dir.x;
-                dy += dir.y;
-                discreteCs[dx][dy] = ((deep + 2) << 2) + dirIdx;//第一步
-                stack.push(new Pair(deep + 2, new Point(dx, dy)));
-            }
-        }
-        //搜不到，走原路
-        return false;
-    }
-
-
-    private boolean checkCrashInDeep(int robotId, int deep, int dx, int dy) {
-        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-            Robot robot = robots[i];
-            if (!robot.assigned || robot.id == robotId) {
-                continue;
-            }
-            if (deep > robot.path.size() - 1) {
-                continue;
-            }
-            if (robot.path.get(deep).equal(dx, dy) && !gameMap.isRobotMainChannel(dx, dy)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean checkCrash(ArrayList<Point> path, int robotId) {
-        return checkCrash(path, robotId, Integer.MAX_VALUE);
-    }
-
-    @SuppressWarnings("all")
-    private boolean checkCrash(ArrayList<Point> path, int robotId, int maxDetectDistance) {
-        //默认检测整条路径
-        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-            Robot robot = robots[i];
-            if (robot.id == robotId || robot.path.isEmpty()) {
-                continue;
-            }
-            int detectDistance = min(maxDetectDistance, min(path.size(), robot.path.size()));
-            for (int j = 0; j < detectDistance; j++) {
-                Point point = robot.path.get(j);
-                if (point.equal(path.get(j)) && !gameMap.isRobotMainChannel(point.x, point.y)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
 
     int robotMinToWorkbenchDistance(Robot robot, Workbench workbench) {
         if (robot.carry) {
             assert (robot.assigned);
-            int toBerth = berths[robot.targetBerthId].getRobotMinDistance(robot.pos);
-            int k = berths[robot.targetBerthId].robotMinDistanceIndexes[robot.pos.x][robot.pos.y].get(0);
-            int toWorkBench = berths[robot.targetBerthId].robotDijkstra.get(k).getMoveDistance(workbench.pos);
+            int toBerth = berths.get(robot.targetBerthId).getRobotMinDistance(robot.pos);
+            int k = berths.get(robot.targetBerthId).robotMinDistanceIndexes[robot.pos.x][robot.pos.y].get(0);
+            int toWorkBench = berths.get(robot.targetBerthId).robotDijkstra.get(k).getMoveDistance(workbench.pos);
             return toWorkBench + toBerth;
         }
         return workbench.getMinDistance(robot.pos);
@@ -1114,8 +1017,7 @@ public class Strategy {
             //选距离最近的，如果是没到泊位的有好几个，选离泊位最近的
             Robot selectRobot = null;
             int minDist = Integer.MAX_VALUE;
-            for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-                Robot robot = robots[i];
+            for (Robot robot : robots) {
                 if (robot.buyAssign) {
                     continue;
                 }
@@ -1128,7 +1030,7 @@ public class Strategy {
                 int dist = robotMinToWorkbenchDistance(robot, buyWorkbench);
                 int toBerthTime = 0;
                 if (robot.carry) {
-                    toBerthTime = berths[robot.targetBerthId].getRobotMinDistance(robot.pos);
+                    toBerthTime = berths.get(robot.targetBerthId).getRobotMinDistance(robot.pos);
                 }
                 dist -= toBerthTime;
                 if (dist < minDist) {
@@ -1141,7 +1043,7 @@ public class Strategy {
             }
             int toBerthTime = 0;
             if (selectRobot.carry) {
-                toBerthTime = berths[selectRobot.targetBerthId].getRobotMinDistance(selectRobot.pos);
+                toBerthTime = berths.get(selectRobot.targetBerthId).getRobotMinDistance(selectRobot.pos);
             }
 
             if (toBerthTime + minDist > buyWorkbench.remainTime) {
@@ -1150,8 +1052,7 @@ public class Strategy {
             int arriveBuyTime = minDist;
             double maxProfit = -GAME_FRAME;
             Berth selectSellBerth = null;
-            for (int i = 0; i < BERTH_PER_PLAYER; i++) {
-                Berth sellBerth = berths[i];
+            for (Berth sellBerth : berths) {
                 if (!sellBerth.robotCanReach(buyWorkbench.pos)) {
                     continue; //不能到达
                 }
@@ -1210,8 +1111,7 @@ public class Strategy {
         }
 
         ArrayList<Stat> stat = new ArrayList<>();
-        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-            Robot robot = robots[i];
+        for (Robot robot : robots) {
             if (robot.assigned || !robot.carry) {
                 continue;
             }
@@ -1219,8 +1119,7 @@ public class Strategy {
             //选择折现价值最大的
             Berth select = null;
             double maxProfit = -GAME_FRAME;
-            for (int j = 0; j < BERTH_PER_PLAYER; j++) {
-                Berth sellBerth = berths[j];
+            for (Berth sellBerth : berths) {
                 if (!sellBerth.robotCanReach(robot.pos)) {
                     continue; //不能到达
                 }
@@ -1285,6 +1184,7 @@ public class Strategy {
             robot.redundancy = true;
             robot.estimateUnloadTime = frameId + berth.getRobotMinDistance(robot.pos);
             if (gameMap.getBelongToBerthId(robot.pos) == berth.id) {
+                printError("error,no pre sell");
                 robot.pull();
             }
         }
@@ -1379,20 +1279,20 @@ public class Strategy {
         ROBOTS_PER_PLAYER = getIntInput();
         //机器人
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-//            if (robots[i] == null) {
-//                robots[i] = new Robot(this);
-//            }
-            robots[i].input();
+            robots.get(i).input();
         }
-
-
+        while (robots.size() > ROBOTS_PER_PLAYER) {
+            robots.remove(robots.size() - 1);
+            printError("error,no buy robot");
+        }
         BOATS_PER_PLAYER = getIntInput();
         //船
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
-//            if (boats[i] == null) {
-//                boats[i] = new Boat(boatCapacity);
-//            }
-            boats[i].input();
+            boats.get(i).input();
+        }
+        while (boats.size() > BOATS_PER_PLAYER) {
+            boats.remove(boats.size() - 1);
+            printError("error,no buy boats");
         }
         String okk = inStream.readLine();
         printMost(okk);

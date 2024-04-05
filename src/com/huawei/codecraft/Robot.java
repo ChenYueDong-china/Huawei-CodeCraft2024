@@ -64,6 +64,7 @@ public class Robot {
 
     public void finish() {
         //按照path来看做什么操作
+
         if (path.size() <= 2) {
             printError("error");
             return;
@@ -84,7 +85,7 @@ public class Robot {
             //要去卖
             assert targetBerthId != -1;
             //在他这个berth范围内
-            if (strategy.berths[targetBerthId].inBerth(target)) {
+            if (strategy.berths.get(targetBerthId).inBerth(target)) {
                 //提前卖，移动完毕卖,货物这种时候可以增加
                 pull();
             }
@@ -106,10 +107,10 @@ public class Robot {
 
 
         //10帧一个
-        strategy.berths[targetBerthId].totalGoodsNums++;
-        strategy.berths[targetBerthId].goodsNums++;
-        strategy.berths[targetBerthId].goods.offer(carryValue);
-        strategy.berths[targetBerthId].totalValue += carryValue;
+        strategy.berths.get(targetBerthId).totalGoodsNums++;
+        strategy.berths.get(targetBerthId).goodsNums++;
+        strategy.berths.get(targetBerthId).goods.offer(carryValue);
+        strategy.berths.get(targetBerthId).totalValue += carryValue;
         strategy.pullScore += carryValue;
         targetBerthId = -1;
         targetWorkBenchId = -1;

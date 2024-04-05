@@ -4,11 +4,12 @@ import java.util.*;
 
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.abs;
+import static java.lang.Math.min;
 
 public class RobotUtils {
 
     public static ArrayList<Point> robotMoveToPointHeuristic(GameMap gameMap, Point start, Point end
-            , int maxDeep, ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
+            , ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
         start = gameMap.posToDiscrete(start);
         end = gameMap.posToDiscrete(end);
         if (start.equal(end)) {
@@ -34,22 +35,23 @@ public class RobotUtils {
             Arrays.fill(discreteC, Integer.MAX_VALUE);
         }
 
-        Stack<Pair> stack = new Stack<>();
+        Deque<Pair> stack = new ArrayDeque<>();
         stack.push(new Pair(0, start));
         discreteCs[start.x][start.y] = 0;
-        while (!stack.empty()) {
-            Point top = stack.peek().p;
+        while (!stack.isEmpty()) {
+            Point top = stack.peekLast().p;
             if (top.equal(end)) {
                 //回溯路径
                 ArrayList<Point> result = getRobotPathByCs(discreteCs, top);
                 Collections.reverse(result);
                 return result;
             }
-            int deep = stack.peek().deep;
+            assert stack.peekLast() != null;
+            int deep = stack.peekLast().deep;
             stack.pop();
             for (int i = 0; i < DIR.length / 2; i++) {
                 //四方向的
-                Point point = getNextPoint(gameMap, otherPaths, heuristicCs, top, i, deep, discreteCs);
+                Point point = getNextPoint(gameMap, otherPaths, discreteCs, top, i, deep, heuristicCs);
                 if (point == null) continue;
                 stack.push(new Pair(deep + 2, point));
             }
@@ -159,10 +161,23 @@ public class RobotUtils {
 
     private static boolean robotCheckCrashInDeep(GameMap gameMap, int deep, int x, int y, ArrayList<ArrayList<Point>> otherPaths) {
         if (otherPaths != null) {
-            for (int i = 0; i < otherPaths.size(); i++) {
-                ArrayList<Point> otherPath = otherPaths.get(i);
-                if (deep < otherPath.size() && otherPath.get(i).equal(x, y)
-                        && !gameMap.isDiscreteRobotMainChannel(x, y)) {
+            for (ArrayList<Point> otherPath : otherPaths) {
+                if (deep < otherPath.size() && otherPath.get(deep).equal(x, y)
+                        && !gameMap.isRobotDiscreteMainChannel(x, y)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean robotCheckCrash(GameMap gameMap, ArrayList<Point> myPath, ArrayList<ArrayList<Point>> otherPaths) {
+        //默认检测整条路径
+        for (ArrayList<Point> otherPath : otherPaths) {
+            int detectDistance = min(otherPath.size(), myPath.size());
+            for (int j = 0; j < detectDistance; j++) {
+                Point point = otherPath.get(j);
+                if (point.equal(myPath.get(j)) && !gameMap.isRobotDiscreteMainChannel(point.x, point.y)) {
                     return true;
                 }
             }

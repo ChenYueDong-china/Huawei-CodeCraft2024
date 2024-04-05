@@ -155,7 +155,7 @@ public class GameMap {
                         || mapData[x][y] == 'c'));//不是海洋或者障碍
     }
 
-    public boolean isRobotMainChannel(int x, int y) {
+    private boolean isRobotMainChannel(int x, int y) {
         return x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '>'//陆地主干道
                         || mapData[x][y] == 'R'//机器人购买处
@@ -163,7 +163,7 @@ public class GameMap {
                         || mapData[x][y] == 'c');//海陆
     }
 
-    public boolean isDiscreteRobotMainChannel(int x, int y) {
+    public boolean isRobotDiscreteMainChannel(int x, int y) {
         //最外层是墙壁
         return (x > 0 && x < MAP_DISCRETE_HEIGHT - 1 && y > 0 && y < MAP_DISCRETE_WIDTH - 1 &&
                 (robotDiscreteMainChannel[x][y]));//海陆

@@ -59,6 +59,11 @@ public class Dijkstra {
             return new ArrayList<>();
         }
         ArrayList<Point> result = getRobotPathByCs(cs, source);
+        if (result.size() == 1) {
+            //此时大概率有问题
+            printError("error start equal end");
+            result.add(source);//多加一个
+        }
         //细化，转成精细坐标
         return mGameMap.toDiscretePath(result);
     }

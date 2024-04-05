@@ -74,7 +74,7 @@ public class Boat {
             return;//恢复状态，啥都干不了
         }
         PointWithDirection next = path.get(1);
-        if (targetBerthId != -1 && next.point.equal(strategy.berths[targetBerthId].corePoint)) {
+        if (targetBerthId != -1 && next.point.equal(strategy.berths.get(targetBerthId).corePoint)) {
             flashBerth();//去泊位
         }
         if (next.point.equal(corePoint)) {
@@ -122,7 +122,7 @@ public class Boat {
         assert status != 1;
         outStream.printf("berth %d\n", id);
         //计算恢复时间
-        PointWithDirection next = new PointWithDirection(strategy.berths[targetBerthId].corePoint, 0);
+        PointWithDirection next = new PointWithDirection(strategy.berths.get(targetBerthId).corePoint, 0);
 
         remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
         corePoint = next.point;
