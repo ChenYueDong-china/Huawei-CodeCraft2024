@@ -7,13 +7,13 @@ public class Utils {
     @SuppressWarnings("all")
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-//    static {
-//        try {
-//            inStream = new BufferedReader(new FileReader("in.txt"));
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    static {
+        try {
+            inStream = new BufferedReader(new FileReader("in.txt"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final boolean ERROR = true;
 
@@ -122,32 +122,32 @@ public class Utils {
 
     };
 
+
+    public static final int[][] BOAT_ROTATION = {{3, 2, 0, 1}, {2, 3, 1, 0}};
+    public static final Point[][][] BOAT_ROTATION_POINT = {
+            {{null, null, null, new Point(0, 2)}, //3
+                    {null, null, new Point(0, -2), null},//2
+                    {new Point(-2, 0), null, null, null},//0
+                    {null, new Point(2, 0), null, null}}//1
+            , {{null, null, new Point(1, 1), null}//2
+            , {null, null, null, new Point(-1, -1)}//3
+            , {null, new Point(-1, 1), null, null}//1
+            , {new Point(1, -1), null, null, null}}};//0
+
+
     public static PointWithDirection getBoatRotationPoint(PointWithDirection pointWithDirection, boolean clockwise) {
         Point corePint = pointWithDirection.point;
         int originDir = pointWithDirection.direction;
-        int[] data;
+        int nextDir;
+        Point nextPoint;
         if (clockwise) {
-            data = new int[]{0, 3, 1, 2, 0};
+            nextDir = BOAT_ROTATION[0][originDir];
+            nextPoint = corePint.add(BOAT_ROTATION_POINT[0][originDir][nextDir]);
         } else {
-            data = new int[]{0, 2, 1, 3, 0};
+            nextDir = BOAT_ROTATION[1][originDir];
+            nextPoint = corePint.add(BOAT_ROTATION_POINT[1][originDir][nextDir]);
         }
-        int nextDir = -1;
-        for (int i = 0; i < DIR.length / 2; i++) {
-            if (originDir == data[i]) {
-                nextDir = data[i + 1];
-                break;
-            }
-        }
-        //位置
-        Point[] data2;
-        if (clockwise) {
-            data2 = new Point[]{new Point(0, 0), new Point(2, 2), new Point(2, 0), new Point(0, 2)};
-        } else {
-            data2 = new Point[]{new Point(0, 0), new Point(0, 2), new Point(1, 1), new Point(-1, 1)};
-        }
-        Point nextPoint = corePint.add(data2[nextDir]).sub(data2[originDir]);
         return new PointWithDirection(nextPoint, nextDir);
-
     }
 
     public static int getIntInput() throws IOException {
