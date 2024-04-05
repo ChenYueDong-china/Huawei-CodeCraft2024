@@ -637,7 +637,7 @@ public class Strategy {
         }
         for (int i = 0; i < otherPaths.size(); i++) {
             int id = otherIds.get(i);//改成避让路径
-            if(boats.get(id).avoid){
+            if (boats.get(id).avoid) {
                 boats.get(id).path.clear();
                 boats.get(id).path.addAll(otherPaths.get(i));
             }
@@ -654,8 +654,7 @@ public class Strategy {
         if (boatFlashMainChannelPoint[boat.corePoint.x][boat.corePoint.y] == null) {
             boatUpdateFlashPoint(boat.corePoint.x, boat.corePoint.y);
         }
-        PointWithDirection mid = boatFlashMainChannelPoint[boat.corePoint.x][boat.corePoint.y];
-        return mid;
+        return boatFlashMainChannelPoint[boat.corePoint.x][boat.corePoint.y];
     }
 
     private void sortBoats(Boat[] tmpBoats) {
@@ -1655,6 +1654,7 @@ public class Strategy {
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
             Boat boat = boats.get(i);
             boat.input();
+            //装货
             int load = boat.num - boat.lastNum;
             if (load > 0) {
                 assert boat.targetBerthId != -1;
