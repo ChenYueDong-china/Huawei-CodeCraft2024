@@ -9,6 +9,7 @@ import static java.lang.Math.abs;
 public class Berth {
 
     int id;
+    public int curBoatId = -1;
     Point corePoint = new Point();
     int coreDirection = 0;
     int transportTime;
@@ -131,7 +132,7 @@ public class Berth {
                 break;
             }
         }
-        gameMap.updateBerthAndAround(berthAroundPoints,berthPoints, id);
+        gameMap.updateBerthAndAround(berthAroundPoints, berthPoints, id);
     }
 
     @SuppressWarnings("all")

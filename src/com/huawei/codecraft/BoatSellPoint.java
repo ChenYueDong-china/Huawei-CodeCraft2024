@@ -30,6 +30,10 @@ public class BoatSellPoint {
         return dijkstra.getMoveDistance(pos, dir);
     }
 
+    int getEndDir(Point pos, int dir) {
+        return dijkstra.getEndDir(pos, dir);
+    }
+
     public boolean canReach(Point pos, int dir) {
         return getMinDistance(pos, dir) != Integer.MAX_VALUE;
     }

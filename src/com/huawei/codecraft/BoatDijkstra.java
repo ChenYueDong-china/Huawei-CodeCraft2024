@@ -169,6 +169,14 @@ public class BoatDijkstra {
         return result;
     }
 
+    //非细化目标到这里的移动时间
+    public int getEndDir(Point target, int dir) {
+        Point start = map2RelativePoint(target, dir);
+        assert mGameMap.isLegalPoint(start.x, start.y);
+        dir ^= 1;
+        assert minDistanceDirection[start.x][start.y][dir] != Integer.MAX_VALUE;
+        return minDistanceDirection[start.x][start.y][dir] & 3;
+    }
 
     //非细化目标到这里的移动时间
     public int getMoveDistance(Point target, int dir) {
