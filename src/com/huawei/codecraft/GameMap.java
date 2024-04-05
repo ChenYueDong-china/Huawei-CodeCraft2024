@@ -106,6 +106,10 @@ public class GameMap {
                         || mapData[x][y] == 'T'));//交货点
     }
 
+    public int getBelongToBerthId(Point point) {
+        return partOfBerthId[point.x][point.y];
+    }
+
     public int getDiscreteBelongToBerthId(int x, int y) {
         assert x % 2 == 1 && y % 2 == 1;//偶数点是额外添加的点，不是真实点
         return partOfBerthId[x / 2][y / 2];

@@ -32,11 +32,11 @@ public class Constants {
 
 
     public static int ROBOTS_PER_PLAYER = 0;    // 每个玩家的机器人数
-    public static int MAX_ROBOTS_PER_PLAYER = 20;    // 每个玩家的泊位
+    public static int MAX_ROBOTS_PER_PLAYER = 50;    // 每个玩家的泊位
+    public static int MAX_BERTH_PER_PLAYER = 20;    // 每个玩家的泊位
+    public static int MAX_BOATS_PER_PLAYER = 20;    // 每个玩家的泊位
     public static int BERTH_PER_PLAYER = 0;    // 每个玩家的泊位
-    public static int MAX_BERTH_PER_PLAYER = 10;    // 每个玩家的泊位
     public static int BOATS_PER_PLAYER = 0;    // 每个玩家的船
-    public static int MAX_BOATS_PER_PLAYER = 10;    // 每个玩家的泊位
 
     public static final int BERTH_HEIGHT = 4;    // 每个玩家的船
     public static final int BERTH_WIDTH = 4;    // 每个玩家的船

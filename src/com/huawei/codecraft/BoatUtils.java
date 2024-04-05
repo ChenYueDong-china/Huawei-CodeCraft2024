@@ -170,21 +170,21 @@ public class BoatUtils {
         return new ArrayList<>();
     }
 
-    public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, Point berthCorePoint
+    public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, PointWithDirection berthCorePoint
             , int maxDeep, int aroundPointsCount, int recoveryTime) {
         return boatMoveToBerth(gameMap, start, berthId, berthCorePoint, maxDeep, aroundPointsCount, -1, null, null, recoveryTime);
     }
 
-    public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, Point berthCorePoint
+    public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, PointWithDirection berthCorePoint
             , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, int recoveryTime) {
-        if (start.point.equals(berthCorePoint)) {
+        if (start.point.equals(berthCorePoint.point)) {
             //直接返回
             ArrayList<PointWithDirection> result = new ArrayList<>();
             result.add(start);
             for (int i = 0; i < recoveryTime; i++) {
                 result.add(start);
             }
-            PointWithDirection end = new PointWithDirection(berthCorePoint, 0);
+            PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
             result.add(end);
             return result;
         }
@@ -227,7 +227,7 @@ public class BoatUtils {
                 if (!visits[top.point.x][top.point.y] && gameMap.boatGetFlashBerthId(top.point.x, top.point.y) == berthId) {
                     //第二次访问距离肯定更长
                     int comeDeep = deep - 1;
-                    int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.x) + abs(top.point.y - berthCorePoint.y));
+                    int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
                     visits[top.point.x][top.point.y] = true;
                     visitAroundBerthCount++;
                     if (comeDeep + nextDeep < minDistance) {
@@ -244,7 +244,7 @@ public class BoatUtils {
         //回溯路径
         ArrayList<PointWithDirection> path = backTrackPath(gameMap, minMidPoint, cs, recoveryTime);
         //结束点添加
-        PointWithDirection end = new PointWithDirection(berthCorePoint, 0);
+        PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
         PointWithDirection lastTwoPoint = path.get(path.size() - 1);
         //一帧闪现到达，剩下的是闪现恢复时间
         int waitTime = 1 + 2 * (abs(lastTwoPoint.point.x - end.point.x) + abs(lastTwoPoint.point.y - end.point.y));

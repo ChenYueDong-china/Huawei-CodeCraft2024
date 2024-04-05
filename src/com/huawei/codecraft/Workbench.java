@@ -30,9 +30,9 @@ public class Workbench {
             return;
         }
         //初始化dij
-//        dijkstra = new Dijkstra();
-//        dijkstra.init(pos, map);
-//        dijkstra.update();
+        dijkstra = new Dijkstra();
+        dijkstra.init(pos, map);
+        dijkstra.update();
     }
 
     //获得这个workbench到任意一个位置的最小距离
