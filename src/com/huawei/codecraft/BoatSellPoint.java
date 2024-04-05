@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import static com.huawei.codecraft.Utils.*;
 
 public class BoatSellPoint {
+
+    int id;
     public Point point;
     BoatDijkstra dijkstra;
 
@@ -12,7 +14,8 @@ public class BoatSellPoint {
         this.point = point;
     }
 
-    public void init(GameMap gameMap) {
+    public void init(int id, GameMap gameMap) {
+        this.id = id;
         dijkstra = new BoatDijkstra();
         dijkstra.init(point, gameMap);
         dijkstra.update();

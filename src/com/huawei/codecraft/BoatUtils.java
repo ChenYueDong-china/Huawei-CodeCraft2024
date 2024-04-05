@@ -8,6 +8,7 @@ import static java.lang.Math.abs;
 
 public class BoatUtils {
 
+    @SuppressWarnings("all")
     public static ArrayList<PointWithDirection> boatGetSafePoints(GameMap gameMap, int[][][] cs, PointWithDirection start, boolean[][] conflictPoints, boolean[][] noResultPoints
             , int maxResultCount) {
         //从目标映射的四个点开始搜
@@ -15,14 +16,6 @@ public class BoatUtils {
         for (int[][] c1 : cs) {
             for (int[] c2 : c1) {
                 Arrays.fill(c2, Integer.MAX_VALUE);
-            }
-        }
-        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            for (int j = 0; j < MAP_FILE_ROW_NUMS; j++) {
-                if (gameMap.isBoatMainChannel(i, j)) {
-                    conflictPoints[i][j] = false;
-                    noResultPoints[i][j] = false;
-                }
             }
         }
         PointWithDirection s = new PointWithDirection(new Point(start.point), start.direction);

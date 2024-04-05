@@ -3,6 +3,7 @@ package com.huawei.codecraft;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.TreeMap;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.Point;
@@ -86,14 +87,17 @@ public class GameMap {
 
     public int getRotationDir(int curDir, int nextDir) {
         int[] data = {0, 3, 1, 2, 0};
-        boolean clockwise = false;
         for (int i = 1; i < data.length; i++) {
             if (data[i] == nextDir && data[i - 1] == curDir) {
-                clockwise = true;
-                break;
+                return 0;
             }
         }
-        return clockwise ? 0 : 1;
+        for (int i = 1; i < data.length; i++) {
+            if (data[i - 1] == nextDir && data[i] == curDir) {
+                return 1;
+            }
+        }
+        return -1;
     }
 
     public boolean isBoatMainChannel(int x, int y) {

@@ -6,8 +6,10 @@ package com.huawei.codecraft;
 public class Constants {
 
 
-    public static final int BOAT_PREDICT_DISTANCE = 20;//预测距离
-    public static final int BOAT_AVOID_DISTANCE = 10;//避让距离
+    public static final int BOAT_PREDICT_DISTANCE = 50;//预测距离
+    public static final int BOAT_AVOID_DISTANCE = 25;//避让距离
+    public static final int BOAT_FIND_PATH_DEEP = 3;//避让距离
+    public static final int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
 
     //调调超参数，打不过的话
     public static final boolean GET_LAST_ONE = false;//是否拿倒数第一

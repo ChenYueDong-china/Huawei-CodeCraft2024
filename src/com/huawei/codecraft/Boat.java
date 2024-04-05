@@ -8,33 +8,26 @@ import static java.lang.Math.abs;
 
 
 public class Boat {
+
+    public int beConflicted = 0;
+    int id;
     Strategy strategy;
-
-
-    //todo 定义船四种状态
-    //1.和虚拟点移动中
-    //2.泊位之间移动中
-    //3.泊位外面等待
-    //4.进入泊位
     public ArrayList<PointWithDirection> path = new ArrayList<>();
     Point corePoint = new Point(-1, -1);
-    int id;
     int direction;
-
-    int targetBerthId = -1;//泊位id
+    int targetBerthId = -1;//买的Id
+    int targetSellId = -1;//卖的id
     int status;//状态
-    BoatStatus exactStatus;//状态
-    int originStatus;//原始状态,因为可能会被变，导致上一个id不一样
-    int remainTime;//到达目标剩余时间
-    int remainRecoveryTime = 0;//到达目标剩余时间
-    int targetId = -1;//泊位id
-    int lastArriveTargetId = -1;//泊位id
-    int num;//目前货物数量
-    final int capacity;//容量
-    int value;//货物金额
-    int estimateComingBerthId = -1;//估计要去的id,第一帧都默认0吧
+    int remainRecoveryTime = 0;//恢复时间
 
+    int lastNum;//目前货物数量
+    int num;//目前货物数量
+    int value;//货物金额
+    final int capacity;//容量
     boolean assigned;
+    boolean buyAssign;
+    boolean avoid;
+    public int forcePri;
 
 
     public Boat(Strategy strategy, int capacity) {
@@ -48,7 +41,11 @@ public class Boat {
         printMost(line);
         String[] parts = line.trim().split(" ");
         id = Integer.parseInt(parts[0]);
+        lastNum = num;
         num = Integer.parseInt(parts[1]);
+        if (num == 0) {
+            targetSellId = -1;//卖完
+        }
         corePoint.x = Integer.parseInt(parts[2]);
         corePoint.y = Integer.parseInt(parts[3]);
         direction = Integer.parseInt(parts[4]);
@@ -62,6 +59,7 @@ public class Boat {
         }
         assigned = false;
         path.clear();
+        buyAssign = false;
     }
 
     public void finish() {
@@ -82,11 +80,19 @@ public class Boat {
             return;
         }
 
-        if (next.direction == direction) {
+        if (next.direction == direction && corePoint.add(DIR[direction]).equal(next.point)) {
             ship();//前进
         } else {
             int rotaDir = strategy.gameMap.getRotationDir(direction, next.direction);
-            rotation(rotaDir);//旋转
+            PointWithDirection rotationPoint = getBoatRotationPoint(new PointWithDirection(corePoint, direction)
+                    , rotaDir == 0);
+            if (rotationPoint.point.equal(next.point)) {
+                rotation(rotaDir);//旋转
+            } else {
+                //闪现去主航道
+                assert strategy.gameMap.boatIsAllInMainChannel(next.point, next.direction);
+                flashDept();
+            }
         }
     }
 
