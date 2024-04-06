@@ -42,9 +42,11 @@ public class BoatUtils {
                     //第二次访问距离肯定更长
                     int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
                     int minDeep = heuristicDistance[top.point.x][top.point.y][top.direction];
-                    assert deep - 1 + nextDeep >= heuristicDistance[start.point.x][start.point.y][start.direction];
-                    if (minDeep == nextDeep && deep - 1 + nextDeep
-                            == heuristicDistance[start.point.x][start.point.y][start.direction]) {
+                    int curDeep = deep - 1;
+                    assert curDeep + nextDeep >= heuristicDistance[start.point.x][start.point.y][start.direction];
+                    //可能启发距离不是最好的，此时小于都行，因为可能初始化超时
+                    if (minDeep == nextDeep && curDeep + nextDeep
+                            <= heuristicDistance[start.point.x][start.point.y][start.direction]) {
                         return getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, top, cs);
                     }
                 }
