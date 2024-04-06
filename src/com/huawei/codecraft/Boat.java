@@ -31,6 +31,9 @@ public class Boat {
     boolean avoid;
     public int forcePri;
 
+    private boolean lastFlashBerth = false;
+    private boolean lastFlashDept = false;
+
 
     public Boat(Strategy strategy, int capacity) {
         this.strategy = strategy;
@@ -53,6 +56,17 @@ public class Boat {
         corePoint.y = Integer.parseInt(parts[3]);
         direction = Integer.parseInt(parts[4]);
         status = Integer.parseInt(parts[5]);
+        if (lastFlashBerth && status == 0) {//闪现，且这一帧没等待或者出问题
+            //没闪现成功
+            printError(frameId + "error last frame flash berth default");
+            strategy.berths.get(targetBerthId).curBoatId = -1;//重置，说明闪现失败代码有问题
+        }
+        lastFlashBerth = false;
+        if (lastFlashDept && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)) {
+            //没闪现成功
+            printError(frameId + "error last frame flash dept default");
+        }
+        lastFlashBerth = false;
         if (status != 2 && originStatus == 2) {
             //从装货到进入恢复状态或者行驶状态，说明船舶离开泊位，解锁,别人可以闪现过去
 
@@ -165,6 +179,7 @@ public class Boat {
         direction = next.direction;
         status = 1;//闪现成功
         strategy.berths.get(targetBerthId).curBoatId = id;
+        lastFlashBerth = true;
     }
 
     public void flashDept() {
@@ -175,6 +190,7 @@ public class Boat {
         corePoint = next.point;
         direction = next.direction;
         status = 1;//闪现成功
+        lastFlashDept = true;
         //计算恢复时间
 
     }

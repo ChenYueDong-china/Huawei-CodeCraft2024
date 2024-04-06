@@ -9,6 +9,76 @@ import static java.lang.Math.abs;
 public class BoatUtils {
 
     @SuppressWarnings("all")
+    public static ArrayList<PointWithDirection> boatMoveToBerthHeuristic(GameMap gameMap, PointWithDirection start, int berthId
+            , PointWithDirection berthCorePoint
+            , int recoveryTime, int[][][] heuristicDistance) {
+        if (start.point.equals(berthCorePoint.point)) {
+            //直接返回
+            return getBoatToBerthEqualPath(start, berthCorePoint, recoveryTime);
+        }
+        int[][][] cs = gameMap.boatCommonCs;
+        resetCs(cs);
+        //从目标映射的四个点开始搜
+        int deep = 0;
+        PointWithDirection s = new PointWithDirection(new Point(start.point), start.direction);
+        Queue<PointWithDirection> queue = new ArrayDeque<>();
+        queue.offer(s);
+        cs[s.point.x][s.point.y][s.direction] = s.direction;
+        ArrayList<PointWithDirection> twoDistancesPoints = new ArrayList<>();
+        int count = 0;
+        while (!queue.isEmpty() || !twoDistancesPoints.isEmpty()) {
+            deep += 1;
+            //2距离的下一个点,先保存起来，后面直接插进去
+            int size = queue.size();
+            if (!twoDistancesPoints.isEmpty()) {
+                queue.addAll(twoDistancesPoints);
+                twoDistancesPoints.clear();
+            }
+            for (int j = 0; j < size; j++) {
+                count++;
+                PointWithDirection top = queue.poll();
+                assert top != null;
+                if (gameMap.boatGetFlashBerthId(top.point.x, top.point.y) == berthId) {
+                    //第二次访问距离肯定更长
+                    int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
+                    int minDeep = heuristicDistance[top.point.x][top.point.y][top.direction];
+                    assert deep - 1 + nextDeep >= heuristicDistance[start.point.x][start.point.y][start.direction];
+                    if (minDeep == nextDeep && deep - 1 + nextDeep
+                            == heuristicDistance[start.point.x][start.point.y][start.direction]) {
+                        return getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, top, cs);
+                    }
+                }
+                nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, -1
+                        , null, null, null, heuristicDistance);
+            }
+        }
+        printError("error boat no find a min path");
+        return new ArrayList<>();
+    }
+
+    private static void resetCs(int[][][] boatCommonCs) {
+        for (int[][] c1 : boatCommonCs) {
+            for (int[] c2 : c1) {
+                Arrays.fill(c2, Integer.MAX_VALUE);
+            }
+        }
+    }
+
+    private static ArrayList<PointWithDirection> getBoatToBerthBackPath(GameMap gameMap, PointWithDirection berthCorePoint, int recoveryTime, PointWithDirection minMidPoint, int[][][] cs) {
+        //回溯路径
+        ArrayList<PointWithDirection> path = backTrackPath(gameMap, minMidPoint, cs, recoveryTime);
+        //结束点添加
+        PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
+        PointWithDirection lastTwoPoint = path.get(path.size() - 1);
+        //一帧闪现到达，剩下的是闪现恢复时间
+        int waitTime = 1 + 2 * (abs(lastTwoPoint.point.x - end.point.x) + abs(lastTwoPoint.point.y - end.point.y));
+        for (int i = 0; i < waitTime; i++) {
+            path.add(end);
+        }
+        return path;
+    }
+
+    @SuppressWarnings("all")
     public static ArrayList<PointWithDirection> boatGetSafePoints(GameMap gameMap, int[][][] cs, PointWithDirection start, boolean[][] conflictPoints, boolean[][] noResultPoints
             , int maxResultCount) {
         //从目标映射的四个点开始搜
@@ -177,22 +247,10 @@ public class BoatUtils {
             , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, int recoveryTime) {
         if (start.point.equals(berthCorePoint.point)) {
             //直接返回
-            ArrayList<PointWithDirection> result = new ArrayList<>();
-            result.add(start);
-            for (int i = 0; i < recoveryTime; i++) {
-                result.add(start);
-            }
-            //闪现一帧,如果本来就在也不会执行，多一帧也没啥
-            PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
-            result.add(end);
-            return result;
+            return getBoatToBerthEqualPath(start, berthCorePoint, recoveryTime);
         }
         int[][][] cs = gameMap.boatCommonCs;
-        for (int[][] c1 : cs) {
-            for (int[] c2 : c1) {
-                Arrays.fill(c2, Integer.MAX_VALUE);
-            }
-        }
+        resetCs(cs);
         //从目标映射的四个点开始搜
         PointWithDirection s = new PointWithDirection(new Point(start.point), start.direction);
         Queue<PointWithDirection> queue = new ArrayDeque<>();
@@ -240,17 +298,19 @@ public class BoatUtils {
         if (minMidPoint == null || minDistance > maxDeep) {
             return new ArrayList<>();
         }
-        //回溯路径
-        ArrayList<PointWithDirection> path = backTrackPath(gameMap, minMidPoint, cs, recoveryTime);
-        //结束点添加
-        PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
-        PointWithDirection lastTwoPoint = path.get(path.size() - 1);
-        //一帧闪现到达，剩下的是闪现恢复时间
-        int waitTime = 1 + 2 * (abs(lastTwoPoint.point.x - end.point.x) + abs(lastTwoPoint.point.y - end.point.y));
-        for (int i = 0; i < waitTime; i++) {
-            path.add(end);
+        return getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, minMidPoint, cs);
+    }
+
+    private static ArrayList<PointWithDirection> getBoatToBerthEqualPath(PointWithDirection start, PointWithDirection berthCorePoint, int recoveryTime) {
+        ArrayList<PointWithDirection> result = new ArrayList<>();
+        result.add(start);
+        for (int i = 0; i < recoveryTime; i++) {
+            result.add(start);
         }
-        return path;
+        //闪现一帧,如果本来就在也不会执行，多一帧也没啥
+        PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
+        result.add(end);
+        return result;
     }
 
 
@@ -330,11 +390,24 @@ public class BoatUtils {
     private static void nextEnterQueue(GameMap gameMap, int[][][] cs, int deep, Queue<PointWithDirection> queue
             , ArrayList<PointWithDirection> twoDistancesPoints, PointWithDirection top, int boatId
             , ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, boolean[][] conflictPoints) {
+        nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPaths, otherIds, conflictPoints
+                , null);
+    }
+
+    private static void nextEnterQueue(GameMap gameMap, int[][][] cs, int deep, Queue<PointWithDirection> queue
+            , ArrayList<PointWithDirection> twoDistancesPoints, PointWithDirection top, int boatId
+            , ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, boolean[][] conflictPoints
+            , int[][][] heuristicDistance) {
         for (int k = 0; k < 3; k++) {
             PointWithDirection next = getNextPoint(top, k);
             //合法性判断
             if (deep >= (cs[next.point.x][next.point.y][next.direction] >> 2)
                     || !gameMap.boatCanReach(next.point, next.direction)) {
+                continue;
+            }
+            //启发
+            if (heuristicDistance != null && heuristicDistance[next.point.x][next.point.y][next.direction]
+                    >= heuristicDistance[top.point.x][top.point.y][top.direction]) {
                 continue;
             }
             //检测碰撞。

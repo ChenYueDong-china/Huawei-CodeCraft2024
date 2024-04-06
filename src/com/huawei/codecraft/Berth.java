@@ -112,6 +112,7 @@ public class Berth {
             }
         }
         //船路径
+        long l1 = System.currentTimeMillis();
         for (Point aroundPoint : berthAroundPoints) {
             commonDij.init(aroundPoint, gameMap);
             commonDij.update();
@@ -132,6 +133,8 @@ public class Berth {
                 break;
             }
         }
+        long l2 = System.currentTimeMillis();
+        printDebug("berthBoatDijTime:"+(l2-l1));
         gameMap.updateBerthAndAround(berthAroundPoints, berthPoints, id);
     }
 

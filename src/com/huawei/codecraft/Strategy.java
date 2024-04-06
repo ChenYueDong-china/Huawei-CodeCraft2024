@@ -122,6 +122,7 @@ public class Strategy {
                 }
             }
         }
+        long l1 = System.currentTimeMillis();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
                 if (gameMap.boatCanReach(i, j)) {
@@ -134,6 +135,8 @@ public class Strategy {
                 }
             }
         }
+        long l2 = System.currentTimeMillis();
+        printDebug("boat flash target update time:" + (l2 - l1));
         for (int i = 0; i < robotLock.length; i++) {
             robotLock[i] = new HashSet<>();
         }
@@ -142,36 +145,33 @@ public class Strategy {
     }
 
     private void boatUpdateFlashPoint(int i, int j) {
-        int[] bestFactors = {Integer.MAX_VALUE, 0, 0, 0, 0};//距离，右，左，上，下
+        int minDistance = Integer.MAX_VALUE;
+        int maxRight = 0;
+        int maxLeft = 0;
+        int maxTop = 0;
+        int maxBottom = 0;
         Point bestPoint = null;
         for (Point candidate : boatFlashCandidates) {
-            int[] curFactors = new int[5];
-            curFactors[0] = abs(candidate.x - i) + abs(candidate.y - j);
-            curFactors[1] = max(candidate.y - j, 0);
-            curFactors[2] = max(j - candidate.y, 0);
-            curFactors[3] = max(i - candidate.x, 0);
-            curFactors[4] = max(candidate.x - i, 0);
-            boolean better = false;
-            for (int k = 0; k < bestFactors.length; k++) {
-                if (k == 0) {
-                    if (curFactors[k] < bestFactors[k]) {
-                        better = true;
-                        break;
-                    } else if (curFactors[k] > bestFactors[k]) {
-                        break;//大的话说明不会更好
-                    }
-                } else {
-                    if (curFactors[k] > bestFactors[k]) {
-                        better = true;
-                        break;
-                    } else if (curFactors[k] < bestFactors[k]) {
-                        break;//小的话说明不会更好
-                    }
-                }
+            int curDistance = abs(candidate.x - i) + abs(candidate.y - j);
+            if (curDistance > minDistance) {
+                continue;//大于立马排除
             }
-            if (better) {
+            //后面按照哪个方向计算
+            int curRight = max(candidate.y - j, 0);
+            int curLeft = max(j - candidate.y, 0);
+            int curTop = max(i - candidate.x, 0);
+            int curBottom = max(candidate.x - i, 0);
+            if (curDistance < minDistance || curRight > maxRight ||
+                    (curRight == maxRight && curLeft > maxLeft) ||
+                    (curRight == maxRight && curLeft == maxLeft && curTop > maxTop)
+                    || (curRight == maxRight && curLeft == maxLeft
+                    && curTop == maxTop && curBottom > maxBottom)) {
                 bestPoint = candidate;
-                bestFactors = curFactors;
+                minDistance = curDistance;
+                maxRight = curRight;
+                maxLeft = curLeft;
+                maxTop = curTop;
+                maxBottom = curBottom;
             }
         }
         // 找到最好的点
@@ -190,10 +190,18 @@ public class Strategy {
                 , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds, boat.remainRecoveryTime);
     }
 
+    public ArrayList<PointWithDirection> boatToBerthHeuristic(Boat boat, Berth berth) {
+        boat.targetBerthId = berth.id;
+        return boatMoveToBerthHeuristic(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), boat.remainRecoveryTime
+                , berth.boatMinDistance);
+    }
+
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep) {
         boat.targetBerthId = berth.id;
         return boatMoveToBerth(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
-                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.remainRecoveryTime);
+                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), maxDeep
+                , berth.berthAroundPoints.size(), boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep) {
@@ -363,6 +371,7 @@ public class Strategy {
 
     private void dispatch() {
 //        robotDoAction();
+
         boatDoAction();
 
 
@@ -375,6 +384,9 @@ public class Strategy {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats.add(new Boat(this, boatCapacity));
             }
+        }
+        if (frameId == 200) {
+            System.out.println("sss");
         }
 //        if (frameId > 1 && frameId < 100) {
 //            Boat boat = boats.get(0);
@@ -409,6 +421,9 @@ public class Strategy {
 //            boat.finish();
 //        }
     }
+
+    long time1 = 0;
+    int count1 = 0;
 
     private void boatDoAction() {
         //船只选择回家
@@ -471,8 +486,11 @@ public class Strategy {
                 Berth targetBerth = berths.get(boat.targetBerthId);
                 int deep = targetBerth.getBoatMinDistance(boat.corePoint, boat.direction);
                 //todo 这个可以启发式搜
-                boat.path = boatToBerth(boat, targetBerth, deep);
-
+                long l1 = System.nanoTime();
+                boat.path = boatToBerthHeuristic(boat, targetBerth);
+                long l2 = System.nanoTime();
+                time1 += l2 - l1;
+                count1++;
                 assert !boat.path.isEmpty();
                 //不然肯定dij不对
                 if (boatCheckCrash(gameMap, boat.id, boat.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {

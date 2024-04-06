@@ -7,13 +7,13 @@ public class Utils {
     @SuppressWarnings("all")
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-    static {
-        try {
-            inStream = new BufferedReader(new FileReader("in.txt"));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    static {
+//        try {
+//            inStream = new BufferedReader(new FileReader("in.txt"));
+//        } catch (FileNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private static final boolean ERROR = true;
 
@@ -31,7 +31,7 @@ public class Utils {
         }
     }
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     @SuppressWarnings("all")
     public static void printDebug(String s) {
@@ -108,11 +108,13 @@ public class Utils {
             this.point = point;
             this.direction = direction;
         }
+
         boolean equal(PointWithDirection point2) {
-            return point.equal(point2.point) && direction== point2.direction;
+            return point.equal(point2.point) && direction == point2.direction;
         }
+
         boolean equals(PointWithDirection point2) {
-            return point.equal(point2.point) && direction== point2.direction;
+            return point.equal(point2.point) && direction == point2.direction;
         }
     }
 
