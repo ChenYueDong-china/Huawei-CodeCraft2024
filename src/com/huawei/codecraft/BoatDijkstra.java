@@ -134,7 +134,6 @@ public class BoatDijkstra {
     //move to没有，因为没保存
     public ArrayList<PointWithDirection> moveFrom(Point source, int dir) {
         Point start = map2RelativePoint(source, dir);
-
         dir ^= 1;
         ArrayList<PointWithDirection> result = new ArrayList<>();
         int index = minDistanceDirection[start.x][start.y][dir];
@@ -146,7 +145,6 @@ public class BoatDijkstra {
             int lastDir = cs[index][t.point.x][t.point.y][t.direction] & 3;
             t = getLastPointWithDirection(mGameMap, result, t, lastDir);
         }
-
         //转为正常路径
         for (PointWithDirection pointWithDirection : result) {
             pointWithDirection.point = map2RelativePoint(pointWithDirection.point, pointWithDirection.direction);
@@ -156,7 +154,6 @@ public class BoatDijkstra {
         ArrayList<PointWithDirection> tmp = new ArrayList<>();
         tmp.add(result.get(0));
         //验证深度对不对
-        int curDeep = 0;
         for (int i = 1; i < result.size(); i++) {
             if (mGameMap.boatHasOneInMainChannel(result.get(i).point, result.get(i).direction)) {
                 tmp.add(result.get(i));

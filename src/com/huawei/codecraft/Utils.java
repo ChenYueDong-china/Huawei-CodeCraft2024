@@ -31,7 +31,7 @@ public class Utils {
         }
     }
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     @SuppressWarnings("all")
     public static void printDebug(String s) {

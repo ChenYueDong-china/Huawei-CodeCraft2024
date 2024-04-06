@@ -186,33 +186,33 @@ public class Strategy {
 
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerth(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
-                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds, boat.remainRecoveryTime);
+        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
+                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds, boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToBerthHeuristic(Boat boat, Berth berth) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerthHeuristic(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
-                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), boat.remainRecoveryTime
+        return boatMoveToBerthHeuristic(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
+                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), boat.remainRecoveryTime
                 , berth.boatMinDistance);
     }
 
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerth(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
-                , berth.id, new PointWithDirection(berth.corePoint, berth.coreDirection), maxDeep
+        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
+                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep
                 , berth.berthAroundPoints.size(), boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep) {
-        return boatMoveToPoint(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
                 , pointWithDirection, maxDeep
                 , boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep
             , ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
-        return boatMoveToPoint(gameMap, new PointWithDirection(boat.corePoint, boat.direction)
+        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
                 , pointWithDirection, maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime
         );
     }
@@ -245,124 +245,6 @@ public class Strategy {
     public void mainLoop() throws IOException {
         while (input()) {
             dispatch();
-
-
-//            if (frameId > 1 && frameId < 100) {
-//                Boat boat = boats[0];
-//                boat.path = boatToPoint(boat, new PointWithDirection(new Point(94, 70), 1), 9999);
-//                boat.finish();
-//            }
-//            if (frameId > 100 && frameId < 200) {
-//                Boat boat = boats[1];
-//                boat.path = boatToPoint(boat, new PointWithDirection(new Point(93, 60), 0), 9999);
-//                boat.finish();
-//            }
-//
-//            if (frameId > 200 && frameId < 500) {
-//                PointWithDirection boat0Target = new PointWithDirection(new Point(94, 55), 1);
-//                PointWithDirection boat1Target = new PointWithDirection(new Point(93, 75), 0);
-//                Boat boat = boats[0];
-//                boat.path = boatToPoint(boat, boat0Target, 9999);
-//                Boat boat1 = boats[1];
-//                boat1.path = boatToPoint(boat1, boat1Target, 9999);
-//                ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
-//                ArrayList<Integer> otherIds = new ArrayList<>();
-//                for (int i = 0; i < 2; i++) {
-//                    ArrayList<PointWithDirection> myPath = new ArrayList<>();
-//                    for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boats[i].path.size()); j++) {
-//                        myPath.add(boats[i].path.get(j));
-//                    }
-//                    int crashId = boatCheckCrash(gameMap, i, myPath, otherPaths, otherIds, BOAT_AVOID_DISTANCE);
-//                    if (crashId != -1 && boats[i].status != 1) {
-//                        //避让
-//                        for (boolean[] conflictPoint : gameMap.commonConflictPoints) {
-//                            Arrays.fill(conflictPoint, false);
-//                        }
-//                        for (boolean[] commonNoResultPoint : gameMap.commonNoResultPoints) {
-//                            Arrays.fill(commonNoResultPoint, false);
-//                        }
-//                        for (ArrayList<PointWithDirection> otherPath : otherPaths) {
-//                            PointWithDirection pointWithDirection = otherPath.get(0);
-//                            ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
-//                            for (Point point : points) {
-//                                gameMap.commonConflictPoints[point.x][point.y] = true;
-//                            }
-//                        }
-//                        for (int j = 0; j < otherPaths.size(); j++) {
-//                            if (otherIds.get(j) == crashId) {
-//                                ArrayList<PointWithDirection> pointWithDirections = otherPaths.get(j);
-//                                for (PointWithDirection pointWithDirection : pointWithDirections) {
-//                                    ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
-//                                    for (Point point : points) {
-//                                        gameMap.commonNoResultPoints[point.x][point.y] = true;
-//                                    }
-//                                }
-//                            }
-//                        }
-//                        ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.commonCs, myPath.get(0), gameMap.commonConflictPoints, gameMap.commonNoResultPoints, 25);
-//                        boats[i].path = backTrackPath(gameMap, result.get(0), gameMap.commonCs, 0);
-//                        myPath.clear();
-//                        for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boats[i].path.size()); j++) {
-//                            myPath.add(boats[i].path.get(i));
-//                        }
-//                    }
-//
-//                    //高优先级的撞到你，则不动
-//                    for (int j = 0; j < otherPaths.size(); j++) {
-//                        if (otherPaths.get(j).size() <= 1) {
-//                            continue;
-//                        }
-//                        PointWithDirection otherNext = otherPaths.get(j).get(1);
-//                        boolean crash = false;
-//                        if (otherIds.get(j) < i) {
-//                            if (boatCheckCrash(gameMap, otherNext, myPath.get(0))) {
-//                                crash = true;
-//                            }
-//                        } else {
-//                            if (boatCheckCrash(gameMap, otherNext, myPath.get(1))) {
-//                                crash = true;
-//                            }
-//                        }
-//                        if (crash) {
-//                            PointWithDirection start = otherPaths.get(j).get(0);
-//                            otherPaths.get(j).clear();
-//                            for (int k = 0; k < 2; k++) {
-//                                otherPaths.get(j).add(start);
-//                            }
-//                            boats[otherIds.get(j)].path = new ArrayList<>(otherPaths.get(j));
-//                            //选择不动去避让
-//                        }
-//                    }
-//                    otherPaths.add(myPath);
-//                    otherIds.add(i);
-//                }
-//                boat.finish();
-//                boat1.finish();
-//            }
-
-
-//            if (frameId == 1) {
-//                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-//                robots[ROBOTS_PER_PLAYER++] = new Robot(this);
-//                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-//                robots[ROBOTS_PER_PLAYER++] = new Robot(this);
-//            }
-//            if (frameId > 1 && frameId < 200) {
-//                Robot robot = robots[0];
-//                robot.path = robotToPoint(robot, new Point(93, 73), 9999);
-//                robot.finish();
-//            }
-//            if (frameId > 200 && frameId < 400) {
-//                Robot robot = robots[1];
-//                robot.path = robotToPoint(robot, new Point(92, 73), 9999);
-//                robot.finish();
-//            }
-//            if (frameId == 401) {
-////                outStream.printf("move %d %d\n", 0, 2);
-//                outStream.printf("move %d %d\n", 1, 3);
-//            }
-
-
             outStream.print("OK\n");
             outStream.flush();
         }
@@ -370,60 +252,21 @@ public class Strategy {
 
 
     private void dispatch() {
-//        robotDoAction();
-
+        robotDoAction();
         boatDoAction();
 
-
         if (frameId == 1) {
-//            for (int i = 0; i < 4; i++) {
-//                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-//                robots.add(new Robot(this));
-//            }
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 8; i++) {
+                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
+                robots.add(new Robot(this));
+            }
+            for (int i = 0; i < 1; i++) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats.add(new Boat(this, boatCapacity));
             }
         }
-        if (frameId == 200) {
-            System.out.println("sss");
-        }
-//        if (frameId > 1 && frameId < 100) {
-//            Boat boat = boats.get(0);
-//            boat.path = boatToBerth(boat, berths.get(0), 9999);
-//            boat.finish();
-//        }
-//        if (frameId > 100 && frameId < 200) {
-//            Boat boat = boats.get(1);
-//            Berth berth = berths.get(0);
-//            boat.path = boatToBerth(boat, berth, 9999);
-//
-//            if (berth.curBoatId != -1 &&
-//                    berth.curBoatId != boat.id) {
-//                for (int i = 0; i < min(boat.path.size(), 5); i++) {
-//                    PointWithDirection next = boat.path.get(i);
-//                    if (next.point.equals(berth.corePoint)) {
-//                        //有船且不是你,先去核心点等着闪现
-//                        ArrayList<PointWithDirection> toCorePath = boatToPoint(boat, new PointWithDirection(berth.corePoint, -1), 9999);
-//                        if (!toCorePath.isEmpty()) {
-//                            boat.path.clear();
-//                            boat.path.addAll(toCorePath);
-//                        }
-//                        break;
-//                    }
-//                }
-//            }
-//            boat.finish();
-//        }
-//        if(frameId>100&&frameId<200){
-//            Boat boat = boats[0];
-//            boat.path = boatToBerth(boat, berths[2], 9999);
-//            boat.finish();
-//        }
     }
 
-    long time1 = 0;
-    int count1 = 0;
 
     private void boatDoAction() {
         //船只选择回家
@@ -485,12 +328,7 @@ public class Strategy {
                 assert boat.targetBerthId != -1;
                 Berth targetBerth = berths.get(boat.targetBerthId);
                 int deep = targetBerth.getBoatMinDistance(boat.corePoint, boat.direction);
-                //todo 这个可以启发式搜
-                long l1 = System.nanoTime();
                 boat.path = boatToBerthHeuristic(boat, targetBerth);
-                long l2 = System.nanoTime();
-                time1 += l2 - l1;
-                count1++;
                 assert !boat.path.isEmpty();
                 //不然肯定dij不对
                 if (boatCheckCrash(gameMap, boat.id, boat.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
@@ -507,7 +345,7 @@ public class Strategy {
                         targetBerth.curBoatId != boat.id) {
                     for (int i = 0; i < min(boat.path.size(), 5); i++) {
                         PointWithDirection next = boat.path.get(i);
-                        if (next.point.equals(targetBerth.corePoint)) {
+                        if (next.point.equal(targetBerth.corePoint)) {
                             //有船且不是你,先去核心点等着闪现
                             ArrayList<PointWithDirection> toCorePath = boatToPoint(boat
                                     , new PointWithDirection(targetBerth.corePoint, -1)
@@ -826,7 +664,7 @@ public class Strategy {
             }
         }
         for (Boat boat : boats) {
-            if (boat.status == 2) {
+            if (!boat.buyAssign && boat.status == 2) {
                 //已经在装货了
                 assert boat.targetBerthId != -1;
                 if (berths.get(boat.targetBerthId).goodsNums > 0) {
@@ -1629,12 +1467,12 @@ public class Strategy {
                 robot.estimateUnloadTime = frameId + toWorkbenchDist + berth.getRobotMinDistance(workbench.pos);
                 robot.redundancy = toWorkbenchDist != workbench.remainTime;
             }
+            robot.priority = workbench.value;
             if (!robot.carry && robot.pos.equal(workbench.pos)) {
                 //没带物品，且到目标，一定买，然后重新决策一个下一个目标买
                 robot.buy();
                 robot.buyAssign = false;
             }
-            robot.priority = workbench.value;
         } else {
             robot.redundancy = true;
             robot.estimateUnloadTime = frameId + berth.getRobotMinDistance(robot.pos);

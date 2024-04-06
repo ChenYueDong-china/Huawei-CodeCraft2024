@@ -12,7 +12,7 @@ public class BoatUtils {
     public static ArrayList<PointWithDirection> boatMoveToBerthHeuristic(GameMap gameMap, PointWithDirection start, int berthId
             , PointWithDirection berthCorePoint
             , int recoveryTime, int[][][] heuristicDistance) {
-        if (start.point.equals(berthCorePoint.point)) {
+        if (start.point.equal(berthCorePoint.point)) {
             //直接返回
             return getBoatToBerthEqualPath(start, berthCorePoint, recoveryTime);
         }
@@ -247,7 +247,7 @@ public class BoatUtils {
 
     public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, PointWithDirection berthCorePoint
             , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, int recoveryTime) {
-        if (start.point.equals(berthCorePoint.point)) {
+        if (start.point.equal(berthCorePoint.point)) {
             //直接返回
             return getBoatToBerthEqualPath(start, berthCorePoint, recoveryTime);
         }

@@ -160,7 +160,8 @@ public class Boat {
         //撞到主航道
         boolean clockwise = rotaDir == 0;
         PointWithDirection next = getBoatRotationPoint(new PointWithDirection(corePoint, direction), clockwise);
-        corePoint = next.point;
+        corePoint.x = next.point.x;
+        corePoint.y = next.point.y;
         direction = next.direction;
         //检查移动后的位置
         if (strategy.gameMap.boatHasOneInMainChannel(corePoint, direction)) {
@@ -175,7 +176,8 @@ public class Boat {
         //计算恢复时间
         PointWithDirection next = new PointWithDirection(strategy.berths.get(targetBerthId).corePoint, 0);
         remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
-        corePoint = next.point;
+        corePoint.x = next.point.x;
+        corePoint.y = next.point.y;
         direction = next.direction;
         status = 1;//闪现成功
         strategy.berths.get(targetBerthId).curBoatId = id;
@@ -187,7 +189,8 @@ public class Boat {
         outStream.printf("dept %d\n", id);
         PointWithDirection next = strategy.getBoatFlashDeptPoint(corePoint);
         remainRecoveryTime = 2;//下一帧就变1了
-        corePoint = next.point;
+        corePoint.x = next.point.x;
+        corePoint.y = next.point.y;
         direction = next.direction;
         status = 1;//闪现成功
         lastFlashDept = true;
