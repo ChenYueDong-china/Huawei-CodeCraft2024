@@ -122,7 +122,12 @@ public class BoatUtils {
             //输出路径
             ArrayList<PointWithDirection> result = new ArrayList<>();
             result.add(start);//加两个，说明不动
-            result.add(start);
+            for (int i = 0; i < recoveryTime; i++) {
+                result.add(result.get(0));
+            }
+            if (result.size() == 1) {
+                result.add(start);//说明不动
+            }
             return result;
         }
         int[][][] cs = gameMap.boatCommonCs;
@@ -177,6 +182,7 @@ public class BoatUtils {
             for (int i = 0; i < recoveryTime; i++) {
                 result.add(start);
             }
+            //闪现一帧,如果本来就在也不会执行，多一帧也没啥
             PointWithDirection end = new PointWithDirection(berthCorePoint.point, berthCorePoint.direction);
             result.add(end);
             return result;
