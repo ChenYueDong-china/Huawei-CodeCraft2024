@@ -460,7 +460,7 @@ public class Strategy {
                     int minDeep = boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
                     ArrayList<PointWithDirection> avoidPath = boatToPoint(boat
                             , new PointWithDirection(point, -1), minDeep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
-                    if (avoidPath.isEmpty()) {
+                    if (!avoidPath.isEmpty()) {
                         boat.path.clear();
                         boat.path.addAll(avoidPath);
                     }
@@ -619,7 +619,7 @@ public class Strategy {
                         } else {
                             //正常避让
                             myPath = backTrackPath(gameMap, result.get(0), gameMap.boatCommonCs, 0);
-                            if(myPath.size()==1){
+                            if (myPath.size() == 1) {
                                 myPath.add(myPath.get(0));
                             }
                             while (myPath.size() > BOAT_PREDICT_DISTANCE) {
@@ -675,7 +675,7 @@ public class Strategy {
                 }
             }
             otherPaths.add(myPath);
-            otherIds.add(i);
+            otherIds.add(boat.id);
         }
         for (int i = 0; i < otherPaths.size(); i++) {
             int id = otherIds.get(i);//改成避让路径

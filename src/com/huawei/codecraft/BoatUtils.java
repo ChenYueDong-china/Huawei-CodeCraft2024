@@ -231,7 +231,7 @@ public class BoatUtils {
                 nextEnterQueue(gameMap, cs, deep, queue, twoDistancesPoints, top, boatId, otherPaths, otherIds);
             }
         }
-        if (minMidPoint == null) {
+        if (minMidPoint == null || minDistance > maxDeep) {
             return new ArrayList<>();
         }
         //回溯路径
