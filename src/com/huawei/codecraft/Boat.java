@@ -51,6 +51,7 @@ public class Boat {
         if (num == 0) {
             targetSellId = -1;//卖完
             carry = false;
+            value = 0;
         }
         corePoint.x = Integer.parseInt(parts[2]);
         corePoint.y = Integer.parseInt(parts[3]);
@@ -66,10 +67,9 @@ public class Boat {
             //没闪现成功
             printError(frameId + "error last frame flash dept default");
         }
-        lastFlashBerth = false;
+        lastFlashDept = false;
         if (status != 2 && originStatus == 2) {
             //从装货到进入恢复状态或者行驶状态，说明船舶离开泊位，解锁,别人可以闪现过去
-
             boolean hashOne = false;
             for (Berth berth : strategy.berths) {
                 if (berth.curBoatId == id) {
@@ -97,7 +97,10 @@ public class Boat {
 
     public void finish() {
         //按照path来看做什么操作
-        if (!assigned && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction) && frameId > GAME_FRAME - 1000) {
+        if (status != 1
+                && !assigned
+                && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)
+                && frameId > GAME_FRAME - 1000) {
             flashDept();
             return;
         }

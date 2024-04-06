@@ -663,17 +663,20 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
-        for (Boat boat : boats) {
-            if (!boat.buyAssign && boat.status == 2) {
-                //已经在装货了
-                assert boat.targetBerthId != -1;
-                if (berths.get(boat.targetBerthId).goodsNums > 0) {
-                    //继续装货
-                    int needCount = boat.capacity - boat.num;
-                    boat.buyAssign = true;
-                    goodsNumList[boat.targetBerthId] -= needCount;
-                    return true;
-                }
+        for (Berth berth : berths) {
+            //停靠在泊位上了
+            if (berth.curBoatId != -1
+                    && berth.goodsNums > 0
+                    && !boats.get(berth.curBoatId).buyAssign
+                    && !boats.get(berth.curBoatId).carry) {
+                //没去卖
+                Boat boat = boats.get(berth.curBoatId);
+                assert boat.targetBerthId == berth.id;
+                //继续装货
+                int needCount = boat.capacity - boat.num;
+                boat.buyAssign = true;
+                goodsNumList[berth.id] -= needCount;
+                return true;
             }
         }
         ArrayList<Stat> stat = new ArrayList<>();
