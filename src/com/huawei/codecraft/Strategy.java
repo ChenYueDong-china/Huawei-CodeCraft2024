@@ -245,6 +245,11 @@ public class Strategy {
     public void mainLoop() throws IOException {
         while (input()) {
             dispatch();
+            if (frameId == 15000) {
+                printError("jumpTime:" + jumpCount + ",totalValue:"
+                        + totalValue + ",pullValue:"
+                        + pullScore + ",score:" + money);
+            }
             outStream.print("OK\n");
             outStream.flush();
         }
