@@ -8,7 +8,7 @@ public class Constants {
 
     public static final int BOAT_PREDICT_DISTANCE = 50;//预测距离
     public static final int BOAT_AVOID_DISTANCE = 25;//避让距离
-    public static final int BOAT_FIND_PATH_DEEP = 2;//避让距离
+    public static final int BOAT_FIND_PATH_DEEP = 0;//避让距离
     public static final int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
 
     //调调超参数，打不过的话

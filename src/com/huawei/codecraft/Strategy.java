@@ -887,15 +887,16 @@ public class Strategy {
     }
 
     private int boatMinToBerthDistance(Boat boat, Berth berth) {
+        int recoveryTime = boat.remainRecoveryTime;//核心，这个很重要
         if (boat.carry) {
             //卖
             assert boat.targetSellId != -1;
             int toSellDistance = boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
             int toBerthDistance = berth.getBoatMinDistance(boatSellPoints.get(boat.targetSellId).point
                     , boatSellPoints.get(boat.targetSellId).getEndDir(boat.corePoint, boat.direction));
-            return toSellDistance + toBerthDistance;
+            return recoveryTime + toSellDistance + toBerthDistance;
         }
-        return berth.getBoatMinDistance(boat.corePoint, boat.direction);
+        return recoveryTime + berth.getBoatMinDistance(boat.corePoint, boat.direction);
     }
 
 //    private boolean boatGreedyBuy(int[] goodsNumList, int[] goodComingTimes) {

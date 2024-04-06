@@ -84,8 +84,11 @@ public class Boat {
             printError("error");
             return;
         }
-        if (status == 1 || status == 2) {
-            return;//恢复状态，或者需要继续装货
+        if (status == 1 || (status == 2
+                && targetBerthId != -1
+                && strategy.berths.get(targetBerthId).curBoatId == id)) {
+            //恢复状态，或者已经在目标泊位装货了
+            return;
         }
         PointWithDirection next = path.get(1);
         if (!carry
