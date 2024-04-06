@@ -55,10 +55,17 @@ public class Boat {
         status = Integer.parseInt(parts[5]);
         if (status != 2 && originStatus == 2) {
             //从装货到进入恢复状态或者行驶状态，说明船舶离开泊位，解锁,别人可以闪现过去
+
+            boolean hashOne = false;
             for (Berth berth : strategy.berths) {
                 if (berth.curBoatId == id) {
                     berth.curBoatId = -1;
+                    hashOne = true;
+                    break;
                 }
+            }
+            if (!hashOne) {
+                printError("error in out berth");
             }
         }
         originStatus = status;
