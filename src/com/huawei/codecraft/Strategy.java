@@ -100,6 +100,7 @@ public class Strategy {
             long curTime = System.currentTimeMillis();
             if (curTime - startTime + maxUpdateTime > 1000 * 4 + 800) {
                 berth.init(gameMap, true);
+                normal_init_success = false;
                 continue;
             }
             berth.init(gameMap, false);

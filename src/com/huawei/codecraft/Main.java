@@ -34,11 +34,7 @@ public class Main {
     }
 
     private static void schedule() throws IOException {
-
-        long l1 = System.currentTimeMillis();
         strategy.init();
-        long l2 = System.currentTimeMillis();
-        System.out.println("frame:"+(l2-l1));
         strategy.mainLoop();
     }
 

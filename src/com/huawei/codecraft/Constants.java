@@ -43,6 +43,7 @@ public class Constants {
     public static final int BERTH_HEIGHT = 4;    // 每个玩家的船
     public static final int BERTH_WIDTH = 4;    // 每个玩家的船
     public static int frameId;
+    public static boolean normal_init_success = true;//dij超时说明没有正常初始化
     public static final int BERTH_CHANGE_TIME = 10 * FPS; //切换泊位需要时间
 
 
