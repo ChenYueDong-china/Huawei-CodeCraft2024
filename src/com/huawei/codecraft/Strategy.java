@@ -259,7 +259,6 @@ public class Strategy {
     private void dispatch() {
         robotDoAction();
         boatDoAction();
-
         if (frameId == 1) {
             for (int i = 0; i < 8; i++) {
                 outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
@@ -268,8 +267,29 @@ public class Strategy {
             for (int i = 0; i < 1; i++) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats.add(new Boat(this, boatCapacity));
+                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
+                boats.add(new Boat(this, boatCapacity));
             }
         }
+//        if (frameId > 1 && frameId < 500) {
+//            Boat boat1 = boats.get(0);
+//            boat1.path = boatToPoint(boat1, new PointWithDirection(new Point(111, 98), -1), 9999);
+//            Boat boat2 = boats.get(1);
+//            boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1), 9999);
+//            //不然肯定dij不对
+//            ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
+//            ArrayList<Integer> otherIds = new ArrayList<>();
+//            otherPaths.add(boat1.path);
+//            otherIds.add(0);
+//            if (boatCheckCrash(gameMap, boat2.id, boat2.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
+//                //撞了
+//                boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1)
+//                        , 9999, otherPaths, otherIds);
+//
+//            }
+//            boat1.finish();
+//            boat2.finish();
+//        }
     }
 
 
