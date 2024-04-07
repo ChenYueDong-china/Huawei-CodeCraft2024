@@ -702,6 +702,7 @@ public class Strategy {
                 //继续装货
                 int needCount = boat.capacity - boat.num;
                 boat.buyAssign = true;
+                boat.assigned = true;
                 goodsNumList[berth.id] -= needCount;
                 return true;
             }
