@@ -14,7 +14,7 @@ public class Robot {
     public boolean avoid;
     public int carryValue;
     public Point lastBuyPos = new Point();
-    public int estimateUnloadTime;
+
     public Point pos = new Point();
     public int status;
     public boolean redundancy;//机器人是否有冗余时间去买，无的话最前面，第二携带物品的，最后看价值

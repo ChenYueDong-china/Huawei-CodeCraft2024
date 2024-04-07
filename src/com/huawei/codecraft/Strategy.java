@@ -636,6 +636,7 @@ public class Strategy {
                         distance++;
                     }
                 }
+                distance += boat.remainRecoveryTime;
                 if (distance < minSellDistance) {
                     minSellDistance = distance;
                     selectPoint = boatSellPoint;
@@ -1493,7 +1494,6 @@ public class Strategy {
             if (!robot.carry) {
                 //携带了物品不管
                 int toWorkbenchDist = robotMinToWorkbenchDistance(robot, workbench);
-                robot.estimateUnloadTime = frameId + toWorkbenchDist + berth.getRobotMinDistance(workbench.pos);
                 robot.redundancy = toWorkbenchDist != workbench.remainTime;
             }
             robot.priority = workbench.value;
@@ -1504,7 +1504,6 @@ public class Strategy {
             }
         } else {
             robot.redundancy = true;
-            robot.estimateUnloadTime = frameId + berth.getRobotMinDistance(robot.pos);
             if (gameMap.getBelongToBerthId(robot.pos) == berth.id) {
                 printError("error,no pre sell");
                 robot.pull();
