@@ -258,20 +258,117 @@ public class Strategy {
 
 
     private void dispatch() {
-        robotDoAction();
-        boatDoAction();
-        if (frameId == 1) {
-            for (int i = 0; i < 8; i++) {
-                outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-                robots.add(new Robot(this));
+        if (!GET_LAST_ONE) {
+            robotDoAction();
+            boatDoAction();
+            if (frameId == 1) {
+                for (int i = 0; i < 8; i++) {
+                    outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
+                    robots.add(new Robot(this));
+                }
+                for (int i = 0; i < 1; i++) {
+                    outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                    boats.add(new Boat(this, boatCapacity));
+                    outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
+                    boats.add(new Boat(this, boatCapacity));
+                }
             }
-            for (int i = 0; i < 1; i++) {
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                boats.add(new Boat(this, boatCapacity));
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
-                boats.add(new Boat(this, boatCapacity));
+        } else {
+            if (frameId == 1) {
+                for (int i = 0; i < 8; i++) {
+                    outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
+                    robots.add(new Robot(this));
+                }
+                for (int i = 0; i < 1; i++) {
+                    outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                    boats.add(new Boat(this, boatCapacity));
+                }
             }
+            if (frameId <= 1) {
+                return;
+            }
+            if (lastSelectRobotId == -1) {
+                //寻找小于阈值的工作台和泊位
+                for (Workbench buyWorkbench : workbenches.values()) {
+                    if (buyWorkbench.value > lastValueThreshold) {
+                        continue;
+                    }
+                    //存在就一定有产品
+                    for (Robot robot : robots) {
+                        if (!buyWorkbench.canReach(robot.pos)) {
+                            continue; //不能到达
+                        }
+                        int buyTime = robotMinToWorkbenchDistance(robot, buyWorkbench);
+                        if (buyTime + 5 > buyWorkbench.remainTime) {
+                            continue;
+                        }
+                        //随便找个卖家卖
+                        for (Berth berth : berths) {
+                            if (!berth.robotCanReach(buyWorkbench.pos)) {
+                                continue; //不能到达
+                            }
+                            //ok,就这样
+                            lastSelectRobotId = robot.id;
+                            lastSelectWorkbenchId = buyWorkbench.id;
+                            lastSelectBerthId = berth.id;
+                            robot.targetWorkBenchId = lastSelectWorkbenchId;
+                            robot.targetBerthId = lastSelectBerthId;
+                            break;
+                        }
+                        if (lastSelectRobotId != -1) {
+                            break;
+                        }
+                    }
+                    if (lastSelectRobotId != -1) {
+                        break;
+                    }
+                }
+            } else {
+
+                //出发了
+                if (!lastRobotDoAction) {
+                    Robot robot = robots.get(lastSelectRobotId);
+                    if (!robot.carry) {
+                        robot.path = workbenches.get(lastSelectWorkbenchId).dijkstra.moveFrom(robot.pos);
+                        Point target = gameMap.discreteToPos(robot.path.get(2));
+                        if (target.equal(robot.pos)) {
+                            //
+                            robot.buy();
+                        }
+                        robot.finish();
+                    } else {
+                        int index = berths.get(lastSelectBerthId).robotMinDistanceIndexes[robot.pos.x][robot.pos.y].get(0);
+                        robot.path = berths.get(lastSelectBerthId).robotDijkstra.get(index).moveFrom(robot.pos);
+                        Point target = gameMap.discreteToPos(robot.path.get(2));
+                        if (berths.get(lastSelectBerthId).inBerth(target)) {
+                            //提前卖，移动完毕卖,货物这种时候可以增加
+                            lastRobotDoAction = true;
+                        }
+                        robot.assigned = true;
+                        robot.finish();
+                    }
+                }
+
+                Boat boat1 = boats.get(0);
+                if (boats.get(0).value == 0) {
+                    boat1.path = boatToBerth(boat1, berths.get(lastSelectBerthId), 9999);
+                } else {
+                    boat1.targetBerthId = -1;
+                    boat1.path = boatSellPoints.get(0).moveFrom(boat1.corePoint, boat1.direction);
+                }
+                boats.get(0).finish();
+            }
+
+
         }
+//        if (frameId == 1) {
+//            for (int i = 0; i < 1; i++) {
+//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+//                boats.add(new Boat(this, boatCapacity));
+//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
+//                boats.add(new Boat(this, boatCapacity));
+//            }
+//        }
 //        if (frameId > 1 && frameId < 500) {
 //            Boat boat1 = boats.get(0);
 //            boat1.path = boatToPoint(boat1, new PointWithDirection(new Point(111, 98), -1), 9999);
