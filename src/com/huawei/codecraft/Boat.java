@@ -85,6 +85,10 @@ public class Boat {
             }
         }
         originStatus = status;
+        if (remainRecoveryTime < 0) {
+            printError("error remainRecoveryTime < 0");
+            remainRecoveryTime = 0;
+        }
         if (status == 1) {
             //恢复状态
             remainRecoveryTime--;
@@ -180,11 +184,7 @@ public class Boat {
         outStream.printf("berth %d\n", id);
         //计算恢复时间
         PointWithDirection next = new PointWithDirection(strategy.berths.get(targetBerthId).corePoint, 0);
-        remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
-        corePoint.x = next.point.x;
-        corePoint.y = next.point.y;
-        direction = next.direction;
-        status = 1;//闪现成功
+        flashToNextPoint(next);
         strategy.berths.get(targetBerthId).curBoatId = id;
         lastFlashBerth = true;
     }
@@ -193,13 +193,17 @@ public class Boat {
         assert status != 1;
         outStream.printf("dept %d\n", id);
         PointWithDirection next = strategy.getBoatFlashDeptPoint(corePoint);
-        remainRecoveryTime = 2;//下一帧就变1了
+        flashToNextPoint(next);
+        lastFlashDept = true;
+        //计算恢复时间
+
+    }
+
+    private void flashToNextPoint(PointWithDirection next) {
+        remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
         corePoint.x = next.point.x;
         corePoint.y = next.point.y;
         direction = next.direction;
         status = 1;//闪现成功
-        lastFlashDept = true;
-        //计算恢复时间
-
     }
 }
