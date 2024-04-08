@@ -771,6 +771,9 @@ public class Strategy {
                         //计算到达时间
                         int waitTime = 1 + abs(boat.corePoint.x - mid.point.x) + abs(boat.corePoint.y - mid.point.y);
                         int twoDistance = waitTime;
+                        if (waitTime == 1) {//闪现原地,一定不选
+                            twoDistance += MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
+                        }
                         if (boat.assigned) {
                             if (boat.carry) {
                                 //买
