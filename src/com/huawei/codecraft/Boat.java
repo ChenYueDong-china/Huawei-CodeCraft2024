@@ -48,13 +48,15 @@ public class Boat {
         id = Integer.parseInt(parts[0]);
         lastNum = num;
         num = Integer.parseInt(parts[1]);
-        if (num == 0) {
-            targetSellId = -1;//卖完
-            carry = false;
-            value = 0;
-        }
         corePoint.x = Integer.parseInt(parts[2]);
         corePoint.y = Integer.parseInt(parts[3]);
+        for (BoatSellPoint boatSellPoint : strategy.boatSellPoints) {
+            if (num == 0 && corePoint.equal(boatSellPoint.point)) {
+                targetSellId = -1;//卖完
+                carry = false;
+                value = 0;
+            }
+        }
         direction = Integer.parseInt(parts[4]);
         status = Integer.parseInt(parts[5]);
         if (lastFlashBerth && status == 0) {//闪现，且这一帧没等待或者出问题
