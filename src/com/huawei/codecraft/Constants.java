@@ -10,6 +10,7 @@ public class Constants {
 
     public static int MIN_ROBOT_COUNT = 8;
     public static int MIN_BOAT_COUNT = 1;
+    public static double BUY_ROBOT_FACTOR = 1;//越大越不容易买机器人
 
 
     public static final int BOAT_PREDICT_DISTANCE = 50;//预测距离

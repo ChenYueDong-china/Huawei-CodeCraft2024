@@ -54,6 +54,7 @@ public class Strategy {
 
 
     public ArrayList<Point> robotPurchasePoint = new ArrayList<>();
+    public ArrayList<Integer> robotPurchaseCount = new ArrayList<>();
     public ArrayList<Point> boatPurchasePoint = new ArrayList<>();
     public ArrayList<BoatSellPoint> boatSellPoints = new ArrayList<>();
 
@@ -76,12 +77,14 @@ public class Strategy {
         }
         for (int i = 0; i < mapData.length; i++) {
             for (int j = 0; j < mapData[0].length; j++) {
-                if (mapData[i][j] == 'R')
+                if (mapData[i][j] == 'R') {
                     robotPurchasePoint.add(new Point(i, j));
-                else if (mapData[i][j] == 'S')
+                    robotPurchaseCount.add(0);
+                } else if (mapData[i][j] == 'S') {
                     boatPurchasePoint.add(new Point(i, j));
-                else if (mapData[i][j] == 'T')
+                } else if (mapData[i][j] == 'T') {
                     boatSellPoints.add(new BoatSellPoint(new Point(i, j)));
+                }
             }
         }
         gameMap.setMap(mapData);
@@ -267,11 +270,19 @@ public class Strategy {
 
     public void mainLoop() throws IOException {
         while (input()) {
+            long l = System.currentTimeMillis();
             dispatch();
+            long e = System.currentTimeMillis();
+            if (e - l > 15) {
+                printError("frameId:" + frameId + ",time:" + (e - l));
+            }
             if (frameId == 15000) {
-                printError("jumpTime:" + jumpCount + ",totalValue:"
+                printError("jumpTime:" + jumpCount
+                        + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size()
+                        + ",totalValue:"
                         + totalValue + ",pullValue:"
-                        + pullScore + ",score:" + money);
+                        + pullScore + ",score:" + money
+                );
             }
             outStream.print("OK\n");
             outStream.flush();
@@ -408,7 +419,6 @@ public class Strategy {
         }
         while (robots.size() < INIT_ROBOT_COUNT && money > ROBOT_PRICE) {
             buyRobot();
-
         }
         while (boats.size() < INIT_BOAT_COUNT && money > BOAT_PRICE) {
             if (!buyBoat()) {
@@ -442,7 +452,7 @@ public class Strategy {
         double estimateRemainTotalCount = speed * (GAME_FRAME - frameId);
         double curRobotCount = 0;//折算的个数
         for (Robot robot : robots) {
-            curRobotCount += frameId - robot.buyFrame;
+            curRobotCount += frameId - robot.buyFrame + 1;
         }
         curRobotCount /= frameId;
 
@@ -456,14 +466,14 @@ public class Strategy {
         double curRemainValue = remainTotalValue;
         while (robots.size() + buyRobotCount < estimateMaxRobotCount) {
             double oneRobotValue = curRemainValue * 1.0 * pullScore / totalValue / curRobotCount;
-            if (oneRobotValue > 2 * ROBOT_PRICE) {
+            if (oneRobotValue > BUY_ROBOT_FACTOR * ROBOT_PRICE) {
                 buyRobotCount++;
                 curRemainValue -= oneRobotValue;
             } else {
                 break;
             }
         }
-        while (buyRobotCount > 0) {
+        while (buyRobotCount > 0 && money > ROBOT_PRICE) {
             buyRobot();
             buyRobotCount--;
         }
@@ -475,8 +485,9 @@ public class Strategy {
         if (index == -1) {
             return false;
         }
-        outStream.printf("lbot %d %d\n", robotPurchasePoint.get(index).x, robotPurchasePoint.get(index).y);
+        outStream.printf("lboat %d %d\n", boatPurchasePoint.get(index).x, boatPurchasePoint.get(index).y);
         boats.add(new Boat(this, boatCapacity));
+        money -= BOAT_PRICE;
         return true;
     }
 
@@ -484,16 +495,91 @@ public class Strategy {
         int index = getBestBuyRobotPos();
         outStream.printf("lbot %d %d\n", robotPurchasePoint.get(index).x, robotPurchasePoint.get(index).y);
         Robot robot = new Robot(this);
+        robotPurchaseCount.set(index, robotPurchaseCount.get(index) + 1);
         robot.buyFrame = frameId;
         robots.add(robot);
+        money -= ROBOT_PRICE;
     }
 
     private int getBestBoatBuyPos() {
-        return 0;
+        //货物最多的berth
+        int[] remainGoodsCount = new int[BERTH_PER_PLAYER];
+        for (Berth berth : berths) {
+            remainGoodsCount[berth.id] = berth.goodsNums;
+        }
+        for (Boat boat : boats) {
+            if (boat.targetBerthId != -1) {
+                int needCount = boat.carry ? boat.capacity : boat.capacity - boat.num;
+                remainGoodsCount[boat.targetBerthId] -= needCount;
+            }
+        }
+        int maxCount = -GAME_FRAME;
+        int bestBerthId = -1;
+        for (int i = 0; i < remainGoodsCount.length; i++) {
+            if (remainGoodsCount[i] > maxCount) {
+                maxCount = remainGoodsCount[i];
+                bestBerthId = i;
+            }
+        }
+        int bestI = -1;
+        int minDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < boatPurchasePoint.size(); i++) {
+            Point point = boatPurchasePoint.get(i);
+            int distance = berths.get(bestBerthId).boatMinDistance[point.x][point.y][0];
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestI = i;
+            }
+        }
+        //冲突检测
+        for (Boat boat : boats) {
+            PointWithDirection buyPoint = new PointWithDirection(boatPurchasePoint.get(bestI), 0);
+            if (boatCheckCrash(gameMap, buyPoint, new PointWithDirection(boat.corePoint, boat.direction))) {
+                bestI = -1;//这一帧，买不了
+                break;
+            }
+        }
+        return bestI;
     }
 
     private int getBestBuyRobotPos() {
-        return 0;
+        double maxProfit = 0;
+        int bestI = -1;
+        int bestWorkBenchId = -1;
+        for (int i = 0; i < robotPurchasePoint.size(); i++) {
+            for (Workbench buyWorkbench : workbenches.values()) {
+                if (workbenchesLock.contains(buyWorkbench.id)) {
+                    continue;//别人选择过了
+                }
+                Point point = robotPurchasePoint.get(i);
+                int buyTime = buyWorkbench.getMinDistance(point);
+                int sellTime = buyWorkbench.minSellDistance;
+                if (frameId + buyTime + sellTime > GAME_FRAME) {
+                    continue;
+                }
+                double value = buyWorkbench.value;
+                value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
+                double profit = value / (buyTime + sellTime);
+                if (profit > maxProfit) {
+                    maxProfit = profit;
+                    bestI = i;
+                    bestWorkBenchId = buyWorkbench.id;
+                }
+            }
+        }
+        if (bestWorkBenchId != -1) {
+            workbenchesLock.add(bestWorkBenchId);
+        } else {
+            //咋搞
+            int minBuyCount = Integer.MAX_VALUE;
+            for (int i = 0; i < robotPurchaseCount.size(); i++) {
+                if (robotPurchaseCount.get(i) < minBuyCount) {
+                    minBuyCount = robotPurchaseCount.get(i);
+                    bestI = i;
+                }
+            }
+        }
+        return bestI;
     }
 
 
@@ -1804,7 +1890,7 @@ public class Strategy {
             }
             workbench.minSellDistance = minDistance;
             if (minDistance != Integer.MAX_VALUE) {
-                totalValidBerthCount++;
+                totalValidWorkBenchCount++;
                 totalWorkbenchLoopDistance += 2 * workbench.minSellDistance;//买了卖
             }
             totalValue += workbench.value;
@@ -1812,7 +1898,7 @@ public class Strategy {
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
-        avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidBerthCount);
+        avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidWorkBenchCount);
 
         ROBOTS_PER_PLAYER = getIntInput();
         //机器人
