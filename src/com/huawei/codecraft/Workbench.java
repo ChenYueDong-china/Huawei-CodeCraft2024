@@ -10,6 +10,7 @@ public class Workbench {
     int id;
     Point pos = new Point();
     int value;
+    int minSellDistance;
     Dijkstra dijkstra;//工作台到场上所有点的路径
 
     int remainTime;

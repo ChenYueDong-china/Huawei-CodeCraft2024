@@ -14,6 +14,7 @@ public class Berth {
     int coreDirection = 0;
     int transportTime;
     int loadingSpeed;
+    int minSellDistance;
     int goodsNums;//泊位目前没装的货物数量
 
     Queue<Integer> goods = new ArrayDeque<>();

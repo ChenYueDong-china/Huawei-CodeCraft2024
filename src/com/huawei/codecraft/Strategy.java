@@ -57,8 +57,15 @@ public class Strategy {
     public ArrayList<Point> boatPurchasePoint = new ArrayList<>();
     public ArrayList<BoatSellPoint> boatSellPoints = new ArrayList<>();
 
-
     private int boatCapacity;
+
+    public int totalWorkbenchLoopDistance = 0;
+    public int totalValidWorkBenchCount = 0;
+    public int totalValidBerthCount = 0;
+    public double avgBerthLoopDistance = -1;//平均工作台循环距离
+    public double avgWorkBenchLoopDistance = -1;//平均货物循环距离
+    public double estimateMaxRobotCount = 0;//代码估计的
+    public double estimateMaxBoatCount = 0;
 
     public void init() throws IOException {
         long startTime = System.currentTimeMillis();
@@ -97,15 +104,23 @@ public class Strategy {
             berth.corePoint.y = Integer.parseInt(parts[2]);
             berth.loadingSpeed = Integer.parseInt(parts[3]);
             berth.id = id;
+            //最小卖距离
             long curTime = System.currentTimeMillis();
             if (curTime - startTime + maxUpdateTime > 1000 * 4 + 800) {
                 berth.init(gameMap, true);
                 normal_init_success = false;
-                continue;
+            } else {
+                berth.init(gameMap, false);
+                long r = System.currentTimeMillis();
+                maxUpdateTime = max(maxUpdateTime, r - curTime);
             }
-            berth.init(gameMap, false);
-            long r = System.currentTimeMillis();
-            maxUpdateTime = max(maxUpdateTime, r - curTime);
+            int minSellDistance = Integer.MAX_VALUE;
+            for (BoatSellPoint boatSellPoint : boatSellPoints) {
+                if (boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection) < minSellDistance) {
+                    minSellDistance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
+                }
+            }
+            berth.minSellDistance = minSellDistance;
         }
         boatCapacity = getIntInput();
         String okk = inStream.readLine();
@@ -141,7 +156,16 @@ public class Strategy {
         for (int i = 0; i < robotLock.length; i++) {
             robotLock[i] = new HashSet<>();
         }
-        System.gc();//主动gc一下，防止后面掉帧
+
+        //更新berth循环距离
+        int totalBerthLoopDistance = 0;
+        for (Berth berth : berths) {
+            if (berth.minSellDistance != Integer.MAX_VALUE) {
+                totalBerthLoopDistance += 2 * berth.minSellDistance + (int) ceil(1.0 * boatCapacity / berth.loadingSpeed);
+                totalValidBerthCount++;
+            }
+        }
+        avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
         outStream.print("OK\n");
     }
 
@@ -235,8 +259,6 @@ public class Strategy {
         return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, otherPaths);
     }
 
-    long totalTime = 0;
-
     public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end
             , ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
         return robotMoveToPointHeuristic(gameMap, robot.pos, end, otherPaths, heuristicCs);
@@ -261,18 +283,8 @@ public class Strategy {
         if (!GET_LAST_ONE) {
             robotDoAction();
             boatDoAction();
-            if (frameId == 1) {
-                for (int i = 0; i < 8; i++) {
-                    outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-                    robots.add(new Robot(this));
-                }
-                for (int i = 0; i < 1; i++) {
-                    outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-                    boats.add(new Boat(this, boatCapacity));
-                    outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
-                    boats.add(new Boat(this, boatCapacity));
-                }
-            }
+            robotAndBoatBuy();
+
         } else {
             if (frameId == 1) {
                 for (int i = 0; i < 8; i++) {
@@ -388,6 +400,100 @@ public class Strategy {
 //            boat1.finish();
 //            boat2.finish();
 //        }
+    }
+
+    private void robotAndBoatBuy() {
+        if (money < ROBOT_PRICE) {
+            return;
+        }
+        while (robots.size() < INIT_ROBOT_COUNT && money > ROBOT_PRICE) {
+            buyRobot();
+
+        }
+        while (boats.size() < INIT_BOAT_COUNT && money > BOAT_PRICE) {
+            if (!buyBoat()) {
+                //下一帧再说
+                return;
+            }
+        }
+        while (robots.size() < MIN_ROBOT_COUNT && money > ROBOT_PRICE) {
+            buyRobot();
+        }
+        while (boats.size() < MIN_BOAT_COUNT && money > BOAT_PRICE) {
+            if (!buyBoat()) {
+                //可能本帧直接买会撞，买不到,下一帧再说
+                return;
+            }
+        }
+        if (money < ROBOT_PRICE || GAME_FRAME == frameId) {
+            return;
+        }
+
+        //动态决定是否买机器人和船
+        int goodCounts = totalValidWorkBenchCount;
+        int remainCount = 0;
+        for (Workbench value : workbenches.values()) {
+            if (value.minSellDistance != Integer.MAX_VALUE) {
+                remainCount++;
+            }
+        }
+        //剩余估计要来的count
+        double speed = 1.0 * goodCounts / frameId;
+        double estimateRemainTotalCount = speed * (GAME_FRAME - frameId);
+        double curRobotCount = 0;//折算的个数
+        for (Robot robot : robots) {
+            curRobotCount += frameId - robot.buyFrame;
+        }
+        curRobotCount /= frameId;
+
+        //估计最大机器人数
+        estimateMaxRobotCount = (estimateRemainTotalCount + remainCount) * avgWorkBenchLoopDistance / (GAME_FRAME - frameId);
+        double remainTotalValue = (estimateRemainTotalCount + remainCount) * goodAvgValue;
+        double curCanGetValue = min(remainTotalValue
+                , 1.0 * pullScore / totalValue * remainTotalValue * robots.size() / curRobotCount);
+        remainTotalValue -= curCanGetValue;
+        int buyRobotCount = 0;
+        double curRemainValue = remainTotalValue;
+        while (robots.size() + buyRobotCount < estimateMaxRobotCount) {
+            double oneRobotValue = curRemainValue * 1.0 * pullScore / totalValue / curRobotCount;
+            if (oneRobotValue > 2 * ROBOT_PRICE) {
+                buyRobotCount++;
+                curRemainValue -= oneRobotValue;
+            } else {
+                break;
+            }
+        }
+        while (buyRobotCount > 0) {
+            buyRobot();
+            buyRobotCount--;
+        }
+
+    }
+
+    private boolean buyBoat() {
+        int index = getBestBoatBuyPos();
+        if (index == -1) {
+            return false;
+        }
+        outStream.printf("lbot %d %d\n", robotPurchasePoint.get(index).x, robotPurchasePoint.get(index).y);
+        boats.add(new Boat(this, boatCapacity));
+        return true;
+    }
+
+    private void buyRobot() {
+        int index = getBestBuyRobotPos();
+        outStream.printf("lbot %d %d\n", robotPurchasePoint.get(index).x, robotPurchasePoint.get(index).y);
+        Robot robot = new Robot(this);
+        robot.buyFrame = frameId;
+        robots.add(robot);
+    }
+
+    private int getBestBoatBuyPos() {
+        return 0;
+    }
+
+    private int getBestBuyRobotPos() {
+        return 0;
     }
 
 
@@ -1689,11 +1795,24 @@ public class Strategy {
                 //不管，反正计算过了
                 continue;
             }
+            //最小卖距离
+            int minDistance = Integer.MAX_VALUE;
+            for (Berth berth : berths) {
+                if (berth.getRobotMinDistance(workbench.pos) < minDistance) {
+                    minDistance = berth.getRobotMinDistance(workbench.pos);
+                }
+            }
+            workbench.minSellDistance = minDistance;
+            if (minDistance != Integer.MAX_VALUE) {
+                totalValidBerthCount++;
+                totalWorkbenchLoopDistance += 2 * workbench.minSellDistance;//买了卖
+            }
             totalValue += workbench.value;
             workbenches.put(workbenchId, workbench);
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
+        avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidBerthCount);
 
         ROBOTS_PER_PLAYER = getIntInput();
         //机器人

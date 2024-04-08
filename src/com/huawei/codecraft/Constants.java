@@ -5,6 +5,12 @@ package com.huawei.codecraft;
  */
 public class Constants {
 
+    public static int INIT_ROBOT_COUNT = 8;
+    public static int INIT_BOAT_COUNT = 1;
+
+    public static int MIN_ROBOT_COUNT = 8;
+    public static int MIN_BOAT_COUNT = 1;
+
 
     public static final int BOAT_PREDICT_DISTANCE = 50;//预测距离
     public static final int BOAT_AVOID_DISTANCE = 25;//避让距离

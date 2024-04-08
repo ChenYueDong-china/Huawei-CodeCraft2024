@@ -10,6 +10,7 @@ import static java.lang.Math.min;
 public class Robot {
 
     public int id;
+    public int buyFrame=0;//购买时间
     public boolean carry;
     public boolean avoid;
     public int carryValue;
@@ -103,8 +104,6 @@ public class Robot {
         strategy.totalPullGoodsCount++;
         strategy.totalPullGoodsValues += carryValue;
         strategy.avgPullGoodsValue = 1.0 * strategy.totalPullGoodsValues / strategy.totalPullGoodsCount;
-        strategy.avgPullGoodsTime = min(1.0 * frameId / strategy.totalPullGoodsCount, 15);
-
 
         //10帧一个
         strategy.berths.get(targetBerthId).totalGoodsNums++;
