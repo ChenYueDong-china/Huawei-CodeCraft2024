@@ -473,6 +473,46 @@ public class Strategy {
                 break;
             }
         }
+
+        //决定是否买船
+        int berthTotalNum = 0;
+        int berthRemainNum = 0;
+        for (Berth berth : berths) {
+            berthTotalNum += berth.totalGoodsNums;
+            berthRemainNum += berth.goodsNums;
+        }
+        for (Boat boat : boats) {
+            if (!boat.carry && boat.targetBerthId != -1) {
+                int needCount = boat.capacity - boat.num;
+                berthRemainNum -= needCount;
+            }
+        }
+        //估计未来到达的货物
+        double berthSpeed = 1.0 * berthTotalNum / frameId;
+        double estimateBerthComingGood = 1.0 * berthSpeed * (GAME_FRAME - frameId) * robots.size() / curRobotCount;
+        estimateMaxBoatCount = (estimateBerthComingGood + berthRemainNum) / boatCapacity * avgBerthLoopDistance
+                / (GAME_FRAME - frameId);
+        double oneBoatValue = boatCapacity * avgPullGoodsValue;
+        double oneBoatCanGetValue = floor(oneBoatValue * (GAME_FRAME - frameId) / avgBerthLoopDistance);
+        int buyBoatCount = 0;
+        while (boats.size() + buyBoatCount < estimateMaxBoatCount) {
+            double oneBoatRealValue = oneBoatCanGetValue * min(estimateMaxBoatCount - buyBoatCount - boats.size(), 1);
+            if (oneBoatRealValue > BUY_BOAT_FACTOR * BOAT_PRICE) {
+                buyBoatCount++;
+            } else {
+                break;
+            }
+        }
+        while (buyBoatCount > 0) {
+            if (money > BOAT_PRICE) {
+                buyBoat();
+                buyBoatCount--;
+            } else {
+                //此时钱不够，必须得等钱来
+                return;
+            }
+        }
+
         while (buyRobotCount > 0 && money > ROBOT_PRICE) {
             buyRobot();
             buyRobotCount--;
