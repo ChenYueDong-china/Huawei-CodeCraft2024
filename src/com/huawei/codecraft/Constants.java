@@ -5,26 +5,32 @@ package com.huawei.codecraft;
  */
 public class Constants {
 
-    public static int INIT_ROBOT_COUNT = 8;
+    //机器人超参数
+    public static double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
+    public static double DISAPPEAR_REWARD_FACTOR = 1.5; //消失因子
+
+
+    //船只超参数
+    //任意时刻可以切换泊位 or 到达泊位或者目标点或者在移动到目标点才能切泊位
+    public static BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ANY;
+    public static double BOAT_DYNAMIC_SAME_TARGET_FACTOR = 2;//DECISION_ON_ANY动态决策保持因子
+    public static int BOAT_PREDICT_DISTANCE = 50;//预测距离,待测试
+    public static int BOAT_AVOID_DISTANCE = 25;//避让距离
+    public static int BOAT_FIND_PATH_DEEP = 0;//避让距离
+    public static int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
+
+    //购买超参数
+    public static int INIT_ROBOT_COUNT = 8; //初始化
     public static int INIT_BOAT_COUNT = 1;
-
-    public static int MIN_ROBOT_COUNT = 8;
+    public static int MIN_ROBOT_COUNT = 8; //最小的
     public static int MIN_BOAT_COUNT = 1;
-    public static double BUY_ROBOT_FACTOR = 1;//越大越不容易买机器人
-    public static double BUY_BOAT_FACTOR = 5;//越大越不容易买船,暂时不买船
+    public static double BUY_ROBOT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买机器人
+    public static double BUY_BOAT_FACTOR = 5;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
 
-
-    public static final int BOAT_PREDICT_DISTANCE = 50;//预测距离
-    public static final int BOAT_AVOID_DISTANCE = 25;//避让距离
-    public static final int BOAT_FIND_PATH_DEEP = 0;//避让距离
-    public static final int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
 
     //调调超参数，打不过的话
     public static final boolean GET_LAST_ONE = false;//是否拿倒数第一
-    public static final double SAME_TARGET_REWARD_FACTOR = 5; //动态保险因子，防止老是切换目标工作台
-    public static final double DISAPPEAR_REWARD_FACTOR = 1.5; //消失因子
-    public static final BoatDecisionType boatDecisionType = BoatDecisionType.DECISION_ON_ORIGIN_BERTH;
-    public static final boolean BOAT_NO_WAIT = false;//船最开始是否不等待
+
 
     public static final int FPS = 50;                   // 每秒运行帧数
     public static final int GAME_FRAME = 5 * 60 * FPS;

@@ -12,7 +12,6 @@ public class Berth {
     public int curBoatId = -1;
     Point corePoint = new Point();
     int coreDirection = 0;
-    int transportTime;
     int loadingSpeed;
     int minSellDistance;
     int goodsNums;//泊位目前没装的货物数量
@@ -135,7 +134,7 @@ public class Berth {
             }
         }
         long l2 = System.currentTimeMillis();
-        printDebug("berthBoatDijTime:"+(l2-l1));
+        printDebug("berthBoatDijTime:" + (l2 - l1));
         gameMap.updateBerthAndAround(berthAroundPoints, berthPoints, id);
     }
 

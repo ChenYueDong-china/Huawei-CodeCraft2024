@@ -3,8 +3,8 @@ package com.huawei.codecraft;
 import java.io.IOException;
 import java.util.*;
 
-import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN;
-import static com.huawei.codecraft.BoatStatus.*;
+import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ANY;
+import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN_BERTH;
 import static com.huawei.codecraft.BoatUtils.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.RobotAction.RA_BUY;
@@ -270,10 +270,11 @@ public class Strategy {
 
     public void mainLoop() throws IOException {
         while (input()) {
+            //todo 测试多机器人避让，测试多船避让，测试买船，测试最优的决策
             long l = System.currentTimeMillis();
             dispatch();
             long e = System.currentTimeMillis();
-            if (e - l > 15) {
+            if (e - l > 12) {
                 printError("frameId:" + frameId + ",time:" + (e - l));
             }
             if (frameId == 15000) {
@@ -647,7 +648,7 @@ public class Strategy {
             }
         }
         while (true) {
-            if (!boatGreedyBuy3(goodsNumList)) {
+            if (!boatGreedyBuy2(goodsNumList)) {
                 break;
             }  //决策
         }
@@ -1003,7 +1004,8 @@ public class Strategy {
         return true;
     }
 
-    private boolean boatGreedyBuy(int[] goodsNumList) {
+
+    private boolean boatGreedyBuy1(int[] goodsNumList) {
         class Stat implements Comparable<Stat> {
             final Boat boat;
             final Berth berth;
@@ -1024,111 +1026,19 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
-        for (Berth berth : berths) {
-            //停靠在泊位上了
-            if (berth.curBoatId != -1
-                    && berth.goodsNums > 0
-                    && !boats.get(berth.curBoatId).buyAssign
-                    && !boats.get(berth.curBoatId).carry) {
-                //没去卖
-                Boat boat = boats.get(berth.curBoatId);
-                assert boat.targetBerthId == berth.id;
-                //继续装货
-                int needCount = boat.capacity - boat.num;
-                boat.buyAssign = true;
-                boat.assigned = true;
-                goodsNumList[berth.id] -= needCount;
-                return true;
-            }
-        }
-        ArrayList<Stat> stat = new ArrayList<>();
-
-        for (int i = 0; i < berths.size(); i++) {
-            Berth berth = berths.get(i);
-            int berthGoodNum = goodsNumList[i];
-            //找最近的船
-            Boat selectBoat = null;
-            int minBuyDistance = Integer.MAX_VALUE;
+        if (boatDecisionType == DECISION_ON_ORIGIN_BERTH) {
             for (Boat boat : boats) {
                 if (boat.buyAssign) {
                     continue;
                 }
-                if (!berth.boatCanReach(boat.corePoint, boat.direction)) {
-                    continue;
+                if (boat.targetBerthId != -1 && boat.targetSellId != -1
+                        && !boat.carry && boat.status != 2) {
+                    decisionBoatBuy(boat, berths.get(boat.targetBerthId), boatSellPoints.get(boat.targetSellId), goodsNumList);
+                    return true;
                 }
-                int distance = boatMinToBerthDistance(boat, berth);
-                if (boat.carry) {
-                    distance -= boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
-                }
-                if (distance < minBuyDistance) {
-                    minBuyDistance = distance;
-                    selectBoat = boat;
-                }
-            }
-
-            int minSellDistance = Integer.MAX_VALUE;
-            BoatSellPoint selectSellPoint = null;
-            for (BoatSellPoint boatSellPoint : boatSellPoints) {
-                int distance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
-                if (distance < minSellDistance) {
-                    minSellDistance = distance;
-                    selectSellPoint = boatSellPoint;
-                }
-            }
-            if (selectBoat == null || selectSellPoint == null) {
-                continue;
-            }
-            int toSellDistance = 0;
-            if (selectBoat.carry) {
-                toSellDistance = boatSellPoints.get(selectBoat.targetSellId)
-                        .getMinDistance(selectBoat.corePoint, selectBoat.direction);
-            }
-            if (frameId + toSellDistance + minBuyDistance + minSellDistance >= GAME_FRAME) {
-                continue;//不做决策
-            }
-            //价值是船上的个数加泊位个数
-            int needCount = selectBoat.capacity - selectBoat.num;
-            int value = min(needCount, berthGoodNum);
-            value += selectBoat.num;
-            double profit = 1.0 * value / (minSellDistance + minBuyDistance);
-            stat.add(new Stat(selectBoat, berth, selectSellPoint, profit));
-        }
-        if (stat.isEmpty())
-            return false;
-        Collections.sort(stat);
-        Boat boat = stat.get(0).boat;
-        Berth berth = stat.get(0).berth;
-        BoatSellPoint sellPoint = stat.get(0).sellPoint;
-        boat.targetBerthId = berth.id;
-        boat.targetSellId = sellPoint.id;
-        boat.assigned = true;
-        boat.buyAssign = true;
-        int needCount = boat.capacity - boat.num;
-        goodsNumList[berth.id] -= needCount;
-        return true;
-    }
-
-    private boolean boatGreedyBuy2(int[] goodsNumList) {
-        class Stat implements Comparable<Stat> {
-            final Boat boat;
-            final Berth berth;
-
-            final BoatSellPoint sellPoint;
-
-            final double profit;
-
-            public Stat(Boat boat, Berth berth, BoatSellPoint sellPoint, double profit) {
-                this.boat = boat;
-                this.berth = berth;
-                this.sellPoint = sellPoint;
-                this.profit = profit;
-            }
-
-            @Override
-            public int compareTo(Stat b) {
-                return Double.compare(b.profit, profit);
             }
         }
+
         for (Berth berth : berths) {
             //停靠在泊位上了
             if (berth.curBoatId != -1
@@ -1190,6 +1100,11 @@ public class Strategy {
             int needCount = selectBoat.carry ? selectBoat.capacity : selectBoat.capacity - selectBoat.num;
             int value = min(needCount, berthGoodNum);
             double profit = 1.0 * value / (minSellDistance + minBuyDistance);
+            if (boatDecisionType == DECISION_ON_ANY && !selectBoat.carry
+                    && selectBoat.targetBerthId == berth.id) {
+                //防止出问题
+                profit *= (1 + BOAT_DYNAMIC_SAME_TARGET_FACTOR);
+            }
             stat.add(new Stat(selectBoat, berth, selectSellPoint, profit));
         }
         if (stat.isEmpty())
@@ -1202,7 +1117,8 @@ public class Strategy {
         return true;
     }
 
-    private boolean boatGreedyBuy3(int[] goodsNumList) {
+    private boolean
+    boatGreedyBuy2(int[] goodsNumList) {
         class Stat implements Comparable<Stat> {
             final Boat boat;
             final Berth berth;
@@ -1223,138 +1139,135 @@ public class Strategy {
                 return Double.compare(b.profit, profit);
             }
         }
-        for (Berth berth : berths) {
-            //停靠在泊位上了
-            if (berth.curBoatId != -1
-                    && berth.goodsNums > 0
-                    && !boats.get(berth.curBoatId).buyAssign
-                    && !boats.get(berth.curBoatId).carry) {
-                //没去卖
-                Boat boat = boats.get(berth.curBoatId);
-                decisionBoatBuy(boat, berth, boatSellPoints.get(boat.targetSellId), goodsNumList);
-                return true;
+        ArrayList<Boat> oneTypesBoats = new ArrayList<>();//移动向泊位的
+        ArrayList<Boat> twoTypesBoats = new ArrayList<>();//回家或者在家的
+        ArrayList<Boat> threeTypesBoats = new ArrayList<>();//在泊位上的
+        for (Boat boat : boats) {
+            if (boat.buyAssign) {
+                continue;
+            }
+            if (boat.targetBerthId != -1 && boat.targetSellId != -1
+                    && !boat.carry && boat.status != 2) {
+                oneTypesBoats.add(boat);
+            } else if (boat.carry || boat.targetSellId == -1) {
+                twoTypesBoats.add(boat);//回家的,或者刚好到家的
+            } else {
+                assert boat.targetBerthId != -1;
+                threeTypesBoats.add(boat);//在泊位上的
             }
         }
-        ArrayList<Stat> stat = new ArrayList<>();
-        //能装满的先
-        for (int i = 0; i < berths.size(); i++) {
-            Berth berth = berths.get(i);
-            int berthGoodNum = goodsNumList[i];
-            //找最近的船
-            Boat selectBoat = null;
-            int minBuyDistance = Integer.MAX_VALUE;
-            for (Boat boat : boats) {
-                if (boat.buyAssign) {
-                    continue;
-                }
-                if (!berth.boatCanReach(boat.corePoint, boat.direction)) {
-                    continue;
-                }
-                int distance = boatMinToBerthDistance(boat, berth);
-                if (boat.carry) {
-                    distance -= boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
-                }
-                if (distance < minBuyDistance) {
-                    minBuyDistance = distance;
-                    selectBoat = boat;
-                }
-            }
+        if (boatDecisionType == DECISION_ON_ANY) {
+            twoTypesBoats.addAll(oneTypesBoats);
+            oneTypesBoats.clear();//当作第二类决策
+        }
 
-            int minSellDistance = Integer.MAX_VALUE;
-            BoatSellPoint selectSellPoint = null;
-            for (BoatSellPoint boatSellPoint : boatSellPoints) {
-                int distance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
-                if (distance < minSellDistance) {
-                    minSellDistance = distance;
-                    selectSellPoint = boatSellPoint;
-                }
-            }
-            if (selectBoat == null || selectSellPoint == null) {
-                continue;
-            }
-            int toSellDistance = 0;
-            if (selectBoat.carry) {
-                toSellDistance = boatSellPoints.get(selectBoat.targetSellId)
-                        .getMinDistance(selectBoat.corePoint, selectBoat.direction);
-            }
-            if (frameId + toSellDistance + minBuyDistance + minSellDistance >= GAME_FRAME) {
-                continue;//不做决策
-            }
-            //价值是船上的个数加泊位个数
-            int needCount = selectBoat.carry ? selectBoat.capacity : selectBoat.capacity - selectBoat.num;
-            if (min(berthGoodNum, berth.goodsNums) < needCount) {
-                //不能装满,继续
-                continue;
-            }
-            int value = min(needCount, berthGoodNum);
-            double profit = 1.0 * value / (minSellDistance + minBuyDistance);
-            stat.add(new Stat(selectBoat, berth, selectSellPoint, profit));
-        }
-        if (!stat.isEmpty()) {
-            Collections.sort(stat);
-            Boat boat = stat.get(0).boat;
-            Berth berth = stat.get(0).berth;
-            BoatSellPoint sellPoint = stat.get(0).sellPoint;
-            decisionBoatBuy(boat, berth, sellPoint, goodsNumList);
+        for (Boat boat : oneTypesBoats) {
+            //保持不动,静态决策
+            decisionBoatBuy(boat, berths.get(boat.targetBerthId), boatSellPoints.get(boat.targetSellId), goodsNumList);
             return true;
         }
 
-        for (int i = 0; i < berths.size(); i++) {
-            Berth berth = berths.get(i);
-            int berthGoodNum = goodsNumList[i];
-            //找最近的船
-            Boat selectBoat = null;
-            int minBuyDistance = Integer.MAX_VALUE;
-            for (Boat boat : boats) {
-                if (boat.buyAssign) {
-                    continue;
-                }
-                if (!berth.boatCanReach(boat.corePoint, boat.direction)) {
-                    continue;
-                }
-                int distance = boatMinToBerthDistance(boat, berth);
-                if (boat.carry) {
-                    distance -= boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
-                }
-                if (distance < minBuyDistance) {
-                    minBuyDistance = distance;
+        //考虑在移动，运输中也算不能返回，移动完才可以动？
+        ArrayList<Stat> stat = new ArrayList<>();
+        //选择折现价值最大的
+        for (Berth buyBerth : berths) {
+            Boat selectBoat = null;//最近的先决策
+            int minDistance = Integer.MAX_VALUE;
+            for (Boat boat : twoTypesBoats) {
+                //都在回家，近的先选
+                int distance = boatMinToBerthDistance(boat, buyBerth);
+                if (distance < minDistance) {
+                    minDistance = distance;
                     selectBoat = boat;
                 }
             }
-
-            int minSellDistance = Integer.MAX_VALUE;
-            BoatSellPoint selectSellPoint = null;
-            for (BoatSellPoint boatSellPoint : boatSellPoints) {
-                int distance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
-                if (distance < minSellDistance) {
-                    minSellDistance = distance;
-                    selectSellPoint = boatSellPoint;
-                }
-            }
-            if (selectBoat == null || selectSellPoint == null) {
+            if (selectBoat == null) {
                 continue;
             }
-            int toSellDistance = 0;
-            if (selectBoat.carry) {
-                toSellDistance = boatSellPoints.get(selectBoat.targetSellId)
-                        .getMinDistance(selectBoat.corePoint, selectBoat.direction);
+
+            if (frameId + minDistance + buyBerth.minSellDistance >= GAME_FRAME) {
+                continue;//货物装不满，则不管
             }
-            if (frameId + toSellDistance + minBuyDistance + minSellDistance >= GAME_FRAME) {
-                continue;//不做决策
+
+            int index = boatGetMinSellPointIndex(buyBerth);
+            if (index == -1) {
+                continue;
             }
-            //价值是船上的个数加泊位个数
-            int needCount = selectBoat.carry ? selectBoat.capacity : selectBoat.capacity - selectBoat.num;
-            double profit = min(needCount, berthGoodNum) + (minBuyDistance + minSellDistance) * 1e-5 + toSellDistance * 1e-10;
-            stat.add(new Stat(selectBoat, berth, selectSellPoint, profit));
+            //只看数量和距离
+            BoatSellPoint boatSellPoint = boatSellPoints.get(index);
+            double profit = goodsNumList[buyBerth.id] * 1e10 + minDistance;
+            if (boatDecisionType == DECISION_ON_ANY && !selectBoat.carry
+                    && selectBoat.targetBerthId == buyBerth.id) {
+                profit *= (1 + BOAT_DYNAMIC_SAME_TARGET_FACTOR);
+            }
+            stat.add(new Stat(selectBoat, buyBerth, boatSellPoint, profit));
+        }
+        if (!stat.isEmpty()) {
+            Collections.sort(stat);
+            //同一个目标不用管
+            decisionBoatBuy(stat.get(0).boat, stat.get(0).berth, stat.get(0).sellPoint, goodsNumList);
+            return true;
+        }
+
+
+        //第三种，在泊位上或者等待的,货物数量和,单位时间价值
+        for (Boat boat : threeTypesBoats) {
+            //目前船所在的泊位的来货速度,如果来货速度实在太慢，不需要等，直接切目标
+            Berth fromBerth = berths.get(boat.targetBerthId);
+            Berth selectBerth = null;
+            BoatSellPoint selectSellPoint = null;
+            double maxProfit = 0;
+            for (Berth berth : berths) {
+                int buyTime = boat.targetBerthId == berth.id ? 0 : boatMinBerthToBethDistance(fromBerth, berth);
+                int sellTime = berth.minSellDistance;
+                if (sellTime == Integer.MAX_VALUE) {
+                    continue;
+                }
+                BoatSellPoint boatSellPoint = boatSellPoints.get(boatGetMinSellPointIndex(berth));
+                if (frameId + buyTime + sellTime >= GAME_FRAME) {
+                    continue;//不干
+                }
+                if (berth.id != boat.targetBerthId && berths.get(boat.targetBerthId).goodsNums > 0) {
+                    continue;//有货物了，船只能选择这个泊位不变
+                }
+                //没货物怎么办？
+                int needCount = boat.capacity - boat.num;
+                int remainTime = GAME_FRAME - buyTime - sellTime - frameId;
+                int realCount = min(needCount, remainTime / berth.loadingSpeed);//装货
+                realCount = min(realCount, goodsNumList[berth.id]);//来货
+                int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
+                double profit = realCount + 1.0 * boat.num
+                        / (buyTime + loadTime + sellTime);
+                if (profit > maxProfit) {
+                    selectBerth = berth;
+                    selectSellPoint = boatSellPoint;
+                    maxProfit = profit;
+                }
+            }
+            if (selectBerth != null) {
+                //增益超过保持因子，则切换目标
+                stat.add(new Stat(boat, selectBerth, selectSellPoint, maxProfit));
+            }
+
         }
         if (stat.isEmpty())
             return false;
-        Collections.sort(stat);
-        Boat boat = stat.get(0).boat;
-        Berth berth = stat.get(0).berth;
-        BoatSellPoint sellPoint = stat.get(0).sellPoint;
-        decisionBoatBuy(boat, berth, sellPoint, goodsNumList);
+        decisionBoatBuy(stat.get(0).boat, stat.get(0).berth, stat.get(0).sellPoint, goodsNumList);
         return true;
+    }
+
+    private int boatGetMinSellPointIndex(Berth berth) {
+        int minDistance = Integer.MAX_VALUE;
+        int bestIndex = -1;
+        for (int i = 0; i < boatSellPoints.size(); i++) {
+            BoatSellPoint boatSellPoint = boatSellPoints.get(i);
+            int distance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
     }
 
     private void decisionBoatBuy(Boat boat, Berth berth, BoatSellPoint boatSellPoint, int[] goodsNumList) {
@@ -1977,8 +1890,7 @@ public class Strategy {
                 }
                 int arriveSellTime = sellBerth.getRobotMinDistance(buyWorkbench.pos);//机器人买物品的位置开始
                 int collectTime = getFastestCollectTime(toBerthTime + arriveBuyTime + arriveSellTime, sellBerth);
-                int sellTime = collectTime + sellBerth.transportTime;
-
+                int sellTime = collectTime + sellBerth.minSellDistance;
                 double profit;
                 if (frameId + sellTime >= GAME_FRAME) {
                     profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
@@ -2047,7 +1959,7 @@ public class Strategy {
                 double profit;
                 //包裹被揽收的最小需要的时间
                 int collectTime = getFastestCollectTime(arriveTime - 1, sellBerth);
-                int sellTime = collectTime + sellBerth.transportTime;
+                int sellTime = collectTime + sellBerth.minSellDistance;
                 if (frameId + sellTime >= GAME_FRAME) {
                     //如果不能到达，收益为负到达时间
                     profit = -sellTime;
@@ -2109,47 +2021,47 @@ public class Strategy {
 
     private int getFastestCollectTime(int goodArriveTime, Berth berth) {
         //这个泊位这个物品到达的时候泊位的数量
-//        return goodArriveTime;
-        int estimateGoodsNums = berth.goodsNums;
-        for (Robot robot : robots) {
-            if (robot.assigned && robot.targetBerthId == berth.id) {
-                estimateGoodsNums++;
-            }
-        }
-        estimateGoodsNums++;//加上这个货物时间
-        int minDistance = Integer.MAX_VALUE;
-        for (Boat boat : boats) {
-            if (boat.targetBerthId == berth.id) {
-                //来的是同一搜
-                int comingTime = boatMinToBerthDistance(boat, berth);
-                int remainSpace = boat.carry ? boat.capacity : boat.capacity - boat.num;
-                if (remainSpace >= estimateGoodsNums) {
-                    minDistance = min(minDistance, comingTime);
-                } else {
-                    minDistance = min(minDistance, comingTime + 2 * berth.minSellDistance);
-                }
-            } else {
-                int remainSpace = boat.carry ? boat.capacity : boat.capacity - boat.num;
-                int id = boat.targetBerthId == -1 ? 0 : boat.targetBerthId;
-                int comingTime = boatMinToBerthDistance(boat, berths.get(id));
-                int changeBerthTime = boatMinBerthToBethDistance(berths.get(id), berth);
-                remainSpace -= berths.get(id).goodsNums;
-                //去到估计的位置，在加一来一回
-                if (remainSpace >= estimateGoodsNums) {
-                    //可能切换，也可能不切换
-                    minDistance = min(minDistance, comingTime + changeBerthTime);
-                } else {
-                    //去另一个泊位装满，再回去，再去你这里
-                    minDistance = min(minDistance, comingTime + berths.get(id).minSellDistance + berth.minSellDistance);
-                }
-
-            }
-        }
-
-
-        //检查所有的船，找出这个泊位的这个物品最快被什么时候消费
-        //没到达也没法消费
-        return max(goodArriveTime, minDistance) + estimateGoodsNums / berth.loadingSpeed;
+        return goodArriveTime;
+//        int estimateGoodsNums = berth.goodsNums;
+//        for (Robot robot : robots) {
+//            if (robot.assigned && robot.targetBerthId == berth.id) {
+//                estimateGoodsNums++;
+//            }
+//        }
+//        estimateGoodsNums++;//加上这个货物时间
+//        int minDistance = Integer.MAX_VALUE;
+//        for (Boat boat : boats) {
+//            if (boat.targetBerthId == berth.id) {
+//                //来的是同一搜
+//                int comingTime = boatMinToBerthDistance(boat, berth);
+//                int remainSpace = boat.carry ? boat.capacity : boat.capacity - boat.num;
+//                if (remainSpace >= estimateGoodsNums) {
+//                    minDistance = min(minDistance, comingTime);
+//                } else {
+//                    minDistance = min(minDistance, comingTime + 2 * berth.minSellDistance);
+//                }
+//            } else {
+//                int remainSpace = boat.carry ? boat.capacity : boat.capacity - boat.num;
+//                int id = boat.targetBerthId == -1 ? 0 : boat.targetBerthId;
+//                int comingTime = boatMinToBerthDistance(boat, berths.get(id));
+//                int changeBerthTime = boatMinBerthToBethDistance(berths.get(id), berth);
+//                remainSpace -= berths.get(id).goodsNums;
+//                //去到估计的位置，在加一来一回
+//                if (remainSpace >= estimateGoodsNums) {
+//                    //可能切换，也可能不切换
+//                    minDistance = min(minDistance, comingTime + changeBerthTime);
+//                } else {
+//                    //去另一个泊位装满，再回去，再去你这里
+//                    minDistance = min(minDistance, comingTime + berths.get(id).minSellDistance + berth.minSellDistance);
+//                }
+//
+//            }
+//        }
+//
+//
+//        //检查所有的船，找出这个泊位的这个物品最快被什么时候消费
+//        //没到达也没法消费
+//        return max(goodArriveTime, minDistance) + estimateGoodsNums / berth.loadingSpeed;
     }
 
     private int boatMinBerthToBethDistance(Berth fromBerth, Berth toBerth) {
