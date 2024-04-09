@@ -505,14 +505,16 @@ public class Strategy {
         }
         while (buyBoatCount > 0) {
             if (money > BOAT_PRICE) {
-                buyBoat();
-                buyBoatCount--;
+                if (buyBoat()) {
+                    buyBoatCount--;
+                } else {
+                    return;
+                }
             } else {
                 //此时钱不够，必须得等钱来
                 return;
             }
         }
-
         while (buyRobotCount > 0 && money > ROBOT_PRICE) {
             buyRobot();
             buyRobotCount--;
