@@ -153,6 +153,7 @@ public class BoatUtils {
                 if (deep < otherPath.size()) {
                     boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep));
                     if (crash) {
+                        assert(boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
                         return otherId;
                     }
                 }
@@ -161,6 +162,7 @@ public class BoatUtils {
                     if (deep + 1 < otherPath.size()) {
                         boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep + 1));
                         if (crash) {
+                            assert(boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
                             return otherId;
                         }
                     }
@@ -169,6 +171,7 @@ public class BoatUtils {
                     if (deep - 1 < otherPath.size()) {
                         boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep - 1));
                         if (crash) {
+                            assert(boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
                             return otherId;
                         }
                     }
