@@ -189,11 +189,7 @@ public class Strategy {
             int curLeft = max(j - candidate.y, 0);
             int curTop = max(i - candidate.x, 0);
             int curBottom = max(candidate.x - i, 0);
-            if (curDistance < minDistance || curRight > maxRight ||
-                    (curRight == maxRight && curLeft > maxLeft) ||
-                    (curRight == maxRight && curLeft == maxLeft && curTop > maxTop)
-                    || (curRight == maxRight && curLeft == maxLeft
-                    && curTop == maxTop && curBottom > maxBottom)) {
+            if (curDistance < minDistance || curRight > maxRight || (curRight == maxRight && curLeft > maxLeft) || (curRight == maxRight && curLeft == maxLeft && curTop > maxTop) || (curRight == maxRight && curLeft == maxLeft && curTop == maxTop && curBottom > maxBottom)) {
                 bestPoint = candidate;
                 minDistance = curDistance;
                 maxRight = curRight;
@@ -214,35 +210,25 @@ public class Strategy {
 
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
-                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds, boat.remainRecoveryTime);
+        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds, boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToBerthHeuristic(Boat boat, Berth berth) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerthHeuristic(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
-                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), boat.remainRecoveryTime
-                , berth.boatMinDistance);
+        return boatMoveToBerthHeuristic(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), boat.remainRecoveryTime, berth.boatMinDistance);
     }
 
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
-                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep
-                , berth.berthAroundPoints.size(), boat.remainRecoveryTime);
+        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.remainRecoveryTime);
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep) {
-        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
-                , pointWithDirection, maxDeep
-                , boat.remainRecoveryTime);
+        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), pointWithDirection, maxDeep, boat.remainRecoveryTime);
     }
 
-    public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep
-            , ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
-        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
-                , pointWithDirection, maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime
-        );
+    public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
+        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), pointWithDirection, maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime);
     }
 
     public ArrayList<Point> robotToBerth(Robot robot, Berth berth, int maxDeep) {
@@ -257,13 +243,11 @@ public class Strategy {
         return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, null);
     }
 
-    public ArrayList<Point> robotToPoint(Robot robot, Point end, int maxDeep
-            , ArrayList<ArrayList<Point>> otherPaths) {
+    public ArrayList<Point> robotToPoint(Robot robot, Point end, int maxDeep, ArrayList<ArrayList<Point>> otherPaths) {
         return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, otherPaths);
     }
 
-    public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end
-            , ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
+    public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end, ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
         return robotMoveToPointHeuristic(gameMap, robot.pos, end, otherPaths, heuristicCs);
     }
 
@@ -282,12 +266,7 @@ public class Strategy {
                 for (Boat boat : boats) {
                     sellCount += boat.sellCount;
                 }
-                printError("jumpTime:" + jumpCount
-                        + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size()
-                        + ",totalValue:"
-                        + totalValue + ",pullValue:"
-                        + pullScore + ",score:" + money + ",boatSellCount:" + sellCount
-                );
+                printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:" + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
             }
             outStream.print("OK\n");
             outStream.flush();
@@ -464,8 +443,7 @@ public class Strategy {
         //估计最大机器人数
         estimateMaxRobotCount = (estimateRemainTotalCount + remainCount) * avgWorkBenchLoopDistance / (GAME_FRAME - frameId);
         double remainTotalValue = (estimateRemainTotalCount + remainCount) * goodAvgValue;
-        double curCanGetValue = min(remainTotalValue
-                , 1.0 * pullScore / totalValue * remainTotalValue * robots.size() / curRobotCount);
+        double curCanGetValue = min(remainTotalValue, 1.0 * pullScore / totalValue * remainTotalValue * robots.size() / curRobotCount);
         remainTotalValue -= curCanGetValue;
         int buyRobotCount = 0;
         double curRemainValue = remainTotalValue;
@@ -495,8 +473,7 @@ public class Strategy {
         //估计未来到达的货物
         double berthSpeed = 1.0 * berthTotalNum / frameId;
         double estimateBerthComingGood = 1.0 * berthSpeed * (GAME_FRAME - frameId) * robots.size() / curRobotCount;
-        estimateMaxBoatCount = (estimateBerthComingGood + berthRemainNum) / boatCapacity * avgBerthLoopDistance
-                / (GAME_FRAME - frameId);
+        estimateMaxBoatCount = (estimateBerthComingGood + berthRemainNum) / boatCapacity * avgBerthLoopDistance / (GAME_FRAME - frameId);
         double oneBoatValue = boatCapacity * avgPullGoodsValue;
         double oneBoatCanGetValue = floor(oneBoatValue * (GAME_FRAME - frameId) / avgBerthLoopDistance);
         int buyBoatCount = 0;
@@ -508,7 +485,7 @@ public class Strategy {
                 break;
             }
         }
-        while (buyBoatCount > 0) {
+        while (buyBoatCount > 1) {
             if (money > BOAT_PRICE) {
                 if (buyBoat()) {
                     buyBoatCount--;
@@ -523,6 +500,18 @@ public class Strategy {
         while (buyRobotCount > 0 && money > ROBOT_PRICE) {
             buyRobot();
             buyRobotCount--;
+        }
+        while (buyBoatCount == 1) {
+            if (money > BOAT_PRICE) {
+                if (buyBoat()) {
+                    buyBoatCount--;
+                } else {
+                    return;
+                }
+            } else {
+                //此时钱不够，必须得等钱来
+                return;
+            }
         }
 
     }
@@ -687,8 +676,7 @@ public class Strategy {
                     //撞了
                     Point point = boatSellPoints.get(boat.targetSellId).point;
                     int minDeep = boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
-                    ArrayList<PointWithDirection> avoidPath = boatToPoint(boat
-                            , new PointWithDirection(point, -1), minDeep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
+                    ArrayList<PointWithDirection> avoidPath = boatToPoint(boat, new PointWithDirection(point, -1), minDeep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
                     if (!avoidPath.isEmpty()) {
                         boat.path.clear();
                         boat.path.addAll(avoidPath);
@@ -704,23 +692,19 @@ public class Strategy {
                 //不然肯定dij不对
                 if (boatCheckCrash(gameMap, boat.id, boat.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
                     //撞了
-                    ArrayList<PointWithDirection> avoidPath = boatToBerth(boat, targetBerth
-                            , deep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
+                    ArrayList<PointWithDirection> avoidPath = boatToBerth(boat, targetBerth, deep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
                     if (!avoidPath.isEmpty()) {
                         boat.path.clear();
                         boat.path.addAll(avoidPath);
                     }
                 }
                 //目标有船，且自己里目标就差5帧了，此时直接搜到目标，后面再闪现
-                if (targetBerth.curBoatId != -1 &&
-                        targetBerth.curBoatId != boat.id) {
+                if (targetBerth.curBoatId != -1 && targetBerth.curBoatId != boat.id) {
                     for (int i = 0; i < min(boat.path.size(), 5); i++) {
                         PointWithDirection next = boat.path.get(i);
                         if (next.point.equal(targetBerth.corePoint)) {
                             //有船且不是你,先去核心点等着闪现
-                            ArrayList<PointWithDirection> toCorePath = boatToPoint(boat
-                                    , new PointWithDirection(targetBerth.corePoint, -1)
-                                    , 9999);
+                            ArrayList<PointWithDirection> toCorePath = boatToPoint(boat, new PointWithDirection(targetBerth.corePoint, -1), 9999);
                             if (!toCorePath.isEmpty()) {
                                 boat.path.clear();
                                 boat.path.addAll(toCorePath);
@@ -788,14 +772,12 @@ public class Strategy {
                         }
                     }
                 }
-                ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.boatCommonCs, myPath.get(0)
-                        , gameMap.commonConflictPoints, gameMap.commonNoResultPoints, BOAT_AVOID_CANDIDATE_SIZE);
+                ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.boatCommonCs, myPath.get(0), gameMap.commonConflictPoints, gameMap.commonNoResultPoints, BOAT_AVOID_CANDIDATE_SIZE);
                 if (!result.isEmpty()) {
                     PointWithDirection selectPoint = null;
                     double minDistance = Integer.MAX_VALUE;
                     for (PointWithDirection pointWithDirection : result) {
-                        double curDis = (gameMap.boatCommonCs[pointWithDirection.point.x]
-                                [pointWithDirection.point.y][pointWithDirection.direction] >> 2);
+                        double curDis = (gameMap.boatCommonCs[pointWithDirection.point.x][pointWithDirection.point.y][pointWithDirection.direction] >> 2);
                         //到目标距离
                         if (boat.assigned) {
                             double toTargetDistance;
@@ -813,8 +795,7 @@ public class Strategy {
                         }
                     }
                     if (selectPoint != null) {
-                        int oneDistance = (gameMap.boatCommonCs[selectPoint.point.x]
-                                [selectPoint.point.y][selectPoint.direction] >> 2);
+                        int oneDistance = (gameMap.boatCommonCs[selectPoint.point.x][selectPoint.point.y][selectPoint.direction] >> 2);
                         if (boat.assigned) {
                             if (boat.carry) {
                                 oneDistance += boatSellPoints.get(boat.targetSellId).getMinDistance(selectPoint.point, selectPoint.direction);
@@ -1047,8 +1028,7 @@ public class Strategy {
                 if (boat.buyAssign) {
                     continue;
                 }
-                if (boat.targetBerthId != -1 && boat.targetSellId != -1
-                        && !boat.carry && boat.status != 2) {
+                if (boat.targetBerthId != -1 && boat.targetSellId != -1 && !boat.carry && boat.status != 2) {
                     decisionBoatBuy(boat, berths.get(boat.targetBerthId), boatSellPoints.get(boat.targetSellId), goodsNumList);
                     return true;
                 }
@@ -1057,10 +1037,7 @@ public class Strategy {
 
         for (Berth berth : berths) {
             //停靠在泊位上了
-            if (berth.curBoatId != -1
-                    && berth.goodsNums > 0
-                    && !boats.get(berth.curBoatId).buyAssign
-                    && !boats.get(berth.curBoatId).carry) {
+            if (berth.curBoatId != -1 && berth.goodsNums > 0 && !boats.get(berth.curBoatId).buyAssign && !boats.get(berth.curBoatId).carry) {
                 //没去卖
                 Boat boat = boats.get(berth.curBoatId);
                 decisionBoatBuy(boat, berth, boatSellPoints.get(boat.targetSellId), goodsNumList);
@@ -1106,8 +1083,7 @@ public class Strategy {
             }
             int toSellDistance = 0;
             if (selectBoat.carry) {
-                toSellDistance = boatSellPoints.get(selectBoat.targetSellId)
-                        .getMinDistance(selectBoat.corePoint, selectBoat.direction);
+                toSellDistance = boatSellPoints.get(selectBoat.targetSellId).getMinDistance(selectBoat.corePoint, selectBoat.direction);
             }
             if (frameId + toSellDistance + minBuyDistance + minSellDistance >= GAME_FRAME) {
                 continue;//不做决策
@@ -1116,15 +1092,13 @@ public class Strategy {
             int needCount = selectBoat.carry ? selectBoat.capacity : selectBoat.capacity - selectBoat.num;
             int value = min(needCount, berthGoodNum);
             double profit = 1.0 * value / (minSellDistance + minBuyDistance);
-            if (boatDecisionType == DECISION_ON_ANY && !selectBoat.carry
-                    && selectBoat.targetBerthId == berth.id) {
+            if (boatDecisionType == DECISION_ON_ANY && !selectBoat.carry && selectBoat.targetBerthId == berth.id) {
                 //防止出问题
                 profit *= (1 + BOAT_DYNAMIC_SAME_TARGET_FACTOR);
             }
             stat.add(new Stat(selectBoat, berth, selectSellPoint, profit));
         }
-        if (stat.isEmpty())
-            return false;
+        if (stat.isEmpty()) return false;
         Collections.sort(stat);
         Boat boat = stat.get(0).boat;
         Berth berth = stat.get(0).berth;
@@ -1133,8 +1107,7 @@ public class Strategy {
         return true;
     }
 
-    private boolean
-    boatGreedyBuy2(int[] goodsNumList) {
+    private boolean boatGreedyBuy2(int[] goodsNumList) {
         class Stat implements Comparable<Stat> {
             final Boat boat;
             final Berth berth;
@@ -1162,8 +1135,7 @@ public class Strategy {
             if (boat.buyAssign) {
                 continue;
             }
-            if (boat.targetBerthId != -1 && boat.targetSellId != -1
-                    && !boat.carry && boat.status != 2) {
+            if (boat.targetBerthId != -1 && boat.targetSellId != -1 && !boat.carry && boat.status != 2) {
                 oneTypesBoats.add(boat);
             } else if (boat.carry || boat.targetSellId == -1) {
                 twoTypesBoats.add(boat);//回家的,或者刚好到家的
@@ -1212,8 +1184,7 @@ public class Strategy {
             //只看数量和距离
             BoatSellPoint boatSellPoint = boatSellPoints.get(index);
             double profit = goodsNumList[buyBerth.id] * 1e10 + minDistance;
-            if (boatDecisionType == DECISION_ON_ANY && !selectBoat.carry
-                    && selectBoat.targetBerthId == buyBerth.id) {
+            if (boatDecisionType == DECISION_ON_ANY && !selectBoat.carry && selectBoat.targetBerthId == buyBerth.id) {
                 profit *= (1 + BOAT_DYNAMIC_SAME_TARGET_FACTOR);
             }
             stat.add(new Stat(selectBoat, buyBerth, boatSellPoint, profit));
@@ -1252,8 +1223,7 @@ public class Strategy {
                 int realCount = min(needCount, remainTime / berth.loadingSpeed);//装货
                 realCount = min(realCount, goodsNumList[berth.id]);//来货
                 int loadTime = (int) ceil(1.0 * realCount / berth.loadingSpeed);
-                double profit = realCount + 1.0 * boat.num
-                        / (buyTime + loadTime + sellTime);
+                double profit = realCount + 1.0 * boat.num / (buyTime + loadTime + sellTime);
                 if (profit > maxProfit) {
                     selectBerth = berth;
                     selectSellPoint = boatSellPoint;
@@ -1266,8 +1236,7 @@ public class Strategy {
             }
 
         }
-        if (stat.isEmpty())
-            return false;
+        if (stat.isEmpty()) return false;
         decisionBoatBuy(stat.get(0).boat, stat.get(0).berth, stat.get(0).sellPoint, goodsNumList);
         return true;
     }
@@ -1303,8 +1272,7 @@ public class Strategy {
             //卖
             assert boat.targetSellId != -1;
             int toSellDistance = boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
-            int toBerthDistance = berth.getBoatMinDistance(boatSellPoints.get(boat.targetSellId).point
-                    , boatSellPoints.get(boat.targetSellId).getEndDir(boat.corePoint, boat.direction));
+            int toBerthDistance = berth.getBoatMinDistance(boatSellPoints.get(boat.targetSellId).point, boatSellPoints.get(boat.targetSellId).getEndDir(boat.corePoint, boat.direction));
             return recoveryTime + toSellDistance + toBerthDistance;
         }
         return recoveryTime + berth.getBoatMinDistance(boat.corePoint, boat.direction);
@@ -1731,8 +1699,7 @@ public class Strategy {
                         Point start = gameMap.posToDiscrete(robot.pos);
                         Point end = gameMap.posToDiscrete(candidate);
                         Point mid = start.add(end).div(2);
-                        if ((mid.equal(robotsPredictPath[tmpRobot.id].get(0)) && !gameMap.isRobotDiscreteMainChannel(mid.x, mid.y))
-                                || (end.equal(robotsPredictPath[tmpRobot.id].get(1)) && !gameMap.isRobotDiscreteMainChannel(end.x, end.y))) {
+                        if ((mid.equal(robotsPredictPath[tmpRobot.id].get(0)) && !gameMap.isRobotDiscreteMainChannel(mid.x, mid.y)) || (end.equal(robotsPredictPath[tmpRobot.id].get(1)) && !gameMap.isRobotDiscreteMainChannel(end.x, end.y))) {
                             //去重全加进来
                             crash = true;
                             break;
@@ -1925,12 +1892,10 @@ public class Strategy {
                     selectSellBerth = sellBerth;
                 }
             }
-            if (selectSellBerth == null)
-                continue;
+            if (selectSellBerth == null) continue;
             stat.add(new Stat(selectRobot, buyWorkbench, selectSellBerth, maxProfit));
         }
-        if (stat.isEmpty())
-            return false;
+        if (stat.isEmpty()) return false;
         Collections.sort(stat);
 
         //锁住买家
@@ -1998,8 +1963,7 @@ public class Strategy {
                 stat.add(new Stat(robot, select, maxProfit));
             }
         }
-        if (stat.isEmpty())
-            return false;
+        if (stat.isEmpty()) return false;
         Collections.sort(stat);
         assignRobot(null, stat.get(0).berth, stat.get(0).robot, RA_SELL);
         return true;
