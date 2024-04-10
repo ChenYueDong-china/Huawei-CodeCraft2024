@@ -3,8 +3,6 @@ package com.huawei.codecraft;
 import java.io.IOException;
 import java.util.*;
 
-import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ANY;
-import static com.huawei.codecraft.BoatDecisionType.DECISION_ON_ORIGIN_BERTH;
 import static com.huawei.codecraft.BoatUtils.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.RobotAction.RA_BUY;
