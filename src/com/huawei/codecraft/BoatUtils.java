@@ -456,7 +456,7 @@ public class BoatUtils {
         boolean crash = false;
         for (int i = 0; i < otherPaths.size(); i++) {
             int otherId = otherIds.get(i);
-            ArrayList<PointWithDirection> otherPath = otherPaths.get(otherId);
+            ArrayList<PointWithDirection> otherPath = otherPaths.get(i);
             if (deep < otherPath.size()) {
                 crash = boatCheckCrash(gameMap, point, otherPath.get(deep));
                 if (crash) {

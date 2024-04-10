@@ -674,6 +674,15 @@ public class Strategy {
             if (boat.carry) {
                 //卖
                 boat.path = boatSellPoints.get(boat.targetSellId).moveFrom(boat.corePoint, boat.direction);
+                if (boat.remainRecoveryTime > 0) {
+                    ArrayList<PointWithDirection> path = new ArrayList<>();
+                    path.ensureCapacity(boat.path.size() + boat.remainRecoveryTime);
+                    for (int i = 0; i < boat.remainRecoveryTime; i++) {
+                        path.add(new PointWithDirection(boat.corePoint, boat.direction));
+                    }
+                    path.addAll(boat.path);
+                    boat.path = path;
+                }
                 if (boatCheckCrash(gameMap, boat.id, boat.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
                     //撞了
                     Point point = boatSellPoints.get(boat.targetSellId).point;
@@ -2148,15 +2157,20 @@ public class Strategy {
             //装货
             int load = boat.num - boat.lastNum;
             if (load > 0) {
-                assert boat.targetBerthId != -1;
-                assert (berths.get(boat.targetBerthId).curBoatId == boat.id);
-                berths.get(boat.targetBerthId).goodsNums -= load;
+                int index = -1;
+                for (Berth berth : berths) {
+                    if (berth.curBoatId == boat.id) {
+                        index = berth.id;
+                        break;
+                    }
+                }
+                berths.get(index).goodsNums -= load;
                 for (int j = 0; j < load; j++) {
-                    assert !berths.get(boat.targetBerthId).goods.isEmpty();
-                    Integer value = berths.get(boat.targetBerthId).goods.poll();
+                    assert !berths.get(index).goods.isEmpty();
+                    Integer value = berths.get(index).goods.poll();
                     assert value != null;
                     boat.value += value;
-                    berths.get(boat.targetBerthId).totalValue -= value;
+                    berths.get(index).totalValue -= value;
                 }
                 boat.lastNum = boat.num;
             }
