@@ -278,11 +278,15 @@ public class Strategy {
                 printError("frameId:" + frameId + ",time:" + (e - l));
             }
             if (frameId == 15000) {
+                int sellCount = 0;
+                for (Boat boat : boats) {
+                    sellCount += boat.sellCount;
+                }
                 printError("jumpTime:" + jumpCount
                         + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size()
                         + ",totalValue:"
                         + totalValue + ",pullValue:"
-                        + pullScore + ",score:" + money
+                        + pullScore + ",score:" + money + ",boatSellCount:" + sellCount
                 );
             }
             outStream.print("OK\n");
@@ -995,6 +999,9 @@ public class Strategy {
         BoatSellPoint boatSellPoint = stat.get(0).boatSellPoint;
         boat.assigned = true;
         boat.targetSellId = boatSellPoint.id;
+        if (!boat.carry) {
+            boat.sellCount++;
+        }
         boat.carry = true;
         if (boat.status == 2) {
             //下一个状态不知道,现在状态可以变为0，直接不动,如果不变会认为仍然装货，不动
@@ -1216,7 +1223,7 @@ public class Strategy {
             Berth fromBerth = berths.get(boat.targetBerthId);
             Berth selectBerth = null;
             BoatSellPoint selectSellPoint = null;
-            double maxProfit = 0;
+            double maxProfit = -GAME_FRAME;
             for (Berth berth : berths) {
                 int buyTime = boat.targetBerthId == berth.id ? 0 : boatMinBerthToBethDistance(fromBerth, berth);
                 int sellTime = berth.minSellDistance;
@@ -2142,6 +2149,7 @@ public class Strategy {
             int load = boat.num - boat.lastNum;
             if (load > 0) {
                 assert boat.targetBerthId != -1;
+                assert (berths.get(boat.targetBerthId).curBoatId == boat.id);
                 berths.get(boat.targetBerthId).goodsNums -= load;
                 for (int j = 0; j < load; j++) {
                     assert !berths.get(boat.targetBerthId).goods.isEmpty();

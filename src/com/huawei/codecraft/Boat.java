@@ -12,6 +12,7 @@ public class Boat {
     public int beConflicted = 0;
     public boolean carry = false;
     int id;
+    public int sellCount = 0;
     Strategy strategy;
     public ArrayList<PointWithDirection> path = new ArrayList<>();
     Point corePoint = new Point(-1, -1);
