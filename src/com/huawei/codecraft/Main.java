@@ -34,6 +34,8 @@ public class Main {
     }
 
     private static void schedule() throws IOException {
+        //todo 多个船只碰撞避免，用java测试
+        //todo 决策很难搞，12号再看看吧
         strategy.init();
         strategy.mainLoop();
     }
