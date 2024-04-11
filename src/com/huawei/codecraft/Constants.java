@@ -12,7 +12,7 @@ public class Constants {
 
     //船只超参数
     //任意时刻可以切换泊位 or 到达泊位或者目标点或者在移动到目标点才能切泊位
-    public static double BOAT_DYNAMIC_SAME_TARGET_FACTOR = 1;//DECISION_ON_ANY动态决策保持因子
+    public static double BOAT_DYNAMIC_SAME_TARGET_FACTOR = 1;//有可能0更好
     public static int BOAT_PREDICT_DISTANCE = 20;//预测距离,待测试
     public static int BOAT_AVOID_DISTANCE = 10;//避让距离
     public static int BOAT_FIND_PATH_DEEP = 2;//避让距离
@@ -22,7 +22,7 @@ public class Constants {
     public static int INIT_ROBOT_COUNT = 8; //初始化
     public static int INIT_BOAT_COUNT = 1;
     public static int MIN_ROBOT_COUNT = 8; //最小的
-    public static int MIN_BOAT_COUNT = 2;
+    public static int MIN_BOAT_COUNT = 1;
     public static double BUY_ROBOT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买机器人
     public static double BUY_BOAT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
 
