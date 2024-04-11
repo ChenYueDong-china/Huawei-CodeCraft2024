@@ -22,7 +22,7 @@ public class Constants {
     public static int INIT_ROBOT_COUNT = 8; //初始化
     public static int INIT_BOAT_COUNT = 1;
     public static int MIN_ROBOT_COUNT = 8; //最小的
-    public static int MIN_BOAT_COUNT = 1;
+    public static int MIN_BOAT_COUNT = 8;
     public static double BUY_ROBOT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买机器人
     public static double BUY_BOAT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
 

@@ -190,11 +190,11 @@ public class BoatUtils {
 
     public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
             , int maxDeep, int recoveryTime) {
-        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null, null, recoveryTime);
+        return boatMoveToPoint(gameMap, start, end, maxDeep, -1, null, null, recoveryTime, null);
     }
 
     public static ArrayList<PointWithDirection> boatMoveToPoint(GameMap gameMap, PointWithDirection start, PointWithDirection end
-            , int maxDeep, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds, int recoveryTime) {
+            , int maxDeep, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds, int recoveryTime, int[][][] heuristicDistance) {
         //已经在了，直接返回，防止cs消耗
         if (start.point.equal(end.point) && (start.direction == end.direction || end.direction == -1)) {
             //输出路径
@@ -236,6 +236,9 @@ public class BoatUtils {
             for (int j = 0; j < size; j++) {
                 PointWithDirection top = queue.poll();
                 assert top != null;
+                if (heuristicDistance != null && deep - 1 + heuristicDistance[top.point.x][top.point.y][top.direction] > maxDeep) {
+                    continue;
+                }
                 if (top.point.equal(end.point) && (top.direction == end.direction || end.direction == -1)) {
                     //输出路径
                     return backTrackPath(gameMap, top, cs, recoveryTime);

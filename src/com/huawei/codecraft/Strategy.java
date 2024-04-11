@@ -235,7 +235,11 @@ public class Strategy {
     }
 
     public ArrayList<PointWithDirection> boatToPoint(Boat boat, PointWithDirection pointWithDirection, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
-        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), pointWithDirection, maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime);
+        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), pointWithDirection, maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime, null);
+    }
+
+    public ArrayList<PointWithDirection> boatToSellPoint(Boat boat, BoatSellPoint sellPoint, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
+        return boatMoveToPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), new PointWithDirection(sellPoint.point, -1), maxDeep, boat.id, otherPath, otherIds, boat.remainRecoveryTime, sellPoint.boatMinDistance);
     }
 
     public ArrayList<Point> robotToBerth(Robot robot, Berth berth, int maxDeep) {
@@ -682,7 +686,7 @@ public class Strategy {
                     //撞了
                     Point point = boatSellPoints.get(boat.targetSellId).point;
                     int minDeep = boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
-                    ArrayList<PointWithDirection> avoidPath = boatToPoint(boat, new PointWithDirection(point, -1), minDeep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
+                    ArrayList<PointWithDirection> avoidPath = boatToSellPoint(boat, boatSellPoints.get(boat.targetSellId), minDeep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
                     if (!avoidPath.isEmpty()) {
                         boat.path.clear();
                         boat.path.addAll(avoidPath);
