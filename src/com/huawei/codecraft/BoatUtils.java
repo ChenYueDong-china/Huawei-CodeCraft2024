@@ -153,7 +153,7 @@ public class BoatUtils {
                 if (deep < otherPath.size()) {
                     boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep));
                     if (crash) {
-                        assert(boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
+                        assert (boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
                         return otherId;
                     }
                 }
@@ -162,7 +162,7 @@ public class BoatUtils {
                     if (deep + 1 < otherPath.size()) {
                         boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep + 1));
                         if (crash) {
-                            assert(boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
+                            assert (boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
                             return otherId;
                         }
                     }
@@ -171,7 +171,7 @@ public class BoatUtils {
                     if (deep - 1 < otherPath.size()) {
                         boolean crash = boatCheckCrash(gameMap, pointWithDirection, otherPath.get(deep - 1));
                         if (crash) {
-                            assert(boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
+                            assert (boatCheckCrashInDeep(gameMap, deep, myId, pointWithDirection, otherPaths, otherIds));
                             return otherId;
                         }
                     }
@@ -248,11 +248,11 @@ public class BoatUtils {
 
     public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, PointWithDirection berthCorePoint
             , int maxDeep, int aroundPointsCount, int recoveryTime) {
-        return boatMoveToBerth(gameMap, start, berthId, berthCorePoint, maxDeep, aroundPointsCount, -1, null, null, recoveryTime);
+        return boatMoveToBerth(gameMap, start, berthId, berthCorePoint, maxDeep, aroundPointsCount, -1, null, null, recoveryTime, null);
     }
 
     public static ArrayList<PointWithDirection> boatMoveToBerth(GameMap gameMap, PointWithDirection start, int berthId, PointWithDirection berthCorePoint
-            , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, int recoveryTime) {
+            , int maxDeep, int aroundPointsCount, int boatId, ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds, int recoveryTime, int[][][] heuristicDistance) {
         if (start.point.equal(berthCorePoint.point)) {
             //直接返回
             return getBoatToBerthEqualPath(start, berthCorePoint, recoveryTime);
@@ -273,6 +273,7 @@ public class BoatUtils {
             Arrays.fill(visit, false);
         }
         int deep = 0;
+        int visitCount = 0;
         while (!queue.isEmpty() || !twoDistancesPoints.isEmpty()) {
             if (deep > maxDeep || visitAroundBerthCount == aroundPointsCount) {
                 //泊位周围得点全部遍历了一遍，或者超过最大深度
@@ -287,8 +288,13 @@ public class BoatUtils {
                 twoDistancesPoints.clear();
             }
             for (int j = 0; j < size; j++) {
+                visitCount++;
                 PointWithDirection top = queue.poll();
                 assert top != null;
+                if (heuristicDistance != null &&
+                        heuristicDistance[top.point.x][top.point.y][top.direction] + deep - 1 > maxDeep) {
+                    continue;//启发式剪枝
+                }
                 if (!visits[top.point.x][top.point.y] && gameMap.boatGetFlashBerthId(top.point.x, top.point.y) == berthId) {
                     //第二次访问距离肯定更长
                     int comeDeep = deep - 1;

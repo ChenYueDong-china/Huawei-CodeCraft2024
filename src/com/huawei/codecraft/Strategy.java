@@ -206,9 +206,18 @@ public class Strategy {
         }
     }
 
+    public ArrayList<PointWithDirection> boatToBerthWithPruning(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds
+    ) {
+        boat.targetBerthId = berth.id;
+        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
+                , berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id
+                , otherPath, otherIds, boat.remainRecoveryTime, berth.boatMinDistance);
+    }
+
     public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
         boat.targetBerthId = berth.id;
-        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds, boat.remainRecoveryTime);
+        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds
+                , boat.remainRecoveryTime, null);
     }
 
     public ArrayList<PointWithDirection> boatToBerthHeuristic(Boat boat, Berth berth) {
@@ -277,7 +286,6 @@ public class Strategy {
             robotDoAction();
             boatDoAction();
             robotAndBoatBuy();
-
         } else {
             if (frameId == 1) {
                 for (int i = 0; i < 8; i++) {
@@ -690,7 +698,7 @@ public class Strategy {
                 //不然肯定dij不对
                 if (boatCheckCrash(gameMap, boat.id, boat.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
                     //撞了
-                    ArrayList<PointWithDirection> avoidPath = boatToBerth(boat, targetBerth, deep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
+                    ArrayList<PointWithDirection> avoidPath = boatToBerthWithPruning(boat, targetBerth, deep + BOAT_FIND_PATH_DEEP, otherPaths, otherIds);
                     if (!avoidPath.isEmpty()) {
                         boat.path.clear();
                         boat.path.addAll(avoidPath);
@@ -958,11 +966,6 @@ public class Strategy {
                 }
                 int distance = boatSellPoint.getMinDistance(boat.corePoint, boat.direction);
                 //避让时间,稍微增加一帧
-                for (Boat otherBoat : boats) {
-                    if (otherBoat.assigned && otherBoat.targetSellId == boatSellPoint.id) {
-                        distance++;
-                    }
-                }
                 distance += boat.remainRecoveryTime;
                 if (distance < minSellDistance) {
                     minSellDistance = distance;
@@ -972,7 +975,7 @@ public class Strategy {
             if (selectPoint == null) {
                 continue;
             }
-            if (boat.num == boat.capacity || frameId + minSellDistance >= GAME_FRAME) {
+            if (boat.num == boat.capacity || frameId + minSellDistance >= GAME_FRAME - (boats.size() * 2)) {
                 //卖
                 int value = boat.num;
                 double profit = 1.0 * value / minSellDistance;
@@ -1740,7 +1743,6 @@ public class Strategy {
                 robot.forcePri = 0;
             }
         }
-
     }
 
     private void sortRobots(Robot[] robots) {
