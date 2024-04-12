@@ -453,7 +453,9 @@ public class Strategy {
         //估计最大机器人数
         estimateMaxRobotCount = (estimateRemainTotalCount + remainCount) * avgWorkBenchLoopDistance / (GAME_FRAME - frameId);
         double remainTotalValue = (estimateRemainTotalCount + remainCount) * goodAvgValue;
-        double curCanGetValue = min(remainTotalValue, 1.0 * pullScore / totalValue * remainTotalValue * robots.size() / curRobotCount);
+        double curCanGetValue = min(remainTotalValue,
+                1.0 * pullScore / totalValue * remainTotalValue * (0.5 * (robots.size() - curRobotCount)
+                        / curRobotCount + 1));
         remainTotalValue -= curCanGetValue;
         int buyRobotCount = 0;
         double curRemainValue = remainTotalValue;
