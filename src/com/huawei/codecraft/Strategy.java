@@ -1302,6 +1302,105 @@ public class Strategy {
             if (berthGoodNum < needCount) {
                 //自己当作中介，再找一个berth
                 profit = berthGoodNum + 1.0 / (minBuyDistance + minSellDistance);
+            } else {
+                profit = needCount + 1.0 / (minBuyDistance + minSellDistance);
+            }
+
+            if (!selectBoat.carry && selectBoat.targetBerthId == berth.id && berth.curBoatId != selectBoat.id) {
+                //防止出问题
+                profit *= (1 + BOAT_DYNAMIC_SAME_TARGET_FACTOR);
+            }
+            stat.add(new Stat(selectBoat, berth, selectSellPoint, profit));
+        }
+        if (stat.isEmpty()) return false;
+        Collections.sort(stat);
+        Boat boat = stat.get(0).boat;
+        Berth berth = stat.get(0).berth;
+        BoatSellPoint sellPoint = stat.get(0).sellPoint;
+        decisionBoatBuy(boat, berth, sellPoint, goodsNumList);
+        return true;
+    }
+
+    private boolean boatGreedyBuy4(int[] goodsNumList) {
+        class Stat implements Comparable<Stat> {
+            final Boat boat;
+            final Berth berth;
+
+            final BoatSellPoint sellPoint;
+
+            final double profit;
+
+            public Stat(Boat boat, Berth berth, BoatSellPoint sellPoint, double profit) {
+                this.boat = boat;
+                this.berth = berth;
+                this.sellPoint = sellPoint;
+                this.profit = profit;
+            }
+
+            @Override
+            public int compareTo(Stat b) {
+                return Double.compare(b.profit, profit);
+            }
+        }
+        for (Berth berth : berths) {
+            //停靠在泊位上了
+            if (berth.curBoatId != -1 && berth.goodsNums > 0 && !boats.get(berth.curBoatId).buyAssign && !boats.get(berth.curBoatId).carry) {
+                //没去卖
+                Boat boat = boats.get(berth.curBoatId);
+                decisionBoatBuy(boat, berth, boatSellPoints.get(boat.targetSellId), goodsNumList);
+                return true;
+            }
+        }
+        ArrayList<Stat> stat = new ArrayList<>();
+
+        for (int i = 0; i < berths.size(); i++) {
+            Berth berth = berths.get(i);
+            int berthGoodNum = goodsNumList[i];
+            //找最近的船
+            Boat selectBoat = null;
+            int minBuyDistance = Integer.MAX_VALUE;
+            for (Boat boat : boats) {
+                if (boat.buyAssign) {
+                    continue;
+                }
+                if (!berth.boatCanReach(boat.corePoint, boat.direction)) {
+                    continue;
+                }
+                int distance = boatMinToBerthDistance(boat, berth);
+                if (boat.carry) {
+                    distance -= boatSellPoints.get(boat.targetSellId).getMinDistance(boat.corePoint, boat.direction);
+                }
+                if (distance < minBuyDistance) {
+                    minBuyDistance = distance;
+                    selectBoat = boat;
+                }
+            }
+
+            int minSellDistance = Integer.MAX_VALUE;
+            BoatSellPoint selectSellPoint = null;
+            for (BoatSellPoint boatSellPoint : boatSellPoints) {
+                int distance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
+                if (distance < minSellDistance) {
+                    minSellDistance = distance;
+                    selectSellPoint = boatSellPoint;
+                }
+            }
+            if (selectBoat == null || selectSellPoint == null) {
+                continue;
+            }
+            int toSellDistance = 0;
+            if (selectBoat.carry) {
+                toSellDistance = boatSellPoints.get(selectBoat.targetSellId).getMinDistance(selectBoat.corePoint, selectBoat.direction);
+            }
+            if (frameId + toSellDistance + minBuyDistance + minSellDistance >= GAME_FRAME) {
+                continue;//不做决策
+            }
+            //价值是船上的个数加泊位个数
+            int needCount = selectBoat.carry ? selectBoat.capacity : selectBoat.capacity - selectBoat.num;
+            double profit;
+            if (berthGoodNum < needCount) {
+                //自己当作中介，再找一个berth
+                profit = berthGoodNum + 1.0 / (minBuyDistance + minSellDistance);
                 //这个boat已经在这个berth上了，不能作为中介
                 if (berth.curBoatId != selectBoat.id) {
                     for (Berth berth2 : berths) {
