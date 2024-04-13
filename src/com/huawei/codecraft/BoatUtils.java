@@ -181,7 +181,7 @@ public class BoatUtils {
                 curDistance += abs(pointWithDirection.point.x - last.point.x) + abs(pointWithDirection.point.y - last.point.y);
                 if (2 * curDistance > maxDetectDistance) {
                     //假设一人走一步，则需要乘以两倍
-                    return -1;
+                    break;
                 }
             }
         }

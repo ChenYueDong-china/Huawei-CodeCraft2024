@@ -82,7 +82,7 @@ public class GameMap {
     }
 
     public boolean boatCanReach(Point corePoint, int dir) {
-        return boatCanReach_[corePoint.x][corePoint.y][dir];
+        return isLegalPoint(corePoint.x, corePoint.y) && boatCanReach_[corePoint.x][corePoint.y][dir];
     }
 
     public int getRotationDir(int curDir, int nextDir) {

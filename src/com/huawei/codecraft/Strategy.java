@@ -541,7 +541,7 @@ public class Strategy {
 
     private void buyRobot() {
         int index = getBestBuyRobotPos();
-        outStream.printf("lbot %d %d\n", robotPurchasePoint.get(index).x, robotPurchasePoint.get(index).y);
+        outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(index).x, robotPurchasePoint.get(index).y, 0);
         Robot robot = new Robot(this);
         robotPurchaseCount.set(index, robotPurchaseCount.get(index) + 1);
         robot.buyFrame = frameId;
