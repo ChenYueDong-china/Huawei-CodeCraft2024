@@ -48,7 +48,7 @@ public class BoatDijkstra {
             //单向dfs搜就行
             // 求最短路径
             Point s = map2RelativePoint(mTarget, i);
-            if (!mGameMap.boatCanReach(s, i ^ 1)) {
+            if (!mGameMap.isLegalPoint(s.x, s.y) || !mGameMap.boatCanReach(s, i ^ 1)) {
                 continue;//起始点直接不可达，没得玩
             }
             int deep = 0;

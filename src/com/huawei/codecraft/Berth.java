@@ -52,7 +52,7 @@ public class Berth {
                 Point dir = DIR[k];
                 int dx = top.x + dir.x;
                 int dy = top.y + dir.y;//第一步
-                if (visits[dx][dy] || !gameMap.isBerthAround(dx, dy)) {
+                if (!gameMap.isLegalPoint(dx, dy) || visits[dx][dy] || !gameMap.isBerthAround(dx, dy)) {
                     continue; // 不可达或者访问过了
                 }
                 visits[dx][dy] = true;
