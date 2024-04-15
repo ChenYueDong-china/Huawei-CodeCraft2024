@@ -108,7 +108,7 @@ public class Boat {
                 && !assigned
                 && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)
                 && frameId > GAME_FRAME - 1000) {
-            flashDept();
+            //flashDept();
             return;
         }
         if (path == null || path.size() < 2) {//啥都不动，可能有问题，就算避让也会多走一帧
@@ -145,7 +145,7 @@ public class Boat {
             } else {
                 //闪现去主航道
                 assert strategy.gameMap.boatIsAllInMainChannel(next.point, next.direction);
-                flashDept();
+               // flashDept();
             }
         }
     }
@@ -185,26 +185,26 @@ public class Boat {
         outStream.printf("berth %d\n", id);
         //计算恢复时间
         PointWithDirection next = new PointWithDirection(strategy.berths.get(targetBerthId).corePoint, 0);
-        flashToNextPoint(next);
+        //flashToNextPoint(next);
         strategy.berths.get(targetBerthId).curBoatId = id;
         lastFlashBerth = true;
     }
 
-    public void flashDept() {
-        assert status != 1;
-        outStream.printf("dept %d\n", id);
-        PointWithDirection next = strategy.getBoatFlashDeptPoint(corePoint);
-        flashToNextPoint(next);
-        lastFlashDept = true;
-        //计算恢复时间
+//    public void flashDept() {
+//        assert status != 1;
+//        outStream.printf("dept %d\n", id);
+//        PointWithDirection next = strategy.getBoatFlashDeptPoint(corePoint);
+//        flashToNextPoint(next);
+//        lastFlashDept = true;
+//        //计算恢复时间
+//
+//    }
 
-    }
-
-    private void flashToNextPoint(PointWithDirection next) {
-        remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
-        corePoint.x = next.point.x;
-        corePoint.y = next.point.y;
-        direction = next.direction;
-        status = 1;//闪现成功
-    }
+//    private void flashToNextPoint(PointWithDirection next) {
+//        remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
+//        corePoint.x = next.point.x;
+//        corePoint.y = next.point.y;
+//        direction = next.direction;
+//        status = 1;//闪现成功
+//    }
 }

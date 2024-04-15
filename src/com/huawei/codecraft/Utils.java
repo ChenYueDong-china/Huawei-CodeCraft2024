@@ -15,7 +15,7 @@ public class Utils {
 //        }
 //    }
 
-    private static final boolean ERROR = false;
+    private static final boolean ERROR = true;
 
     public static void printError(String s) {
         if (ERROR) {

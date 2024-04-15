@@ -35,8 +35,8 @@ public class Constants {
     public static final int GAME_FRAME = 5 * 60 * FPS;
     public static final int WORKBENCH_EXIST_TIME = 20 * FPS;//1000帧
 
-    public static final int MAP_FILE_ROW_NUMS = 200;    // 地图文件行数
-    public static final int MAP_FILE_COL_NUMS = 200;    // 地图文件列数
+    public static final int MAP_FILE_ROW_NUMS = 800;    // 地图文件行数
+    public static final int MAP_FILE_COL_NUMS = 800;    // 地图文件列数
 
     public static final int MAP_DISCRETE_WIDTH = 2 * MAP_FILE_COL_NUMS + 1;    // 离散列
     public static final int MAP_DISCRETE_HEIGHT = 2 * MAP_FILE_ROW_NUMS + 1;    // 离散行
