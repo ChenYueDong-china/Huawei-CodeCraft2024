@@ -19,22 +19,25 @@ public class Dijkstra {
     }
 
     void update() {
-        update(Short.MAX_VALUE);
+        update(Short.MAX_VALUE, Integer.MAX_VALUE);
     }
 
-    void update(int maxDeep) {
+    void update(int maxDeep, int maxCount) {
         // 求最短路径
         Point s = mTarget;
+        long l1 = System.currentTimeMillis();
         for (short[] c : cs) {
             Arrays.fill(c, Short.MAX_VALUE);
         }
+        long l2 = System.currentTimeMillis();
         //单向dfs搜就行
         int deep = 0;
         Queue<Point> queue = new ArrayDeque<>();
         queue.offer(s);
         cs[s.x][s.y] = 0;
+        int count = 0;
         while (!queue.isEmpty()) {
-            if (deep > maxDeep) {
+            if (deep > maxDeep || count > maxCount) {
                 break;
             }
             int size = queue.size();
@@ -42,6 +45,7 @@ public class Dijkstra {
             //这一层出来的深度都一样
             for (int i = 0; i < size; i++) {
                 Point top = queue.poll();
+                count++;
                 assert top != null;
                 for (int j = 0; j < DIR.length / 2; j++) {
                     //四方向的
@@ -58,6 +62,8 @@ public class Dijkstra {
                 }
             }
         }
+        long l3 = System.currentTimeMillis();
+        System.out.println((l2 - l1) + ":" + (l3 - l2));
     }
 
     public ArrayList<Point> moveFrom(Point source) {

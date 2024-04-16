@@ -33,12 +33,14 @@ public class Strategy {
     public int totalPullGoodsCount = 0;//总的卖的货物价值
     public double avgPullGoodsValue = 150;//总的卖的货物价值
     public double avgPullGoodsTime = 15;//10个泊位平均卖货时间
-
+    public final ArrayList<SimpleRobot> totalRobots = new ArrayList<>();
+    public final ArrayList<SimpleBoat> totalBoats = new ArrayList<>();
     public final ArrayList<Robot> robots = new ArrayList<>();
+    public final ArrayList<Boat> boats = new ArrayList<>();
     @SuppressWarnings("unchecked")
     public final HashSet<Integer>[] robotLock = new HashSet[MAX_ROBOTS_PER_PLAYER];
     public final ArrayList<Berth> berths = new ArrayList<>();
-    public final ArrayList<Boat> boats = new ArrayList<Boat>();
+
     @SuppressWarnings("unchecked")
     public ArrayList<Point>[] robotsPredictPath = new ArrayList[MAX_ROBOTS_PER_PLAYER];
 
@@ -273,11 +275,14 @@ public class Strategy {
             }
             //留2ms阈值
             while (BackgroundThread.Instance().IsWorking() && frameStartTime + 18 < System.currentTimeMillis())
+            {
                 //noinspection BusyWait
                 Thread.sleep(1);
+            }
             outStream.print("OK\n");
             outStream.flush();
         }
+        BackgroundThread.Instance().exitThread();
     }
 
     //
@@ -912,13 +917,14 @@ public class Strategy {
 //        }
 //    }
 //
-//    public PointWithDirection getBoatFlashDeptPoint(Point point) {
-//        if (boatFlashMainChannelPoint[point.x][point.y] == null) {
-//            boatUpdateFlashPoint(point.x, point.y);
-//        }
-//        return boatFlashMainChannelPoint[point.x][point.y];
-//    }
-//
+    public PointWithDirection getBoatFlashDeptPoint(Point point) {
+        if (boatFlashMainChannelPoint[point.x][point.y] == null) {
+            boatUpdateFlashPoint(point.x, point.y);
+        }
+        return boatFlashMainChannelPoint[point.x][point.y];
+    }
+
+    //
 //    private void sortBoats(Boat[] tmpBoats) {
 //        Arrays.sort(tmpBoats, (o1, o2) -> {
 //            if (o1.forcePri != o2.forcePri) {//暴力优先级最高
@@ -2262,12 +2268,16 @@ public class Strategy {
             workbench.remainTime -= curFrameDiff;//跳帧也要减过去
         }
         ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
+        ArrayList<Point> deletePos = new ArrayList<>();//满足为0的删除
+        ArrayList<Integer> deleteValue = new ArrayList<>();//满足为0的删除
         for (int i = 1; i <= num; i++) {
             Workbench workbench = new Workbench(workbenchId);
             workbench.input(gameMap);
             if (workbench.value == 0) {
                 assert gameMap.getBelongToWorkbenchId(workbench.pos) != -1;
                 deleteIds.add(gameMap.getBelongToWorkbenchId(workbench.pos));
+                deletePos.add(workbench.pos);
+                deleteValue.add(workbenches.get(gameMap.getBelongToWorkbenchId(workbench.pos)).value);
                 continue;
             }
             gameMap.setBelongToWorkbenchId(workbench.pos, workbench.id);
@@ -2292,12 +2302,126 @@ public class Strategy {
             workbenches.remove(deleteId);
         }
         avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidWorkBenchCount);
+        int totalRobotsCount = getIntInput();
+        while (totalRobots.size() < totalRobotsCount) {
+            totalRobots.add(new SimpleRobot());
+        }
+        for (int i = 0; i < totalRobotsCount; i++) {
+            SimpleRobot simpleRobot = totalRobots.get(i);
+            simpleRobot.input();
+            if (simpleRobot.num != simpleRobot.lastNum) {
+                Point lastP = simpleRobot.lastP;
+                Point curP = simpleRobot.p;
+                if (simpleRobot.num == 0) {
+                    //卸货
+                    while (!simpleRobot.goodList.isEmpty()) {
+                        int value = simpleRobot.goodList.pop();
+                        int berthId = gameMap.getBelongToBerthId(lastP);
+                        if (berthId == -1) {
+                            berthId = gameMap.getBelongToBerthId(curP);
+                        }
+                        if (berthId == -1) {
+                            printError("error berthId==-1");
+                            continue;
+                        }
+                        berths.get(berthId).goods.add(value);
+                        berths.get(berthId).goodsNums++;
+                        berths.get(berthId).totalGoodsNums++;
+                    }
+                } else {
+                    //装货
+                    //移动前拿的货，or 移动后拿的货
+                    boolean find = false;
+                    for (int j = 0; j < deletePos.size(); j++) {
+                        Point point = deletePos.get(i);
+                        //至少应该有一个点能匹配上
+                        if (point.equal(lastP) || point.equal(curP)) {
+                            simpleRobot.goodList.add(deleteValue.get(j));
+                            find = true;
+                            break;
+                        }
+                    }
+                    assert find;
+                }
+            }
+        }
+        int totalBoatsCount = getIntInput();
+        while (totalBoats.size() < totalBoatsCount) {
+            totalBoats.add(new SimpleBoat());
+        }
+        for (int i = 0; i < totalBoatsCount; i++) {
+            SimpleBoat simpleboat = totalBoats.get(i);
+            simpleboat.input();
+            if (simpleboat.status != 2 && simpleboat.lastStatus == 2) {
+                //从装货到进入恢复状态或者行驶状态，说明船舶离开泊位，解锁,别人可以闪现过去
+                for (Berth berth : berths) {
+                    if (berth.curBoatId == simpleboat.id) {
+                        berth.curBoatId = -1;
+                        break;
+                    }
+                }
+            }
+            //悲观估计，只要别人所在的方向和位置都和泊位核心点一样，且状态不为0，则认为别人在泊位
+            for (Berth berth : berths) {
+                if (simpleboat.status != 0 &&
+                        simpleboat.corePoint.equal(berth.corePoint)
+                        && simpleboat.direction == berth.coreDirection
+                        && berth.curBoatId == -1) {
+                    //此时我不能发berth指令，因为会导致慢
+                    berth.curBoatId = simpleboat.id;
+                }
+            }
+
+            if (simpleboat.status == 2) {
+                int berthId = gameMap.getBelongToBerthId(simpleboat.corePoint);
+                assert berthId != -1;
+                berths.get(berthId).curBoatId = simpleboat.id;//一定进入泊位
+            }
+            if (simpleboat.lastNum < simpleboat.num) {
+                //在装货
+                int berthId = gameMap.getBelongToBerthId(simpleboat.corePoint);
+                assert berthId != -1;
+                int load = simpleboat.num - simpleboat.lastNum;
+                Berth berth = berths.get(berthId);
+                berth.goodsNums -= load;
+                for (int j = 0; j < load; j++) {
+                    assert !berth.goods.isEmpty();
+                    int poll = berth.goods.poll();
+                    simpleboat.value += poll;
+                }
+            }
+        }
+
 
         ROBOTS_PER_PLAYER = getIntInput();
         //机器人
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-            robots.get(i).input();
+            int id = getIntInput();
+            Robot robot = robots.get(i);
+            robot.id = i;
+            robot.globalId = id;
+            robot.input(totalRobots.get(id));
         }
+        PENDING_ROBOT_NUMS = getIntInput();
+        for (int i = 0; i < PENDING_ROBOT_NUMS; i++) {
+            line = inStream.readLine();
+            parts = line.split(" ");
+            int id = Integer.parseInt(parts[0]);
+            String question = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
+            Robot robot = robots.get(id);
+
+            if (!robot.isPending) {
+                //上一帧不处于答题状态，则发送题目给背景线程回答
+                robot.questionId = BackgroundThread.Instance().sendQuestion(question);
+                robot.question = question;
+                robot.ans = -1;
+            } else {
+                //上一帧处于答题状态，检查是否有答案了;
+                robot.ans = BackgroundThread.Instance().getAnswer(robot.questionId);
+            }
+            robot.isPending = true;
+        }
+
         while (robots.size() > ROBOTS_PER_PLAYER) {
             robots.remove(robots.size() - 1);
             printError("error,no buy robot");
@@ -2305,31 +2429,12 @@ public class Strategy {
         BOATS_PER_PLAYER = getIntInput();
         //船
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
+            int id = getIntInput();
             Boat boat = boats.get(i);
-            boat.input();
-            //装货
-            int load = boat.num - boat.lastNum;
-            if (load > 0) {
-                int index = -1;
-                for (Berth berth : berths) {
-                    if (berth.curBoatId == boat.id) {
-                        index = berth.id;
-                        break;
-                    }
-                }
-                berths.get(index).goodsNums -= load;
-                for (int j = 0; j < load; j++) {
-                    assert !berths.get(index).goods.isEmpty();
-                    Integer value = berths.get(index).goods.poll();
-                    assert value != null;
-                    boat.value += value;
-                    berths.get(index).totalValue -= value;
-                }
-                boat.lastNum = boat.num;
-            }
+            boat.id = i;
+            boat.globalId = id;
+            boat.input(totalBoats.get(id));
         }
-
-
         while (boats.size() > BOATS_PER_PLAYER) {
             boats.remove(boats.size() - 1);
             printError("error,no buy boats");

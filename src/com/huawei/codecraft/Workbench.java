@@ -33,7 +33,10 @@ public class Workbench {
         //初始化dij
         dijkstra = new Dijkstra();
         dijkstra.init(pos, map);
-        dijkstra.update();
+        long l = System.currentTimeMillis();
+        dijkstra.update(400, 40000);
+        long r = System.currentTimeMillis();
+        System.out.println(r - l);
     }
 
     //获得这个workbench到任意一个位置的最小距离

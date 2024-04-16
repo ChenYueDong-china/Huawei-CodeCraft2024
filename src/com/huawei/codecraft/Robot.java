@@ -2,15 +2,19 @@ package com.huawei.codecraft;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Stack;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.min;
 
 public class Robot {
-
-    public int id;
-    public int buyFrame=0;//购买时间
+    public int type = 0;
+    public int maxNum = 1;
+    public int id = -1;
+    public int globalId = -1;
+    public int num = 0;
+    public int buyFrame = 0;//购买时间
     public boolean carry;
     public boolean avoid;
     public int carryValue;
@@ -30,22 +34,25 @@ public class Robot {
     public int forcePri;
     int beConflicted = 0;  // 被冲突
     int priority = 0;
+    boolean isPending;
+    String question;
+    int questionId;
+    int ans = -1;
 
-    public Robot(Strategy strategy) {
+    public Robot(Strategy strategy, int type) {
         this.strategy = strategy;
+        this.type = type;
+        this.maxNum = type == 0 ? 1 : 2;
     }
 
 
-    public void input() throws IOException {
-        String line = inStream.readLine();
-        printMost(line);
-        String[] parts = line.trim().split(" ");
-        id = Integer.parseInt(parts[0]);
-        carry = Integer.parseInt(parts[1]) == 1;
-        pos.x = Integer.parseInt(parts[2]);
-        pos.y = Integer.parseInt(parts[3]);
+    public void input(SimpleRobot simpleRobot) throws IOException {
+        carry = simpleRobot.num == maxNum;
+        this.num = simpleRobot.num;
+        pos.x = simpleRobot.p.x;
+        pos.y = simpleRobot.p.y;
         assigned = false;
-        if (!carry) {
+        if (num == 0) {
             carryValue = 0;
         }
         redundancy = true;//到目标点有冗余时间
@@ -59,7 +66,7 @@ public class Robot {
         carry = true;
         carryValue = strategy.workbenches.get(targetWorkBenchId).value;
         lastBuyPos = new Point(strategy.workbenches.get(targetWorkBenchId).pos);
-        strategy.workbenches.remove(targetWorkBenchId);//销毁工作台
+        //不销毁，可以加锁
         targetWorkBenchId = -1;
     }
 
@@ -104,16 +111,11 @@ public class Robot {
         strategy.totalPullGoodsCount++;
         strategy.totalPullGoodsValues += carryValue;
         strategy.avgPullGoodsValue = 1.0 * strategy.totalPullGoodsValues / strategy.totalPullGoodsCount;
-
-        //10帧一个
-        strategy.berths.get(targetBerthId).totalGoodsNums++;
-        strategy.berths.get(targetBerthId).goodsNums++;
-        strategy.berths.get(targetBerthId).goods.offer(carryValue);
-        strategy.berths.get(targetBerthId).totalValue += carryValue;
         strategy.pullScore += carryValue;
         targetBerthId = -1;
         targetWorkBenchId = -1;
         carry = false;
+        num = 0;
         outStream.printf("pull %d\n", id);
     }
 }

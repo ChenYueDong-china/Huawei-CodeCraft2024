@@ -78,7 +78,7 @@ public class Berth {
         Dijkstra dijkstra = new Dijkstra();
         for (Point berthPoint : berthPoints) {
             dijkstra.init(berthPoint, gameMap);
-            dijkstra.update(BERTH_MAX_ROBOT_SEARCH_DEEP);
+            dijkstra.update(BERTH_MAX_ROBOT_SEARCH_DEEP, Integer.MAX_VALUE);
             for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
                 for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
                     short distance = dijkstra.getMoveDistance(i, j);

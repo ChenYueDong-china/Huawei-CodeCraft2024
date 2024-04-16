@@ -23,7 +23,7 @@ public class BackgroundThread {
     boolean m_exited = false;
     boolean m_working = false;
 
-
+    static int questionId = 0;
     Thread m_thread;
 
     ReentrantLock m_lock = new ReentrantLock(false);
@@ -39,6 +39,24 @@ public class BackgroundThread {
         return obj;
     }
 
+    public int sendQuestion(String question) {
+        Question q = new Question(questionId, question);
+        m_lock.lock();
+        input.add(q);
+        m_lock.unlock();
+        return questionId++;
+    }
+
+    public int getAnswer(int questionId) {
+        assert questionId != -1;
+        if (output.containsKey(questionId)) {
+            int ans = output.get(questionId);
+            output.remove(ans);
+            return ans;
+        }
+        return -1;
+    }
+
 
     public static class Question {
         public int id;
@@ -50,18 +68,9 @@ public class BackgroundThread {
         }
     }
 
-    public static class Answer {
-        public int id;
-        public int ans;
-
-        public Answer(int id, int ans) {
-            this.id = id;
-            this.ans = ans;
-        }
-    }
 
     public static Queue<Question> input = new ArrayDeque<>();
-    public static Queue<Answer> output = new ArrayDeque<>();
+    public static HashMap<Integer, Integer> output = new HashMap<>();
 
 
     public void init() {
@@ -103,9 +112,8 @@ public class BackgroundThread {
             } catch (Exception e) {
                 printError("error in sendRequest:" + e);
             }
-            Answer answer = new Answer(question.id, ans);
             m_lock.lock();
-            output.offer(answer);
+            output.put(question.id, ans);
             m_lock.unlock();
             m_working = false;
         }

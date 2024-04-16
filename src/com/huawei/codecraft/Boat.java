@@ -11,7 +11,8 @@ public class Boat {
 
     public int beConflicted = 0;
     public boolean carry = false;
-    int id;
+    int id = -1;
+    int globalId = -1;//需要，因为可能别人会占用泊位，会出问题
     public int sellCount = 0;
     Strategy strategy;
     public ArrayList<PointWithDirection> path = new ArrayList<>();
@@ -25,7 +26,7 @@ public class Boat {
 
     int lastNum;//目前货物数量
     int num;//目前货物数量
-    int value;//货物金额
+
     final int capacity;//容量
     boolean assigned;
     boolean buyAssign;
@@ -42,28 +43,24 @@ public class Boat {
         this.capacity = capacity;
     }
 
-    public void input() throws IOException {
-        String line = inStream.readLine();
-        printMost(line);
-        String[] parts = line.trim().split(" ");
-        id = Integer.parseInt(parts[0]);
-        lastNum = num;
-        num = Integer.parseInt(parts[1]);
-        corePoint.x = Integer.parseInt(parts[2]);
-        corePoint.y = Integer.parseInt(parts[3]);
+    public void input(SimpleBoat simpleBoat) throws IOException {
+        num = simpleBoat.num;
+        corePoint.x = simpleBoat.corePoint.x;
+        corePoint.y = simpleBoat.corePoint.y;
         for (BoatSellPoint boatSellPoint : strategy.boatSellPoints) {
             if (num == 0 && corePoint.equal(boatSellPoint.point)) {
                 targetSellId = -1;//卖完
-                carry = false;
-                value = 0;
+                carry = false;//不考虑金额，没必要
             }
         }
-        direction = Integer.parseInt(parts[4]);
-        status = Integer.parseInt(parts[5]);
+        direction = simpleBoat.direction;
+        status = simpleBoat.status;
         if (lastFlashBerth && status == 0) {//闪现，且这一帧没等待或者出问题
             //没闪现成功
-            printError(frameId + "error last frame flash berth default");
-            strategy.berths.get(targetBerthId).curBoatId = -1;//重置，说明闪现失败代码有问题
+            assert strategy.berths.get(targetBerthId).curBoatId != -1;
+            assert strategy.berths.get(targetBerthId).curBoatId < globalId;
+            //不一定是代码问题，可能同时闪现，自己没成功
+            printError(frameId + "last frame flash berth default");
         }
         lastFlashBerth = false;
         if (lastFlashDept && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)) {
@@ -71,21 +68,6 @@ public class Boat {
             printError(frameId + "error last frame flash dept default");
         }
         lastFlashDept = false;
-        if (status != 2 && originStatus == 2) {
-            //从装货到进入恢复状态或者行驶状态，说明船舶离开泊位，解锁,别人可以闪现过去
-            boolean hashOne = false;
-            for (Berth berth : strategy.berths) {
-                if (berth.curBoatId == id) {
-                    berth.curBoatId = -1;
-                    hashOne = true;
-                    break;
-                }
-            }
-            if (!hashOne) {
-                printError("error in out berth");
-            }
-        }
-        originStatus = status;
         if (remainRecoveryTime < 0) {
             printError("error remainRecoveryTime < 0");
             remainRecoveryTime = 0;
@@ -108,7 +90,7 @@ public class Boat {
                 && !assigned
                 && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)
                 && frameId > GAME_FRAME - 1000) {
-            //flashDept();
+            flashDept();
             return;
         }
         if (path == null || path.size() < 2) {//啥都不动，可能有问题，就算避让也会多走一帧
@@ -145,7 +127,7 @@ public class Boat {
             } else {
                 //闪现去主航道
                 assert strategy.gameMap.boatIsAllInMainChannel(next.point, next.direction);
-               // flashDept();
+                // flashDept();
             }
         }
     }
@@ -185,26 +167,25 @@ public class Boat {
         outStream.printf("berth %d\n", id);
         //计算恢复时间
         PointWithDirection next = new PointWithDirection(strategy.berths.get(targetBerthId).corePoint, 0);
-        //flashToNextPoint(next);
-        strategy.berths.get(targetBerthId).curBoatId = id;
+        flashToNextPoint(next);
         lastFlashBerth = true;
     }
 
-//    public void flashDept() {
-//        assert status != 1;
-//        outStream.printf("dept %d\n", id);
-//        PointWithDirection next = strategy.getBoatFlashDeptPoint(corePoint);
-//        flashToNextPoint(next);
-//        lastFlashDept = true;
-//        //计算恢复时间
-//
-//    }
+    public void flashDept() {
+        assert status != 1;
+        outStream.printf("dept %d\n", id);
+        PointWithDirection next = strategy.getBoatFlashDeptPoint(corePoint);
+        flashToNextPoint(next);
+        lastFlashDept = true;
+        //计算恢复时间
 
-//    private void flashToNextPoint(PointWithDirection next) {
-//        remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
-//        corePoint.x = next.point.x;
-//        corePoint.y = next.point.y;
-//        direction = next.direction;
-//        status = 1;//闪现成功
-//    }
+    }
+
+    private void flashToNextPoint(PointWithDirection next) {
+        remainRecoveryTime = 1 + 2 * (abs(next.point.x - corePoint.x) + abs(next.point.y - corePoint.y));
+        corePoint.x = next.point.x;
+        corePoint.y = next.point.y;
+        direction = next.direction;
+        status = 1;//闪现成功
+    }
 }
