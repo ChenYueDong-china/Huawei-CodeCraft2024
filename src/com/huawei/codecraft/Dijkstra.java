@@ -11,7 +11,7 @@ public class Dijkstra {
     private Point mTarget;//目标点
     private GameMap mGameMap;
 
-    int[][] cs = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS]; //前面2位是距离，后面的位数是距离0xdistdir
+    short[][] cs = new short[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS]; //前面2位是距离，后面的位数是距离0xdistdir
 
     void init(Point target, GameMap gameMap) {
         this.mTarget = target;
@@ -19,10 +19,14 @@ public class Dijkstra {
     }
 
     void update() {
+        update(Short.MAX_VALUE);
+    }
+
+    void update(int maxDeep) {
         // 求最短路径
         Point s = mTarget;
-        for (int[] c : cs) {
-            Arrays.fill(c, Integer.MAX_VALUE);
+        for (short[] c : cs) {
+            Arrays.fill(c, Short.MAX_VALUE);
         }
         //单向dfs搜就行
         int deep = 0;
@@ -30,6 +34,9 @@ public class Dijkstra {
         queue.offer(s);
         cs[s.x][s.y] = 0;
         while (!queue.isEmpty()) {
+            if (deep > maxDeep) {
+                break;
+            }
             int size = queue.size();
             deep += 1;
             //这一层出来的深度都一样
@@ -43,10 +50,10 @@ public class Dijkstra {
                     Point dir = DIR[dirIdx];
                     int dx = top.x + dir.x;
                     int dy = top.y + dir.y;//第一步
-                    if (!mGameMap.robotCanReach(dx, dy) || cs[dx][dy] != Integer.MAX_VALUE) {
+                    if (!mGameMap.robotCanReach(dx, dy) || cs[dx][dy] != Short.MAX_VALUE) {
                         continue; // 不可达或者访问过了
                     }
-                    cs[dx][dy] = (deep << 2) + dirIdx;//第一步家的优先级大于移位
+                    cs[dx][dy] = (short) ((deep << 2) + dirIdx);//第一步家的优先级大于移位
                     queue.offer(new Point(dx, dy));
                 }
             }
@@ -54,8 +61,8 @@ public class Dijkstra {
     }
 
     public ArrayList<Point> moveFrom(Point source) {
-        assert cs[source.x][source.y] != Integer.MAX_VALUE;
-        if (cs[source.x][source.y] == Integer.MAX_VALUE) {
+        assert cs[source.x][source.y] != Short.MAX_VALUE;
+        if (cs[source.x][source.y] == Short.MAX_VALUE) {
             return new ArrayList<>();
         }
         ArrayList<Point> result = getRobotPathByCs(cs, source);
@@ -86,11 +93,11 @@ public class Dijkstra {
         return getMoveDistance(target.x, target.y);
     }
 
-    public int getMoveDistance(int x, int y) {
+    public short getMoveDistance(int x, int y) {
         if (cs[x][y] == Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
+            return Short.MAX_VALUE;
         }
-        return (cs[x][y] >> 2);
+        return (short) (cs[x][y] >> 2);
     }
 
 }

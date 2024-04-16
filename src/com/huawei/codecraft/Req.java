@@ -24,7 +24,7 @@ public class Req {
     public static void init() {
         RequestConfig.Builder requestBuilder = RequestConfig.custom()
                 .setConnectTimeout(3000) // 连接超时3秒
-                .setSocketTimeout(5000);  // 数据读取超时5秒
+                .setSocketTimeout(10000);  // 数据读取超时10秒
         client = HttpClients.custom().setDefaultRequestConfig(requestBuilder.build()).build();
     }
 

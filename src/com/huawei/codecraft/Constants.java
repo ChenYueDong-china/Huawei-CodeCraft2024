@@ -31,6 +31,12 @@ public class Constants {
     public static final boolean GET_LAST_ONE = false;//是否拿倒数第一
 
 
+    public static final int SELL_POINT_MAX_SEARCH_DEEP = 800;    // 只搜800深度以内的点，一旦有某个方向到达800
+    // ，其他三个方向最大为400，加快速度
+    public static final int BERTH_MAX_ROBOT_SEARCH_DEEP = 1600;    // 只搜800深度以内的点，一旦有某个方向到达800
+    public static final int BERTH_MAX_BOAT_SEARCH_DEEP = 800;    // 只搜800深度以内的点，一旦有某个方向到达800
+
+
     public static final int FPS = 50;                   // 每秒运行帧数
     public static final int GAME_FRAME = 5 * 60 * FPS;
     public static final int WORKBENCH_EXIST_TIME = 20 * FPS;//1000帧

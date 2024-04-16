@@ -17,24 +17,26 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         // 如果在本地调试时不需要重启，在启动参数中添加restart，如：java -jar main.jar restart
-        if (args.length == 0) {
-            ProcessBuilder pb = new ProcessBuilder();
-            pb.command("java", "-jar", "-Xmn512m", "-Xms1024m", "-Xmx1024m",
-                    "-XX:TieredStopAtLevel=1", "main.jar", "restart");
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-            pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
-            Process p = pb.start();
-            p.waitFor();
-        } else if (!args[0].equals("restart")) {
-            System.out.println("err");
-        } else {
-            schedule();
-        }
+//        if (args.length == 0) {
+//            ProcessBuilder pb = new ProcessBuilder();
+//            pb.command("java", "-jar", "-Xmn512m", "-Xms1024m", "-Xmx1024m",
+//                    "-XX:TieredStopAtLevel=1", "main.jar", "restart");
+//            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+//            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+//            pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
+//            Process p = pb.start();
+//            p.waitFor();
+//        } else if (!args[0].equals("restart")) {
+//            System.out.println("err");
+//        } else {
+//            schedule();
+//        }
+        schedule();
     }
 
-    private static void schedule() throws IOException {
+    private static void schedule() throws IOException, InterruptedException {
         strategy.init();
+        strategy.mainLoop();
     }
 
 

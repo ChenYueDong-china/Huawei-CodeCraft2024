@@ -28,6 +28,8 @@ public class GameMap {
     private final int[][] boatAroundBerthId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//船闪现能到达得泊位,只有在靠泊区和泊位有值
     private final int[][] partOfBerthId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//这个点如果是泊位，那么id是啥
 
+    private final int[][] workBenchId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//这个点是工作台，则id是啥
+
     public final int[][][] boatCommonCs
             = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//寻路得时候复用cs
     public final boolean[][] commonConflictPoints
@@ -81,8 +83,12 @@ public class GameMap {
         );
     }
 
+    public boolean boatCanReach(int x, int y, int dir) {
+        return isLegalPoint(x, y) && boatCanReach_[x][y][dir];
+    }
+
     public boolean boatCanReach(Point corePoint, int dir) {
-        return isLegalPoint(corePoint.x, corePoint.y) && boatCanReach_[corePoint.x][corePoint.y][dir];
+        return boatCanReach(corePoint.x, corePoint.y, dir);
     }
 
     public int getRotationDir(int curDir, int nextDir) {
@@ -112,6 +118,14 @@ public class GameMap {
 
     public int getBelongToBerthId(Point point) {
         return partOfBerthId[point.x][point.y];
+    }
+
+    public int getBelongToWorkbenchId(Point point) {
+        return workBenchId[point.x][point.y];
+    }
+
+    public void setBelongToWorkbenchId(Point point, int id) {
+        workBenchId[point.x][point.y] = id;
     }
 
     public int getDiscreteBelongToBerthId(int x, int y) {
@@ -216,6 +230,9 @@ public class GameMap {
             Arrays.fill(around, -1);
         }
 
+        for (int[] ids : workBenchId) {
+            Arrays.fill(ids, -1);
+        }
         return true;
     }
 

@@ -65,6 +65,7 @@ public class Strategy {
     public double avgWorkBenchLoopDistance = -1;//平均货物循环距离
     public double estimateMaxRobotCount = 0;//代码估计的
     public double estimateMaxBoatCount = 0;
+    public long frameStartTime = 0;
 
     public void init() throws IOException {
         long startTime = System.currentTimeMillis();
@@ -89,13 +90,11 @@ public class Strategy {
             }
         }
         gameMap.setMap(mapData);
-//        for (int i = 0; i < boatSellPoints.size(); i++) {
-//            boatSellPoints.get(i).init(i, gameMap);
-//        }
-
+        for (int i = 0; i < boatSellPoints.size(); i++) {
+            boatSellPoints.get(i).init(i, gameMap);
+        }
         BERTH_PER_PLAYER = getIntInput();
         //码头
-        long maxUpdateTime = 0;
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             berths.add(new Berth());
         }
@@ -108,72 +107,60 @@ public class Strategy {
             berth.corePoint.y = Integer.parseInt(parts[2]);
             berth.loadingSpeed = Integer.parseInt(parts[3]);
             berth.id = id;
-            //最小卖距离
-//            long curTime = System.currentTimeMillis();
-//            if (curTime - startTime + maxUpdateTime > 1000 * 4 + 800) {
-//                berth.init(gameMap, true);
-//                normal_init_success = false;
-//            } else {
-//                berth.init(gameMap, false);
-//                long r = System.currentTimeMillis();
-//                maxUpdateTime = max(maxUpdateTime, r - curTime);
-//            }
-//            int minSellDistance = Integer.MAX_VALUE;
-//            for (BoatSellPoint boatSellPoint : boatSellPoints) {
-//                if (boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection) < minSellDistance) {
-//                    minSellDistance = boatSellPoint.getMinDistance(berth.corePoint, berth.coreDirection);
-//                }
-//            }
-//            berth.minSellDistance = minSellDistance;
+            berth.init(gameMap);
         }
+
+
         boatCapacity = getIntInput();
         String okk = inStream.readLine();
         printMost(okk);
 
         //闪现点
-//        boatFlashCandidates = new ArrayList<>();
-//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                for (int k = 0; k < DIR.length / 2; k++) {
-//                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
-//                        boatFlashCandidates.add(new Point(i, j));
-//                        break;
-//                    }
-//                }
-//            }
-//        }
-//        long l1 = System.currentTimeMillis();
-//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                if (gameMap.boatCanReach(i, j)) {
-//                    //留200ms阈值,超时不更新，到时候再更新
-//                    long curTime = System.currentTimeMillis();
-//                    if (curTime - startTime > 1000 * 4 + 800) {
-//                        break;
-//                    }
-//                    boatUpdateFlashPoint(i, j);
-//                }
-//            }
-//        }
-//        long l2 = System.currentTimeMillis();
-//        printDebug("boat flash target update time:" + (l2 - l1));
-//        for (int i = 0; i < robotLock.length; i++) {
-//            robotLock[i] = new HashSet<>();
-//        }
-//
-//        //更新berth循环距离
-//        int totalBerthLoopDistance = 0;
-//        for (Berth berth : berths) {
-//            if (berth.minSellDistance != Integer.MAX_VALUE) {
-//                totalBerthLoopDistance += 2 * berth.minSellDistance + (int) ceil(1.0 * boatCapacity / berth.loadingSpeed);
-//                totalValidBerthCount++;
-//            }
-//        }
-//        avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
-//        Req.init();
+        long l1 = System.currentTimeMillis();
+        boatFlashCandidates = new ArrayList<>();
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                for (int k = 0; k < DIR.length / 2; k++) {
+                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
+                        boatFlashCandidates.add(new Point(i, j));
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                if (gameMap.boatCanReach(i, j)) {
+                    //留200ms阈值,超时不更新，到时候再更新
+                    long curTime = System.currentTimeMillis();
+                    if (curTime - startTime > 1000 * 19 + 500) {
+                        break;
+                    }
+                    boatUpdateFlashPoint(i, j);
+                }
+            }
+        }
+        long l2 = System.currentTimeMillis();
+        printError("boat flash target update time:" + (l2 - l1));
+        for (int i = 0; i < robotLock.length; i++) {
+            robotLock[i] = new HashSet<>();
+        }
+
+        //更新berth循环距离
+        int totalBerthLoopDistance = 0;
+        for (Berth berth : berths) {
+            if (berth.minSellDistance != Integer.MAX_VALUE) {
+                totalBerthLoopDistance += 2 * berth.minSellDistance + (int) ceil(1.0 * boatCapacity / berth.loadingSpeed);
+                totalValidBerthCount++;
+            }
+        }
+        avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
+        BackgroundThread.Instance().init();
+        long l11 = System.currentTimeMillis();
+        printError("initTime:" + (l11 - startTime));
         outStream.print("OK\n");
         outStream.flush();
-        Req.init();
     }
 
     private void boatUpdateFlashPoint(int i, int j) {
@@ -220,7 +207,7 @@ public class Strategy {
 //                , otherPath, otherIds, boat.remainRecoveryTime, berth.boatMinDistance);
 //    }
 
-//    public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
+    //    public ArrayList<PointWithDirection> boatToBerth(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds) {
 //        boat.targetBerthId = berth.id;
 //        return boatMoveToBerth(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction), berth.id, new PointWithDirection(new Point(berth.corePoint), berth.coreDirection), maxDeep, berth.berthAroundPoints.size(), boat.id, otherPath, otherIds
 //                , boat.remainRecoveryTime, null);
@@ -269,27 +256,31 @@ public class Strategy {
 //    }
 //
 //
-//    public void mainLoop() throws IOException {
-//        while (input()) {
-//            //todo 测试多机器人避让，测试多船避让，测试买船，测试最优的决策
-//            long l = System.currentTimeMillis();
-//            dispatch();
-//            long e = System.currentTimeMillis();
-//            if (e - l > 12) {
-//                printError("frameId:" + frameId + ",time:" + (e - l));
-//            }
-//            if (frameId == 15000) {
-//                int sellCount = 0;
-//                for (Boat boat : boats) {
-//                    sellCount += boat.sellCount;
-//                }
-//                printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:" + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
-//            }
-//            outStream.print("OK\n");
-//            outStream.flush();
-//        }
-//    }
-//
+    public void mainLoop() throws IOException, InterruptedException {
+        while (input()) {
+            //todo 测试多机器人避让，测试多船避让，测试买船，测试最优的决策
+            //dispatch();
+            long e = System.currentTimeMillis();
+            if (e - frameStartTime > 12) {
+                printError("frameId:" + frameId + ",time:" + (e - frameStartTime));
+            }
+            if (frameId == 15000) {
+                int sellCount = 0;
+                for (Boat boat : boats) {
+                    sellCount += boat.sellCount;
+                }
+                printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:" + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
+            }
+            //留2ms阈值
+            while (BackgroundThread.Instance().IsWorking() && frameStartTime + 18 < System.currentTimeMillis())
+                //noinspection BusyWait
+                Thread.sleep(1);
+            outStream.print("OK\n");
+            outStream.flush();
+        }
+    }
+
+    //
 //
 //    private void dispatch() {
 //        if (!GET_LAST_ONE) {
@@ -2246,105 +2237,105 @@ public class Strategy {
 //        return toBerth.getBoatMinDistance(fromBerth.corePoint, fromBerth.coreDirection);
 //    }
 //
-//    private boolean input() throws IOException {
-//        String line = inStream.readLine();
-//        printMost(line);
-//        if (line == null) {
-//            return false;
-//        }
-//        String[] parts = line.trim().split(" ");
-//        int tmp = frameId;
-//        frameId = Integer.parseInt(parts[0]);
-//        curFrameDiff = frameId - tmp;
-//        if (tmp + 1 != frameId) {
-//            jumpCount += frameId - tmp - 1;
-//        }
-//        money = Integer.parseInt(parts[1]);
-//
-//
-//        //新增工作台
-//        int num = getIntInput();
-//        ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
-//        for (Map.Entry<Integer, Workbench> entry : workbenches.entrySet()) {
-//            Workbench workbench = entry.getValue();
-//            workbench.remainTime -= curFrameDiff;//跳帧也要减过去
-//            if (workbench.remainTime <= 0) {
-//                deleteIds.add(entry.getKey());
-//            }
-//        }
-//        for (Integer id : deleteIds) {
-//            workbenches.remove(id);
-//        }
-//        deleteIds.clear();
-//        for (int i = 1; i <= num; i++) {
-//            Workbench workbench = new Workbench(workbenchId);
-//            workbench.input(gameMap);
-//            if (workbench.value == 0) {
-//                //不管，反正计算过了
-//                continue;
-//            }
-//            //最小卖距离
-//            int minDistance = Integer.MAX_VALUE;
-//            for (Berth berth : berths) {
-//                if (berth.getRobotMinDistance(workbench.pos) < minDistance) {
-//                    minDistance = berth.getRobotMinDistance(workbench.pos);
-//                }
-//            }
-//            workbench.minSellDistance = minDistance;
-//            if (minDistance != Integer.MAX_VALUE) {
-//                totalValidWorkBenchCount++;
-//                totalWorkbenchLoopDistance += 2 * workbench.minSellDistance;//买了卖
-//            }
-//            totalValue += workbench.value;
-//            workbenches.put(workbenchId, workbench);
-//            workbenchId++;
-//            goodAvgValue = totalValue / workbenchId;
-//        }
-//        avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidWorkBenchCount);
-//
-//        ROBOTS_PER_PLAYER = getIntInput();
-//        //机器人
-//        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-//            robots.get(i).input();
-//        }
-//        while (robots.size() > ROBOTS_PER_PLAYER) {
-//            robots.remove(robots.size() - 1);
-//            printError("error,no buy robot");
-//        }
-//        BOATS_PER_PLAYER = getIntInput();
-//        //船
-//        for (int i = 0; i < BOATS_PER_PLAYER; i++) {
-//            Boat boat = boats.get(i);
-//            boat.input();
-//            //装货
-//            int load = boat.num - boat.lastNum;
-//            if (load > 0) {
-//                int index = -1;
-//                for (Berth berth : berths) {
-//                    if (berth.curBoatId == boat.id) {
-//                        index = berth.id;
-//                        break;
-//                    }
-//                }
-//                berths.get(index).goodsNums -= load;
-//                for (int j = 0; j < load; j++) {
-//                    assert !berths.get(index).goods.isEmpty();
-//                    Integer value = berths.get(index).goods.poll();
-//                    assert value != null;
-//                    boat.value += value;
-//                    berths.get(index).totalValue -= value;
-//                }
-//                boat.lastNum = boat.num;
-//            }
-//        }
-//
-//
-//        while (boats.size() > BOATS_PER_PLAYER) {
-//            boats.remove(boats.size() - 1);
-//            printError("error,no buy boats");
-//        }
-//        String okk = inStream.readLine();
-//        printMost(okk);
-//        return true;
-//    }
+    private boolean input() throws IOException {
+        frameStartTime = System.currentTimeMillis();
+        String line = inStream.readLine();
+        printMost(line);
+        if (line == null) {
+            return false;
+        }
+        String[] parts = line.trim().split(" ");
+        int tmp = frameId;
+        frameId = Integer.parseInt(parts[0]);
+        curFrameDiff = frameId - tmp;
+        if (tmp + 1 != frameId) {
+            jumpCount += frameId - tmp - 1;
+        }
+        money = Integer.parseInt(parts[1]);
+
+
+        //新增工作台
+        int num = getIntInput();
+
+        for (Map.Entry<Integer, Workbench> entry : workbenches.entrySet()) {
+            Workbench workbench = entry.getValue();
+            workbench.remainTime -= curFrameDiff;//跳帧也要减过去
+        }
+        ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
+        for (int i = 1; i <= num; i++) {
+            Workbench workbench = new Workbench(workbenchId);
+            workbench.input(gameMap);
+            if (workbench.value == 0) {
+                assert gameMap.getBelongToWorkbenchId(workbench.pos) != -1;
+                deleteIds.add(gameMap.getBelongToWorkbenchId(workbench.pos));
+                continue;
+            }
+            gameMap.setBelongToWorkbenchId(workbench.pos, workbench.id);
+            //最小卖距离
+            int minDistance = Integer.MAX_VALUE;
+            for (Berth berth : berths) {
+                if (berth.getRobotMinDistance(workbench.pos) < minDistance) {
+                    minDistance = berth.getRobotMinDistance(workbench.pos);
+                }
+            }
+            workbench.minSellDistance = minDistance;
+            if (minDistance != Integer.MAX_VALUE) {
+                totalValidWorkBenchCount++;
+                totalWorkbenchLoopDistance += 2 * workbench.minSellDistance;//买了卖
+            }
+            totalValue += workbench.value;
+            workbenches.put(workbenchId, workbench);
+            workbenchId++;
+            goodAvgValue = totalValue / workbenchId;
+        }
+        for (Integer deleteId : deleteIds) {
+            workbenches.remove(deleteId);
+        }
+        avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidWorkBenchCount);
+
+        ROBOTS_PER_PLAYER = getIntInput();
+        //机器人
+        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
+            robots.get(i).input();
+        }
+        while (robots.size() > ROBOTS_PER_PLAYER) {
+            robots.remove(robots.size() - 1);
+            printError("error,no buy robot");
+        }
+        BOATS_PER_PLAYER = getIntInput();
+        //船
+        for (int i = 0; i < BOATS_PER_PLAYER; i++) {
+            Boat boat = boats.get(i);
+            boat.input();
+            //装货
+            int load = boat.num - boat.lastNum;
+            if (load > 0) {
+                int index = -1;
+                for (Berth berth : berths) {
+                    if (berth.curBoatId == boat.id) {
+                        index = berth.id;
+                        break;
+                    }
+                }
+                berths.get(index).goodsNums -= load;
+                for (int j = 0; j < load; j++) {
+                    assert !berths.get(index).goods.isEmpty();
+                    Integer value = berths.get(index).goods.poll();
+                    assert value != null;
+                    boat.value += value;
+                    berths.get(index).totalValue -= value;
+                }
+                boat.lastNum = boat.num;
+            }
+        }
+
+
+        while (boats.size() > BOATS_PER_PLAYER) {
+            boats.remove(boats.size() - 1);
+            printError("error,no buy boats");
+        }
+        String okk = inStream.readLine();
+        printMost(okk);
+        return true;
+    }
 }
