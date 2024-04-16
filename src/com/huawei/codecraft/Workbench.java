@@ -2,7 +2,7 @@ package com.huawei.codecraft;
 
 import java.io.IOException;
 
-import static com.huawei.codecraft.Constants.WORKBENCH_EXIST_TIME;
+import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
 
 public class Workbench {
@@ -33,10 +33,7 @@ public class Workbench {
         //初始化dij
         dijkstra = new Dijkstra();
         dijkstra.init(pos, map);
-        long l = System.currentTimeMillis();
-        dijkstra.update(400, 40000);
-        long r = System.currentTimeMillis();
-        System.out.println(r - l);
+        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP,WORKBENCH_MAX_SEARCH_COUNT);
     }
 
     //获得这个workbench到任意一个位置的最小距离

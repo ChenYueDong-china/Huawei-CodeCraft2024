@@ -274,8 +274,7 @@ public class Strategy {
                 printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:" + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
             }
             //留2ms阈值
-            while (BackgroundThread.Instance().IsWorking() && frameStartTime + 18 < System.currentTimeMillis())
-            {
+            while (BackgroundThread.Instance().IsWorking() && frameStartTime + 18 < System.currentTimeMillis()) {
                 //noinspection BusyWait
                 Thread.sleep(1);
             }
@@ -2270,6 +2269,7 @@ public class Strategy {
         ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
         ArrayList<Point> deletePos = new ArrayList<>();//满足为0的删除
         ArrayList<Integer> deleteValue = new ArrayList<>();//满足为0的删除
+        long l = System.currentTimeMillis();
         for (int i = 1; i <= num; i++) {
             Workbench workbench = new Workbench(workbenchId);
             workbench.input(gameMap);
@@ -2298,6 +2298,8 @@ public class Strategy {
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
+        long r = System.currentTimeMillis();
+        System.out.println(r - l);
         for (Integer deleteId : deleteIds) {
             workbenches.remove(deleteId);
         }
