@@ -69,6 +69,8 @@ public class Strategy {
     public double estimateMaxBoatCount = 0;
     public long frameStartTime = 0;
 
+    public Queue<Workbench2> workbenchCache = new ArrayDeque<>();
+
     public void init() throws IOException {
         long startTime = System.currentTimeMillis();
         char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
@@ -119,7 +121,26 @@ public class Strategy {
         String okk = inStream.readLine();
         printMost(okk);
 
-        //闪现点
+
+        //缓存workbench，也可以用来线上测试
+        for (int i = 0; i < 3500; i++) {
+            workbenchCache.add(new Workbench2(-1));
+        }
+
+        for (int i = 0; i < robotLock.length; i++) {
+            robotLock[i] = new HashSet<>();
+        }
+        //更新berth循环距离
+        int totalBerthLoopDistance = 0;
+        for (Berth berth : berths) {
+            if (berth.minSellDistance != Integer.MAX_VALUE) {
+                totalBerthLoopDistance += 2 * berth.minSellDistance + (int) ceil(1.0 * boatCapacity / berth.loadingSpeed);
+                totalValidBerthCount++;
+            }
+        }
+        avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
+        BackgroundThread.Instance().init();
+
         long l1 = System.currentTimeMillis();
         boatFlashCandidates = new ArrayList<>();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
@@ -132,7 +153,6 @@ public class Strategy {
                 }
             }
         }
-
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
                 if (gameMap.boatCanReach(i, j)) {
@@ -147,32 +167,20 @@ public class Strategy {
         }
         long l2 = System.currentTimeMillis();
         printError("boat flash target update time:" + (l2 - l1));
-        for (int i = 0; i < robotLock.length; i++) {
-            robotLock[i] = new HashSet<>();
-        }
-
-        //更新berth循环距离
-        int totalBerthLoopDistance = 0;
-        for (Berth berth : berths) {
-            if (berth.minSellDistance != Integer.MAX_VALUE) {
-                totalBerthLoopDistance += 2 * berth.minSellDistance + (int) ceil(1.0 * boatCapacity / berth.loadingSpeed);
-                totalValidBerthCount++;
-            }
-        }
-        avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
-        BackgroundThread.Instance().init();
         long l11 = System.currentTimeMillis();
         printError("initTime:" + (l11 - startTime));
-        outStream.print("OK\n");
-        outStream.flush();
         Runtime runtime = Runtime.getRuntime();
         long totalMemory = runtime.totalMemory(); // 总内存
         long freeMemory = runtime.freeMemory(); // 可用内存
         long usedMemory = totalMemory - freeMemory; // 已使用内存
-        System.out.println("Total Memory (bytes): " + totalMemory);
-        System.out.println("Free Memory (bytes): " + freeMemory);
-        System.out.println("Used Memory (bytes): " + usedMemory);
-        System.out.println("--------------------------");
+        printError("Total Memory (bytes): " + totalMemory);
+        printError("Free Memory (bytes): " + freeMemory);
+        printError("Used Memory (bytes): " + usedMemory);
+        printError("--------------------------");
+
+
+        outStream.print("OK\n");
+        outStream.flush();
     }
 
     private void boatUpdateFlashPoint(int i, int j) {
@@ -273,10 +281,10 @@ public class Strategy {
             //todo 测试多机器人避让，测试多船避让，测试买船，测试最优的决策
             //dispatch();
             long e = System.currentTimeMillis();
-            if (e - frameStartTime > 12) {
+            if (e - frameStartTime > 5) {
                 printError("frameId:" + frameId + ",time:" + (e - frameStartTime));
             }
-            if (frameId == 15000) {
+            if (frameId == 20000) {
                 int sellCount = 0;
                 for (Boat boat : boats) {
                     sellCount += boat.sellCount;
@@ -2254,6 +2262,10 @@ public class Strategy {
 //
     int totalCount = 0;
 
+    Dijkstra commonDij = new Dijkstra();
+
+    int[][] fastQueue = new int[MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS][2];
+
     private boolean input() throws IOException {
         frameStartTime = System.currentTimeMillis();
         String line = inStream.readLine();
@@ -2278,7 +2290,7 @@ public class Strategy {
             Workbench2 workbench = entry.getValue();
             workbench.remainTime -= curFrameDiff;//跳帧也要减过去
         }
-        ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
+        HashSet<Integer> deleteIds = new HashSet<>();//满足为0的删除
         ArrayList<Point> deletePos = new ArrayList<>();//满足为0的删除
         ArrayList<Integer> deleteValue = new ArrayList<>();//满足为0的删除
         long l = System.currentTimeMillis();
@@ -2290,8 +2302,13 @@ public class Strategy {
             }
         }
         for (int i = 1; i <= num; i++) {
-            Workbench2 workbench = new Workbench2(workbenchId);
-            workbench.input(gameMap);
+            if (workbenchCache.isEmpty()) {
+                workbenchCache.offer(new Workbench2(-1));
+            }
+            Workbench2 workbench = workbenchCache.poll();
+            assert workbench != null;
+            workbench.id = workbenchId;
+            workbench.input(gameMap, commonDij, fastQueue);
             if (workbench.value > 0) {
                 totalCount++;
             } else {
@@ -2300,13 +2317,15 @@ public class Strategy {
             if (workbench.value == 0) {
                 //被别人拿了，或者消失
                 for (Workbench2 workbench2 : workbenches.values()) {
-                    if (workbench2.pos.equal(workbench.pos)) {
+                    if (workbench2.pos.equal(workbench.pos) && !deleteIds.contains(workbench2.id)) {
                         deleteIds.add(workbench2.id);
                         deletePos.add(workbench2.pos);
                         deleteValue.add(workbench2.value);
                         break;
                     }
                 }
+                workbenchCache.offer(workbench);
+                //回收
                 continue;
             }
             //最小卖距离
@@ -2326,10 +2345,8 @@ public class Strategy {
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
-        printError("frame:" + frameId + ",size:" + workbenches.size());
-        long r = System.currentTimeMillis();
-        System.out.println(r - l);
         for (Integer deleteId : deleteIds) {
+            workbenchCache.offer(workbenches.get(deleteId));
             workbenches.remove(deleteId);
         }
         avgWorkBenchLoopDistance = 1.0 * totalWorkbenchLoopDistance / max(1, totalValidWorkBenchCount);
@@ -2418,8 +2435,10 @@ public class Strategy {
                 assert berthId != -1;
                 int load = simpleboat.num - simpleboat.lastNum;
                 Berth berth = berths.get(berthId);
+                load = min(berth.goodsNums, load);
                 berth.goodsNums -= load;
                 for (int j = 0; j < load; j++) {
+                    //todo 存在掉帧的可能
                     assert !berth.goods.isEmpty();
                     int poll = berth.goods.poll();
                     simpleboat.value += poll;
@@ -2476,6 +2495,7 @@ public class Strategy {
         }
         String okk = inStream.readLine();
         printMost(okk);
+//        printError("frame:" + frameId + ",size:" + workbenches.size());
         return true;
     }
 }
