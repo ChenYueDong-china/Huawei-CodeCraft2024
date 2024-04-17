@@ -24,7 +24,7 @@ public class Strategy {
     private int money;
     public GameMap gameMap;
     public static int workbenchId = 0;
-    public final HashMap<Integer, Workbench> workbenches = new HashMap<>();
+    public final HashMap<Integer, Workbench2> workbenches = new HashMap<>();
     public final HashSet<Integer> workbenchesLock = new HashSet<>();//锁住某些工作台
 
     public int totalValue = 0;
@@ -75,10 +75,12 @@ public class Strategy {
         gameMap = new GameMap();
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             fgets(mapData[i], inStream);
-            inStream.readLine();
+            String ok = inStream.readLine();
+            printMost(ok);
             outStream.print("OK\n");
             outStream.flush();
         }
+
         for (int i = 0; i < mapData.length; i++) {
             for (int j = 0; j < mapData[0].length; j++) {
                 if (mapData[i][j] == 'R') {
@@ -163,6 +165,14 @@ public class Strategy {
         printError("initTime:" + (l11 - startTime));
         outStream.print("OK\n");
         outStream.flush();
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemory = runtime.totalMemory(); // 总内存
+        long freeMemory = runtime.freeMemory(); // 可用内存
+        long usedMemory = totalMemory - freeMemory; // 已使用内存
+        System.out.println("Total Memory (bytes): " + totalMemory);
+        System.out.println("Free Memory (bytes): " + freeMemory);
+        System.out.println("Used Memory (bytes): " + usedMemory);
+        System.out.println("--------------------------");
     }
 
     private void boatUpdateFlashPoint(int i, int j) {
@@ -2242,6 +2252,8 @@ public class Strategy {
 //        return toBerth.getBoatMinDistance(fromBerth.corePoint, fromBerth.coreDirection);
 //    }
 //
+    int totalCount = 0;
+
     private boolean input() throws IOException {
         frameStartTime = System.currentTimeMillis();
         String line = inStream.readLine();
@@ -2262,25 +2274,41 @@ public class Strategy {
         //新增工作台
         int num = getIntInput();
 
-        for (Map.Entry<Integer, Workbench> entry : workbenches.entrySet()) {
-            Workbench workbench = entry.getValue();
+        for (Map.Entry<Integer, Workbench2> entry : workbenches.entrySet()) {
+            Workbench2 workbench = entry.getValue();
             workbench.remainTime -= curFrameDiff;//跳帧也要减过去
         }
         ArrayList<Integer> deleteIds = new ArrayList<>();//满足为0的删除
         ArrayList<Point> deletePos = new ArrayList<>();//满足为0的删除
         ArrayList<Integer> deleteValue = new ArrayList<>();//满足为0的删除
         long l = System.currentTimeMillis();
-        for (int i = 1; i <= num; i++) {
-            Workbench workbench = new Workbench(workbenchId);
-            workbench.input(gameMap);
-            if (workbench.value == 0) {
-                assert gameMap.getBelongToWorkbenchId(workbench.pos) != -1;
-                deleteIds.add(gameMap.getBelongToWorkbenchId(workbench.pos));
+        for (Workbench2 workbench : workbenches.values()) {
+            if (workbench.remainTime <= 0) {
+                deleteIds.add(workbench.id);
                 deletePos.add(workbench.pos);
-                deleteValue.add(workbenches.get(gameMap.getBelongToWorkbenchId(workbench.pos)).value);
+                deleteValue.add(workbench.value);
+            }
+        }
+        for (int i = 1; i <= num; i++) {
+            Workbench2 workbench = new Workbench2(workbenchId);
+            workbench.input(gameMap);
+            if (workbench.value > 0) {
+                totalCount++;
+            } else {
+                totalCount--;
+            }
+            if (workbench.value == 0) {
+                //被别人拿了，或者消失
+                for (Workbench2 workbench2 : workbenches.values()) {
+                    if (workbench2.pos.equal(workbench.pos)) {
+                        deleteIds.add(workbench2.id);
+                        deletePos.add(workbench2.pos);
+                        deleteValue.add(workbench2.value);
+                        break;
+                    }
+                }
                 continue;
             }
-            gameMap.setBelongToWorkbenchId(workbench.pos, workbench.id);
             //最小卖距离
             int minDistance = Integer.MAX_VALUE;
             for (Berth berth : berths) {
@@ -2298,6 +2326,7 @@ public class Strategy {
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
+        printError("frame:" + frameId + ",size:" + workbenches.size());
         long r = System.currentTimeMillis();
         System.out.println(r - l);
         for (Integer deleteId : deleteIds) {
@@ -2343,7 +2372,11 @@ public class Strategy {
                             break;
                         }
                     }
-                    assert find;
+                    if (!find) {
+                        //假设拿了50的价值
+                        simpleRobot.goodList.add(50);
+                    }
+
                 }
             }
         }

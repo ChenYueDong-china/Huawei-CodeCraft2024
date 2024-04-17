@@ -63,7 +63,7 @@ public class Dijkstra {
             }
         }
         long l3 = System.currentTimeMillis();
-        System.out.println((l2 - l1) + ":" + (l3 - l2));
+//        System.out.println((l2 - l1) + ":" + (l3 - l2));
     }
 
     public ArrayList<Point> moveFrom(Point source) {

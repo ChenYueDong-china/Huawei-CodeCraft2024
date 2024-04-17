@@ -49,12 +49,14 @@ public class BackgroundThread {
 
     public int getAnswer(int questionId) {
         assert questionId != -1;
+        int ans = -1;
+        m_lock.lock();
         if (output.containsKey(questionId)) {
-            int ans = output.get(questionId);
+            ans = output.get(questionId);
             output.remove(ans);
-            return ans;
         }
-        return -1;
+        m_lock.unlock();
+        return ans;
     }
 
 
