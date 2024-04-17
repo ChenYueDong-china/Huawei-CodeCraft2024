@@ -1,11 +1,13 @@
 package com.huawei.codecraft;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class Utils {
+
     @SuppressWarnings("all")
-    public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
+    public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
 //    static {
 //        try {

@@ -87,7 +87,7 @@ public class Robot {
             if (isPending && ans != -1) {
                 //回答问题
                 outStream.printf("ans %d %d\n", id, ans);
-                printDebug("frame:" + frameId + ",question:" + question + ",id:" + id + ",ans:" + ans);
+//                printError("frame:" + frameId + ",question:" + question + ",id:" + id + ",ans:" + ans);
                 strategy.workbenchesPermanentLock.add(targetWorkBenchId);
                 //可能没有成功回答？，理论上pending下一帧一定能回答，判题器有问题，下一帧继续回答一下
             }
