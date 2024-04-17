@@ -31,16 +31,16 @@ public class Constants {
     public static final boolean GET_LAST_ONE = false;//是否拿倒数第一
 
 
-    public static final int SELL_POINT_MAX_SEARCH_DEEP = 400;    // 只搜800深度以内的点，一旦有某个方向到达800
-    public static final int BERTH_MAX_BOAT_SEARCH_DEEP = 400;    // 只搜800深度以内的点，一旦有某个方向到达800
-    public static final int WORKBENCH_MAX_SEARCH_DEEP = 400;    //只搜400周围的点
+    public static final int SELL_POINT_MAX_SEARCH_DEEP = 500;    // 只搜800深度以内的点，一旦有某个方向到达800
+    public static final int BERTH_MAX_BOAT_SEARCH_DEEP = 500;    // 只搜800深度以内的点，一旦有某个方向到达800
+    public static final int WORKBENCH_MAX_SEARCH_DEEP = 300;    //只搜400周围的点
     public static final int WORKBENCH_MAX_SEARCH_COUNT = 40000;    //最多搜4万个点，再搜容易超时,c++可以增大一些
     public static final int SIMPLE_ROBOT_PATH_LENGTH = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
     public static final int SIMPLE_BOAT_PATH_LENGTH = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
 
-    public static final int FPS = 50;                   // 每秒运行帧数
-    public static final int GAME_FRAME = 5 * 60 * FPS;
-    public static final int WORKBENCH_EXIST_TIME = 20 * FPS;//1000帧
+    public static final int FPS = 20;                   // 每秒运行帧数
+    public static final int GAME_FRAME = 5 * 200 * FPS;
+    public static final int WORKBENCH_EXIST_TIME = 50 * FPS;//1000帧
 
     public static final int MAP_FILE_ROW_NUMS = 800;    // 地图文件行数
     public static final int MAP_FILE_COL_NUMS = 800;    // 地图文件列数

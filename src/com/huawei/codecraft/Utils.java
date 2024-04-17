@@ -7,13 +7,13 @@ public class Utils {
     @SuppressWarnings("all")
     public static BufferedReader inStream = new BufferedReader(new InputStreamReader(System.in));
 
-    static {
-        try {
-            inStream = new BufferedReader(new FileReader("in.txt"));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    static {
+//        try {
+//            inStream = new BufferedReader(new FileReader("in.txt"));
+//        } catch (FileNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private static final boolean ERROR = true;
 
@@ -161,7 +161,7 @@ public class Utils {
     public static int getIntInput() throws IOException {
         String line = inStream.readLine();
         printMost(line);
-        return Integer.parseInt(line.trim().split(" ")[0]);
+        return Integer.parseInt(line.split(" ")[0]);
     }
 
     public static ArrayList<Point> getRobotPathByCs(short[][] cs, Point target) {

@@ -67,9 +67,11 @@ public class Strategy {
     public double avgWorkBenchLoopDistance = -1;//平均货物循环距离
     public double estimateMaxRobotCount = 0;//代码估计的
     public double estimateMaxBoatCount = 0;
-    public long frameStartTime = 0;
+
 
     public Queue<Workbench2> workbenchCache = new ArrayDeque<>();
+    public Queue<Robot> pendingRobots = new ArrayDeque<>();
+    public Queue<Boat> pendingBoats = new ArrayDeque<>();
 
     public void init() throws IOException {
         long startTime = System.currentTimeMillis();
@@ -139,7 +141,7 @@ public class Strategy {
             }
         }
         avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
-        BackgroundThread.Instance().init();
+//        BackgroundThread.Instance().init();
 
         long l1 = System.currentTimeMillis();
         boatFlashCandidates = new ArrayList<>();
@@ -169,16 +171,6 @@ public class Strategy {
         printError("boat flash target update time:" + (l2 - l1));
         long l11 = System.currentTimeMillis();
         printError("initTime:" + (l11 - startTime));
-        Runtime runtime = Runtime.getRuntime();
-        long totalMemory = runtime.totalMemory(); // 总内存
-        long freeMemory = runtime.freeMemory(); // 可用内存
-        long usedMemory = totalMemory - freeMemory; // 已使用内存
-        printError("Total Memory (bytes): " + totalMemory);
-        printError("Free Memory (bytes): " + freeMemory);
-        printError("Used Memory (bytes): " + usedMemory);
-        printError("--------------------------");
-
-
         outStream.print("OK\n");
         outStream.flush();
     }
@@ -271,20 +263,25 @@ public class Strategy {
 //        return robotMoveToPoint(gameMap, robot.pos, end, maxDeep, otherPaths);
 //    }
 //
+    public ArrayList<Point> robotToBerthHeuristic(Robot robot, int berthId) {
+        return robotMoveToBerth(gameMap, robot.pos, berthId, berths.get(berthId).robotMinDistance);
+    }
+
 //    public ArrayList<Point> robotToPointHeuristic(Robot robot, Point end, ArrayList<ArrayList<Point>> otherPaths, int[][] heuristicCs) {
 //        return robotMoveToPointHeuristic(gameMap, robot.pos, end, otherPaths, heuristicCs);
 //    }
-//
-//
+
     public void mainLoop() throws IOException, InterruptedException {
         while (input()) {
             //todo 测试多机器人避让，测试多船避让，测试买船，测试最优的决策
-            //dispatch();
+            long l = System.currentTimeMillis();
+            dispatch();
             long e = System.currentTimeMillis();
-            if (e - frameStartTime > 5) {
-                printError("frameId:" + frameId + ",time:" + (e - frameStartTime));
+
+            if (e - l > 50) {
+                printError("frameId:" + frameId + ",time:" + (e - l));
             }
-            if (frameId == 20000) {
+            if (frameId >= GAME_FRAME - 2) {
                 int sellCount = 0;
                 for (Boat boat : boats) {
                     sellCount += boat.sellCount;
@@ -292,140 +289,66 @@ public class Strategy {
                 printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:" + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
             }
             //留2ms阈值
-            while (BackgroundThread.Instance().IsWorking() && frameStartTime + 18 < System.currentTimeMillis()) {
-                //noinspection BusyWait
-                Thread.sleep(1);
-            }
+//            while (BackgroundThread.Instance().IsWorking() && frameStartTime + 18 < System.currentTimeMillis()) {
+//                //noinspection BusyWait
+//                Thread.sleep(1);
+//            }
             outStream.print("OK\n");
             outStream.flush();
         }
         BackgroundThread.Instance().exitThread();
     }
 
-    //
-//
-//    private void dispatch() {
-//        if (!GET_LAST_ONE) {
-//            robotDoAction();
+
+    private void dispatch() {
+
+        long l = System.currentTimeMillis();
+        robotDoAction();
+        long r = System.currentTimeMillis();
+        printError("frame:" + frameId + ",robotRunTime:" + (r - l));
+        if (frameId == 1) {
+            for (int i = 0; i < 1; i++) {
+                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
+                Robot robot = new Robot(this, 0);
+                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
+                robot.buyFrame = frameId;
+                robot.id = robots.size();
+                robots.add(robot);
+            }
+        }
 //            boatDoAction();
 //            robotAndBoatBuy();
-//        } else {
-//            if (frameId == 1) {
-//                for (int i = 0; i < 8; i++) {
-//                    outStream.printf("lbot %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y);
-//                    robots.add(new Robot(this));
-//                }
-//                for (int i = 0; i < 1; i++) {
-//                    outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-//                    boats.add(new Boat(this, boatCapacity));
-//                }
+
+//        if (frameId == 1) {
+//            for (int i = 0; i < 1; i++) {
+//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+//                boats.add(new Boat(this, boatCapacity));
+//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
+//                boats.add(new Boat(this, boatCapacity));
 //            }
-//            if (frameId <= 1) {
-//                return;
-//            }
-//            if (lastSelectRobotId == -1) {
-//                //寻找小于阈值的工作台和泊位
-//                for (Workbench buyWorkbench : workbenches.values()) {
-//                    if (buyWorkbench.value > lastValueThreshold) {
-//                        continue;
-//                    }
-//                    //存在就一定有产品
-//                    for (Robot robot : robots) {
-//                        if (!buyWorkbench.canReach(robot.pos)) {
-//                            continue; //不能到达
-//                        }
-//                        int buyTime = robotMinToWorkbenchDistance(robot, buyWorkbench);
-//                        if (buyTime + 5 > buyWorkbench.remainTime) {
-//                            continue;
-//                        }
-//                        //随便找个卖家卖
-//                        for (Berth berth : berths) {
-//                            if (!berth.robotCanReach(buyWorkbench.pos)) {
-//                                continue; //不能到达
-//                            }
-//                            //ok,就这样
-//                            lastSelectRobotId = robot.id;
-//                            lastSelectWorkbenchId = buyWorkbench.id;
-//                            lastSelectBerthId = berth.id;
-//                            robot.targetWorkBenchId = lastSelectWorkbenchId;
-//                            robot.targetBerthId = lastSelectBerthId;
-//                            break;
-//                        }
-//                        if (lastSelectRobotId != -1) {
-//                            break;
-//                        }
-//                    }
-//                    if (lastSelectRobotId != -1) {
-//                        break;
-//                    }
-//                }
-//            } else {
-//
-//                //出发了
-//                if (!lastRobotDoAction) {
-//                    Robot robot = robots.get(lastSelectRobotId);
-//                    if (!robot.carry) {
-//                        robot.path = workbenches.get(lastSelectWorkbenchId).dijkstra.moveFrom(robot.pos);
-//                        Point target = gameMap.discreteToPos(robot.path.get(2));
-//                        if (target.equal(robot.pos)) {
-//                            //
-//                            robot.buy();
-//                        }
-//                        robot.finish();
-//                    } else {
-//                        int index = berths.get(lastSelectBerthId).robotMinDistanceIndexes[robot.pos.x][robot.pos.y].get(0);
-//                        robot.path = berths.get(lastSelectBerthId).robotDijkstra.get(index).moveFrom(robot.pos);
-//                        Point target = gameMap.discreteToPos(robot.path.get(2));
-//                        if (berths.get(lastSelectBerthId).inBerth(target)) {
-//                            //提前卖，移动完毕卖,货物这种时候可以增加
-//                            lastRobotDoAction = true;
-//                        }
-//                        robot.assigned = true;
-//                        robot.finish();
-//                    }
-//                }
-//
-//                Boat boat1 = boats.get(0);
-//                if (boats.get(0).value == 0) {
-//                    boat1.path = boatToBerth(boat1, berths.get(lastSelectBerthId), 9999);
-//                } else {
-//                    boat1.targetBerthId = -1;
-//                    boat1.path = boatSellPoints.get(0).moveFrom(boat1.corePoint, boat1.direction);
-//                }
-//                boats.get(0).finish();
-//            }
-//
-//
 //        }
-////        if (frameId == 1) {
-////            for (int i = 0; i < 1; i++) {
-////                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-////                boats.add(new Boat(this, boatCapacity));
-////                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
-////                boats.add(new Boat(this, boatCapacity));
-////            }
-////        }
-////        if (frameId > 1 && frameId < 500) {
-////            Boat boat1 = boats.get(0);
-////            boat1.path = boatToPoint(boat1, new PointWithDirection(new Point(111, 98), -1), 9999);
-////            Boat boat2 = boats.get(1);
-////            boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1), 9999);
-////            //不然肯定dij不对
-////            ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
-////            ArrayList<Integer> otherIds = new ArrayList<>();
-////            otherPaths.add(boat1.path);
-////            otherIds.add(0);
-////            if (boatCheckCrash(gameMap, boat2.id, boat2.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
-////                //撞了
-////                boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1)
-////                        , 9999, otherPaths, otherIds);
-////
-////            }
-////            boat1.finish();
-////            boat2.finish();
-////        }
-//    }
+//        if (frameId > 1 && frameId < 500) {
+//            Boat boat1 = boats.get(0);
+//            boat1.path = boatToPoint(boat1, new PointWithDirection(new Point(111, 98), -1), 9999);
+//            Boat boat2 = boats.get(1);
+//            boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1), 9999);
+//            //不然肯定dij不对
+//            ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
+//            ArrayList<Integer> otherIds = new ArrayList<>();
+//            otherPaths.add(boat1.path);
+//            otherIds.add(0);
+//            if (boatCheckCrash(gameMap, boat2.id, boat2.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
+//                //撞了
+//                boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1)
+//                        , 9999, otherPaths, otherIds);
 //
+//            }
+//            boat1.finish();
+//            boat2.finish();
+//        }
+    }
+
+    //
 //    private void robotAndBoatBuy() {
 //        if (money < ROBOT_PRICE) {
 //            return;
@@ -1774,450 +1697,414 @@ public class Strategy {
 ////        return dist;
 ////    }
 //
-////    private void robotDoAction() {
-////        workbenchesLock.clear();//动态需要解锁
-////        for (HashSet<Integer> set : robotLock) {
-////            set.clear();
-////        }
-////        while (true) {
-////            if (!greedySell()) {
-////                break;
-////            }  //决策
-////        }
-////        while (true) {
-////            if (!greedyBuy()) {
-////                break;
-////            }
-////        }
-////
-////
-////        //选择路径，碰撞避免
-////        Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
-////        for (int i = 0; i < tmpRobots.length; i++) {
-////            tmpRobots[i] = robots.get(i);
-////        }
-////        sortRobots(tmpRobots);
-////        //1.选择路径,和修复路径
-////        ArrayList<ArrayList<Point>> otherPaths = new ArrayList<>();
-////        for (int i = 0; i < tmpRobots.length; i++) {
-////            Robot robot = tmpRobots[i];
-////            if (!robot.assigned) {
-////                continue;
-////            }
-////
-////            ArrayList<Point> path;
-////            int[][] heuristicPoints;
-////            if (robot.carry) {
-////                ArrayList<Integer> candidate = berths.get(robot.targetBerthId).robotMinDistanceIndexes[robot.pos.x][robot.pos.y];
-////                //找到一条路径不与之前的路径相撞,找不到，选择第一条路径
-////                path = berths.get(robot.targetBerthId).robotDijkstra.get(candidate.get(0)).moveFrom(robot.pos);
-////                for (int j = 1; j < candidate.size(); j++) {
-////                    int index = candidate.get(j);
-////                    ArrayList<Point> candidatePath = berths.get(robot.targetBerthId).robotDijkstra.get(index).moveFrom(robot.pos);
-////                    if (!robotCheckCrash(gameMap, candidatePath, otherPaths)) {
-////                        path = candidatePath;
-////                        break;
-////                    } else {
-////                        //尝试找不撞的
-////                        Point end = berths.get(robot.targetBerthId).berthPoints.get(index);
-////                        heuristicPoints = berths.get(robot.targetBerthId).robotDijkstra.get(index).cs;
-////                        ArrayList<Point> avoidPath = robotToPointHeuristic(robot, end, otherPaths, heuristicPoints);
-////                        if (!avoidPath.isEmpty()) {
-////                            path = candidatePath;
-////                            break;
-////                        }
-////                    }
-////                }
-////                heuristicPoints = berths.get(robot.targetBerthId).robotDijkstra.get(0).cs;
-////            } else {
-////                path = workbenches.get(robot.targetWorkBenchId).dijkstra.moveFrom(robot.pos);
-////                heuristicPoints = workbenches.get(robot.targetWorkBenchId).dijkstra.cs;
-////            }
-////            //检查是否与前面机器人相撞，如果是，则重新搜一条到目标点的路径，极端情况，去到物品消失不考虑
-////            if (robotCheckCrash(gameMap, path, otherPaths)) {
-////                //尝试搜一条不撞的路径
-////                assert !path.isEmpty();
-////                Point end = gameMap.discreteToPos(path.get(path.size() - 1));
-////                ArrayList<Point> avoidPath = robotToPointHeuristic(robot, end, otherPaths, heuristicPoints);
-////                if (avoidPath.isEmpty() && !robot.redundancy) {
-////                    //去到很大概率会消失,锁住这个工作台,重新决策分配路径
-////                    robot.assigned = false;
-////                    robot.buyAssign = false;
-////                    robotLock[robot.id].add(robot.targetBerthId);
-////                    greedyBuy();
-////                    i--;
-////                    //重开
-////                    continue;
-////                }
-////
-////            }
-////            robot.path.clear();
-////            robot.path.addAll(path);
-////            otherPaths.add(path);
-////        }
-////
-////        //2.碰撞避免
-////        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
-////            //固定只预测未来一个格子，就是两个小格子，
-////            //预测他未来两个格子就行，四下，如果冲突，则他未来一个格子自己不能走，未来第二个格子自己尽量也不走
-////            Robot robot = tmpRobots[i];
-////            robotsPredictPath[robot.id] = new ArrayList<>();
-////            if (!robot.assigned) {
-////                //未来一格子在这里不动，如果别人撞过来，则自己避让
-////                robot.path.add(gameMap.posToDiscrete(robot.pos));
-////                for (int j = 1; j <= 2; j++) {
-////                    robotsPredictPath[robot.id].add(gameMap.posToDiscrete(robot.pos));
-////                    robot.path.add(gameMap.posToDiscrete(robot.pos));
-////                }
-////            } else {
-////                if (robot.path.size() == 1) {
-////                    //原点不动，大概率有漏洞
-////                    robotsPredictPath[robot.id].add(robot.path.get(0));
-////                    robotsPredictPath[robot.id].add(robot.path.get(0));
-////                    printError("error robot.path.size()==1");
-////                }
-////                //至少有未来一个格子，如果有两个也要预测，因为两个可以让他往旁边避让，预测前面3个格子，避让机器人要尽量躲开他的三个格子。
-////                for (int j = 1; j <= min(6, robot.path.size() - 1); j++) {
-////                    robotsPredictPath[robot.id].add(robot.path.get(j));
-////                }
-////            }
-////            int crashId = -1;
-////            for (int j = 0; j < i; j++) {
-////                //一个格子之内撞不撞
-////                for (int k = 0; k < 2; k++) {
-////                    Point point = robotsPredictPath[robot.id].get(k);
-////                    if (point.equal(robotsPredictPath[tmpRobots[j].id].get(k)) && !gameMap.isRobotDiscreteMainChannel(point.x, point.y)) {
-////                        crashId = tmpRobots[j].id;
-////                        break;
-////                    }
-////                }
-////                if (crashId != -1) {
-////                    break;
-////                }
-////            }
-////
-////            if (crashId != -1) {
-////                //看看自己是否可以避让，不可以的话就说明被夹住了,让冲突点去让,并且自己强制提高优先级50帧
-////                robots.get(crashId).beConflicted = FPS;
-////                ArrayList<Point> candidates = new ArrayList<>();
-////                candidates.add(robot.pos);
-////                for (int j = 0; j < DIR.length / 2; j++) {
-////                    candidates.add(robot.pos.add(DIR[j]));
-////                }
-////                Point result = new Point(-1, -1);
-////                int bestDist = Integer.MAX_VALUE;
-////
-////                for (Point candidate : candidates) {
-////                    if (!gameMap.robotCanReach(candidate.x, candidate.y)) {
-////                        continue;
-////                    }
-////                    boolean crash = false;
-////                    for (Robot tmpRobot : tmpRobots) {
-////                        if (tmpRobot.id == robot.id || robotsPredictPath[tmpRobot.id] == null) {
-////                            continue;//后面的
-////                        }
-////                        Point start = gameMap.posToDiscrete(robot.pos);
-////                        Point end = gameMap.posToDiscrete(candidate);
-////                        Point mid = start.add(end).div(2);
-////                        if ((mid.equal(robotsPredictPath[tmpRobot.id].get(0)) && !gameMap.isRobotDiscreteMainChannel(mid.x, mid.y)) || (end.equal(robotsPredictPath[tmpRobot.id].get(1)) && !gameMap.isRobotDiscreteMainChannel(end.x, end.y))) {
-////                            //去重全加进来
-////                            crash = true;
-////                            break;
-////                        }
-////                    }
-////                    if (crash) {
-////                        continue;
-////                    }
-////
-////                    int dist;
-////                    if (!robot.carry) {
-////                        if (robot.targetWorkBenchId == -1) {
-////                            assert !robot.assigned;
-////                            dist = MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
-////                        } else {
-////                            dist = workbenches.get(robot.targetWorkBenchId).getMinDistance(candidate);
-////                        }
-////                    } else {
-////                        dist = berths.get(robot.targetBerthId).getRobotMinDistance(candidate);
-////                    }
-////                    assert dist != Integer.MAX_VALUE;
-////                    Point tmp = gameMap.posToDiscrete(candidate);
-////                    for (Point point : robotsPredictPath[crashId]) {
-////                        if (tmp.equal(point) && !gameMap.isRobotDiscreteMainChannel(candidate.x, candidate.y)) {
-////                            dist += 2;//在别人路径上惩罚增大
-////                            break;
-////                        }
-////                    }
-////                    if (dist < bestDist) {
-////                        result = candidate;
-////                        bestDist = dist;
-////                    }
-////                }
-////                if (!result.equal(-1, -1)) {
-////                    //修改预测路径
-////                    robotsPredictPath[robot.id].clear();
-////                    robots.get(robot.id).avoid = true;
-////                    Point start = gameMap.posToDiscrete(robot.pos);
-////                    Point end = gameMap.posToDiscrete(result);
-////                    Point mid = start.add(end).div(2);
-////                    robotsPredictPath[robot.id].add(mid);//中间
-////                    robotsPredictPath[robot.id].add(end);//下一个格子
-////                } else {
-////                    robot.beConflicted = FPS;
-////                    robot.forcePri += 1;
-////                    sortRobots(tmpRobots);
-////                    i = -1;
-////                }
-////
-////            }
-////        }
-////
-////        for (Robot robot : robots) {
-////            if (robot.avoid) {
-////                Point start = gameMap.posToDiscrete(robot.pos);
-////                robot.path.clear();
-////                robot.path.add(start);
-////                robot.path.add(robotsPredictPath[robot.id].get(0));
-////                robot.path.add(robotsPredictPath[robot.id].get(1));
-////                //在避让，所以路径改变了，稍微改一下好看一点
-////            }
-////            robot.finish();
-////            if (robot.beConflicted-- < 0 && robot.forcePri != 0) {
-////                robot.forcePri = 0;
-////            }
-////        }
-////    }
-//
-//    private void sortRobots(Robot[] robots) {
-//        Arrays.sort(robots, (o1, o2) -> {
-//            if (o1.forcePri != o2.forcePri) {//暴力优先级最高
-//                return o2.forcePri - o1.forcePri;
-//            }
-//            if (o1.redundancy ^ o2.redundancy) {//没冗余时间
-//                return o2.redundancy ? -1 : 1;
-//            }
-//            if (o1.carryValue != o2.carryValue) {//携带物品高
-//                return o2.carryValue - o1.carryValue;//看价值
-//            }
-//            return o1.priority != o2.priority ? o2.priority - o1.priority : o1.id - o2.id;
-//        });
-//        Arrays.fill(robotsPredictPath, null);
-//        for (Robot robot : robots) {
-//            robot.avoid = false;
-//        }
-//    }
-//
-//
-//    int robotMinToWorkbenchDistance(Robot robot, Workbench workbench) {
-//        if (robot.carry) {
-//            assert (robot.assigned);
-//            int toBerth = berths.get(robot.targetBerthId).getRobotMinDistance(robot.pos);
-//            int k = berths.get(robot.targetBerthId).robotMinDistanceIndexes[robot.pos.x][robot.pos.y].get(0);
-//            int toWorkBench = berths.get(robot.targetBerthId).robotDijkstra.get(k).getMoveDistance(workbench.pos);
-//            return toWorkBench + toBerth;
-//        }
-//        return workbench.getMinDistance(robot.pos);
-//    }
-//
-//    private boolean greedyBuy() {
-//        class Stat implements Comparable<Stat> {
-//            final Robot robot;
-//            final Workbench workbench;
-//            final Berth seller;
-//            final double profit;
-//
-//            public Stat(Robot robot, Workbench workbench, Berth seller, double profit) {
-//                this.robot = robot;
-//                this.workbench = workbench;
-//                this.seller = seller;
-//                this.profit = profit;
-//            }
-//
-//            @Override
-//            public int compareTo(Stat b) {
-//                return Double.compare(b.profit, profit);
-//            }
-//        }
-//
-//        ArrayList<Stat> stat = new ArrayList<>();
-//        //选择折现价值最大的
-//        for (Workbench buyWorkbench : workbenches.values()) {
-//            //存在就一定有产品
-//            if (workbenchesLock.contains(buyWorkbench.id)) {
-//                continue;//别人选择过了
-//            }
-//            //贪心，选择最近的机器人
-//
-//            //选距离最近的，如果是没到泊位的有好几个，选离泊位最近的
-//            Robot selectRobot = null;
-//            int minDist = Integer.MAX_VALUE;
-//            for (Robot robot : robots) {
-//                if (robot.buyAssign) {
-//                    continue;
-//                }
-//                if (!buyWorkbench.canReach(robot.pos)) {
-//                    continue; //不能到达
-//                }
-//                if (robotLock[robot.id].contains(buyWorkbench.id)) {
-//                    continue;
-//                }
-//                int dist = robotMinToWorkbenchDistance(robot, buyWorkbench);
-//                int toBerthTime = 0;
+    private void robotDoAction() {
+        long l = System.currentTimeMillis();
+        workbenchesLock.clear();//动态需要解锁
+        for (HashSet<Integer> set : robotLock) {
+            set.clear();
+        }
+        while (true) {
+            if (!greedySell()) {
+                break;
+            }  //决策
+        }
+        while (true) {
+            if (!greedyBuy()) {
+                break;
+            }
+        }
+        long r = System.currentTimeMillis();
+        printError("frame:" + frameId + ",robotDecision:" + (r - l));
+        l = System.currentTimeMillis();
+        //选择路径，碰撞避免
+        Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
+        for (int i = 0; i < tmpRobots.length; i++) {
+            tmpRobots[i] = robots.get(i);
+        }
+        sortRobots(tmpRobots);
+        //1.选择路径,和修复路径
+        ArrayList<ArrayList<Point>> otherPaths = new ArrayList<>();
+        for (int i = 0; i < tmpRobots.length; i++) {
+            Robot robot = tmpRobots[i];
+            if (!robot.assigned) {
+                continue;
+            }
+            ArrayList<Point> path;
+
+            if (robot.carry) {
+                short[][] heuristicPoints = berths.get(robot.targetBerthId).robotMinDistance;
+                //启发式寻路,如果保存的话太多了
+                path = robotToBerthHeuristic(robot, robot.targetBerthId);
+            } else {
+                path = workbenches.get(robot.targetWorkBenchId).moveFrom(robot.pos);
+            }
+            //检查是否与前面机器人相撞，如果是，则重新搜一条到目标点的路径，极端情况，去到物品消失不考虑
+            if (robotCheckCrash(gameMap, path, otherPaths)) {
+                short[][] heuristicPoints;
 //                if (robot.carry) {
-//                    toBerthTime = berths.get(robot.targetBerthId).getRobotMinDistance(robot.pos);
-//                }
-//                dist -= toBerthTime;
-//                if (dist < minDist) {
-//                    minDist = dist;
-//                    selectRobot = robot;
-//                }
-//            }
-//            if (selectRobot == null) {
-//                continue;
-//            }
-//            int toBerthTime = 0;
-//            if (selectRobot.carry) {
-//                toBerthTime = berths.get(selectRobot.targetBerthId).getRobotMinDistance(selectRobot.pos);
-//            }
-//
-//            if (toBerthTime + minDist > buyWorkbench.remainTime) {
-//                continue;//去到货物就消失了,不去
-//            }
-//            int arriveBuyTime = minDist;
-//            double maxProfit = -GAME_FRAME;
-//            Berth selectSellBerth = null;
-//            for (Berth sellBerth : berths) {
-//                if (!sellBerth.robotCanReach(buyWorkbench.pos)) {
-//                    continue; //不能到达
-//                }
-//                int arriveSellTime = sellBerth.getRobotMinDistance(buyWorkbench.pos);//机器人买物品的位置开始
-//                int collectTime = getFastestCollectTime(toBerthTime + arriveBuyTime + arriveSellTime, sellBerth);
-//                int sellTime = collectTime + sellBerth.minSellDistance;
-//                double profit;
-//                if (frameId + sellTime >= GAME_FRAME) {
-//                    profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
+//                    heuristicPoints = berths.get(robot.targetBerthId).robotMinDistance;
 //                } else {
-//                    double value = buyWorkbench.value;
-//                    value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
-//                    profit = value / (arriveSellTime + arriveBuyTime);
-//                    //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
-//                    if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {
-//                        profit *= (1 + SAME_TARGET_REWARD_FACTOR);
-//                    }
+//                    workbenches.get(robot.targetWorkBenchId).setHeuristicCs(gameMap.robotCommonHeuristicCs);
+//                    heuristicPoints = gameMap.robotCommonHeuristicCs;
 //                }
-//
-//                if (profit > maxProfit) {
-//                    maxProfit = profit;
-//                    selectSellBerth = sellBerth;
+//                //尝试搜一条不撞的路径
+//                assert !path.isEmpty();
+//                Point end = gameMap.discreteToPos(path.get(path.size() - 1));
+//                ArrayList<Point> avoidPath = robotToPointHeuristic(robot, end, otherPaths, heuristicPoints);
+//                if (avoidPath.isEmpty() && !robot.redundancy) {
+//                    //去到很大概率会消失,锁住这个工作台,重新决策分配路径
+//                    robot.assigned = false;
+//                    robot.buyAssign = false;
+//                    robotLock[robot.id].add(robot.targetBerthId);
+//                    greedyBuy();
+//                    i--;
+//                    //重开
+//                    continue;
 //                }
-//            }
-//            if (selectSellBerth == null) continue;
-//            stat.add(new Stat(selectRobot, buyWorkbench, selectSellBerth, maxProfit));
-//        }
-//        if (stat.isEmpty()) return false;
-//        Collections.sort(stat);
+
+            }
+            robot.path.clear();
+            robot.path.addAll(path);
+            otherPaths.add(path);
+        }
+
+        //2.碰撞避免
+        for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
+            //固定只预测未来一个格子，就是两个小格子，
+            //预测他未来两个格子就行，四下，如果冲突，则他未来一个格子自己不能走，未来第二个格子自己尽量也不走
+            Robot robot = tmpRobots[i];
+            robotsPredictPath[robot.id] = new ArrayList<>();
+            if (!robot.assigned) {
+                //未来一格子在这里不动，如果别人撞过来，则自己避让
+                robot.path.add(gameMap.posToDiscrete(robot.pos));
+                for (int j = 1; j <= 2; j++) {
+                    robotsPredictPath[robot.id].add(gameMap.posToDiscrete(robot.pos));
+                    robot.path.add(gameMap.posToDiscrete(robot.pos));
+                }
+            } else {
+                if (robot.path.size() == 1) {
+                    //原点不动，大概率有漏洞
+                    robotsPredictPath[robot.id].add(robot.path.get(0));
+                    robotsPredictPath[robot.id].add(robot.path.get(0));
+                    printError("error robot.path.size()==1");
+                }
+                //至少有未来一个格子，如果有两个也要预测，因为两个可以让他往旁边避让，预测前面3个格子，避让机器人要尽量躲开他的三个格子。
+                for (int j = 1; j <= min(6, robot.path.size() - 1); j++) {
+                    robotsPredictPath[robot.id].add(robot.path.get(j));
+                }
+            }
+            int crashId = -1;
+            for (int j = 0; j < i; j++) {
+                //一个格子之内撞不撞
+                for (int k = 0; k < 2; k++) {
+                    Point point = robotsPredictPath[robot.id].get(k);
+                    if (point.equal(robotsPredictPath[tmpRobots[j].id].get(k)) && !gameMap.isRobotDiscreteMainChannel(point.x, point.y)) {
+                        crashId = tmpRobots[j].id;
+                        break;
+                    }
+                }
+                if (crashId != -1) {
+                    break;
+                }
+            }
+
+            if (crashId != -1) {
+                //看看自己是否可以避让，不可以的话就说明被夹住了,让冲突点去让,并且自己强制提高优先级50帧
+                robots.get(crashId).beConflicted = FPS;
+                ArrayList<Point> candidates = new ArrayList<>();
+                candidates.add(robot.pos);
+                for (int j = 0; j < DIR.length / 2; j++) {
+                    candidates.add(robot.pos.add(DIR[j]));
+                }
+                Point result = new Point(-1, -1);
+                int bestDist = Integer.MAX_VALUE;
+
+                for (Point candidate : candidates) {
+                    if (!gameMap.robotCanReach(candidate.x, candidate.y)) {
+                        continue;
+                    }
+                    boolean crash = false;
+                    for (Robot tmpRobot : tmpRobots) {
+                        if (tmpRobot.id == robot.id || robotsPredictPath[tmpRobot.id] == null) {
+                            continue;//后面的
+                        }
+                        Point start = gameMap.posToDiscrete(robot.pos);
+                        Point end = gameMap.posToDiscrete(candidate);
+                        Point mid = start.add(end).div(2);
+                        if ((mid.equal(robotsPredictPath[tmpRobot.id].get(0)) && !gameMap.isRobotDiscreteMainChannel(mid.x, mid.y)) || (end.equal(robotsPredictPath[tmpRobot.id].get(1)) && !gameMap.isRobotDiscreteMainChannel(end.x, end.y))) {
+                            //去重全加进来
+                            crash = true;
+                            break;
+                        }
+                    }
+                    if (crash) {
+                        continue;
+                    }
+
+                    int dist;
+                    if (!robot.carry) {
+                        if (robot.targetWorkBenchId == -1) {
+                            assert !robot.assigned;
+                            dist = MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
+                        } else {
+                            dist = workbenches.get(robot.targetWorkBenchId).getMinDistance(candidate);
+                        }
+                    } else {
+                        dist = berths.get(robot.targetBerthId).getRobotMinDistance(candidate);
+                    }
+                    assert dist != Integer.MAX_VALUE;
+                    Point tmp = gameMap.posToDiscrete(candidate);
+                    for (Point point : robotsPredictPath[crashId]) {
+                        if (tmp.equal(point) && !gameMap.isRobotDiscreteMainChannel(candidate.x, candidate.y)) {
+                            dist += 2;//在别人路径上惩罚增大
+                            break;
+                        }
+                    }
+                    if (dist < bestDist) {
+                        result = candidate;
+                        bestDist = dist;
+                    }
+                }
+                if (!result.equal(-1, -1)) {
+                    //修改预测路径
+                    robotsPredictPath[robot.id].clear();
+                    robots.get(robot.id).avoid = true;
+                    Point start = gameMap.posToDiscrete(robot.pos);
+                    Point end = gameMap.posToDiscrete(result);
+                    Point mid = start.add(end).div(2);
+                    robotsPredictPath[robot.id].add(mid);//中间
+                    robotsPredictPath[robot.id].add(end);//下一个格子
+                } else {
+                    robot.beConflicted = FPS;
+                    robot.forcePri += 1;
+                    sortRobots(tmpRobots);
+                    i = -1;
+                }
+
+            }
+        }
+
+        for (Robot robot : robots) {
+            if (robot.avoid) {
+                Point start = gameMap.posToDiscrete(robot.pos);
+                robot.path.clear();
+                robot.path.add(start);
+                robot.path.add(robotsPredictPath[robot.id].get(0));
+                robot.path.add(robotsPredictPath[robot.id].get(1));
+                //在避让，所以路径改变了，稍微改一下好看一点
+            }
+            robot.finish();
+            if (robot.beConflicted-- < 0 && robot.forcePri != 0) {
+                robot.forcePri = 0;
+            }
+        }
+        r = System.currentTimeMillis();
+        printError("frame:" + frameId + ",robotOther:" + (r - l));
+    }
+
+    private void sortRobots(Robot[] robots) {
+        Arrays.sort(robots, (o1, o2) -> {
+            if (o1.forcePri != o2.forcePri) {//暴力优先级最高
+                return o2.forcePri - o1.forcePri;
+            }
+            if (o1.redundancy ^ o2.redundancy) {//没冗余时间
+                return o2.redundancy ? -1 : 1;
+            }
+            if (o1.carryValue != o2.carryValue) {//携带物品高
+                return o2.carryValue - o1.carryValue;//看价值
+            }
+            return o1.priority != o2.priority ? o2.priority - o1.priority : o1.id - o2.id;
+        });
+        Arrays.fill(robotsPredictPath, null);
+        for (Robot robot : robots) {
+            robot.avoid = false;
+        }
+    }
+
+    //
 //
-//        //锁住买家
-//        assignRobot(stat.get(0).workbench, stat.get(0).seller, stat.get(0).robot, RA_BUY);
-//        return true;
-//    }
-//
-//
-//    private boolean greedySell() {
-//        class Stat implements Comparable<Stat> {
-//            final Robot robot;
-//            final Berth berth;
-//            final double profit;
-//
-//            public Stat(Robot robot, Berth berth, double profit) {
-//                this.robot = robot;
-//                this.berth = berth;
-//                this.profit = profit;
-//            }
-//
-//            @Override
-//            public int compareTo(Stat b) {
-//                return Double.compare(b.profit, profit);
-//            }
-//        }
-//
-//        ArrayList<Stat> stat = new ArrayList<>();
-//        for (Robot robot : robots) {
-//            if (robot.assigned || !robot.carry) {
-//                continue;
-//            }
-//
-//            //选择折现价值最大的
-//            Berth select = null;
-//            double maxProfit = -GAME_FRAME;
-//            for (Berth sellBerth : berths) {
-//                if (!sellBerth.robotCanReach(robot.pos)) {
-//                    continue; //不能到达
-//                }
-//                //assert fixTime != Integer.MAX_VALUE;
-//                int arriveTime = sellBerth.getRobotMinDistance(robot.pos);
-//                double profit;
-//                //包裹被揽收的最小需要的时间
-//                int collectTime = getFastestCollectTime(arriveTime - 1, sellBerth);
-//                int sellTime = collectTime + sellBerth.minSellDistance;
-//                if (frameId + sellTime >= GAME_FRAME) {
-//                    //如果不能到达，收益为负到达时间
-//                    profit = -sellTime;
-//                } else {
-//                    double value = robot.carryValue;
-////                    value += estimateEraseValue(sellTime, robot, sellBerth);
-//                    //防止走的特别近马上切泊位了
-//                    profit = value / arriveTime;
-//                    if (robot.targetBerthId == sellBerth.id) {//同一泊位
-//                        profit *= (1 + SAME_TARGET_REWARD_FACTOR);
-//                    }
-//                }
-//
-//                if (profit > maxProfit) {
-//                    maxProfit = profit;
-//                    select = sellBerth;
-//                }
-//            }
-//            if (select != null) {
-//                stat.add(new Stat(robot, select, maxProfit));
-//            }
-//        }
-//        if (stat.isEmpty()) return false;
-//        Collections.sort(stat);
-//        assignRobot(null, stat.get(0).berth, stat.get(0).robot, RA_SELL);
-//        return true;
-//    }
-//
-//    private void assignRobot(Workbench workbench, Berth berth, Robot robot, RobotAction action) {
-//        robot.assigned = true;
-//        if (!robot.carry || action == RA_SELL) {
-//            //没携带物品，或者是卖，需要改变目标
-//            robot.targetBerthId = berth.id;
-//        }
-//        if (action == RA_BUY) {
-//            robot.buyAssign = true;
-//            workbenchesLock.add(workbench.id);//锁住，别人不准选择
-//            robot.targetWorkBenchId = workbench.id;
-//            if (!robot.carry) {
-//                //携带了物品不管
-//                int toWorkbenchDist = robotMinToWorkbenchDistance(robot, workbench);
-//                robot.redundancy = toWorkbenchDist != workbench.remainTime;
-//            }
-//            robot.priority = workbench.value;
-//            if (!robot.carry && robot.pos.equal(workbench.pos)) {
-//                //没带物品，且到目标，一定买，然后重新决策一个下一个目标买
-//                robot.buy();
-//                robot.buyAssign = false;
-//            }
-//        } else {
-//            robot.redundancy = true;
-//            if (gameMap.getBelongToBerthId(robot.pos) == berth.id) {
-//                printError("error,no pre sell");
-//                robot.pull();
-//            }
-//        }
-//    }
-//
+    int robotMinToWorkbenchDistance(Robot robot, Workbench2 workbench) {
+        if (robot.carry) {
+            assert (robot.assigned);
+            int toBerth = berths.get(robot.targetBerthId).getRobotMinDistance(robot.pos);
+            int toWorkBench = berths.get(robot.targetBerthId).getRobotMinDistance(workbench.pos);
+            toWorkBench += 2;//最坏需要再走两帧
+            return toWorkBench + toBerth;
+        }
+        return workbench.getMinDistance(robot.pos);
+    }
+
+    private boolean greedyBuy() {
+        Robot bestRobot = null;
+        Workbench2 bestWorkBench = null;
+        Berth bestWorkBerth = null;
+        double bestProfit = -GAME_FRAME;
+        //选择折现价值最大的
+        for (Workbench2 buyWorkbench : workbenches.values()) {
+            //存在就一定有产品
+            if (workbenchesLock.contains(buyWorkbench.id)) {
+                continue;//别人选择过了
+            }
+            if (buyWorkbench.value > 100) {
+                continue;
+            }
+            //贪心，选择最近的机器人
+
+            //选距离最近的，如果是没到泊位的有好几个，选离泊位最近的
+            Robot selectRobot = null;
+            int minDist = Integer.MAX_VALUE;
+            for (Robot robot : robots) {
+                if (robot.buyAssign) {
+                    continue;
+                }
+                if (!buyWorkbench.canReach(robot.pos)) {
+                    continue; //不能到达
+                }
+                if (robotLock[robot.id].contains(buyWorkbench.id)) {
+                    continue;
+                }
+                int dist = robotMinToWorkbenchDistance(robot, buyWorkbench);
+                int toBerthTime = 0;
+                if (robot.carry) {
+                    toBerthTime = berths.get(robot.targetBerthId).getRobotMinDistance(robot.pos);
+                }
+                dist -= toBerthTime;
+                if (dist < minDist) {
+                    minDist = dist;
+                    selectRobot = robot;
+                }
+            }
+            if (selectRobot == null) {
+                continue;
+            }
+            int toBerthTime = 0;
+            if (selectRobot.carry) {
+                toBerthTime = berths.get(selectRobot.targetBerthId).getRobotMinDistance(selectRobot.pos);
+            }
+
+            if (toBerthTime + minDist > buyWorkbench.remainTime) {
+                continue;//去到货物就消失了,不去
+            }
+            int arriveBuyTime = minDist;
+            if (buyWorkbench.minSellBerthId == -1) {
+                continue;
+            }
+            //只卖最近的
+            Berth sellBerth = berths.get(buyWorkbench.minSellBerthId);
+            if (!sellBerth.robotCanReach(buyWorkbench.pos)) {
+                continue; //不能到达
+            }
+            int arriveSellTime = sellBerth.getRobotMinDistance(buyWorkbench.pos);//机器人买物品的位置开始
+            int collectTime = toBerthTime + arriveBuyTime + arriveSellTime;
+            int sellTime = collectTime + sellBerth.minSellDistance;
+            double profit;
+            if (frameId + sellTime >= GAME_FRAME) {
+                profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
+            } else {
+                double value = buyWorkbench.value;
+                value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
+                profit = value / (arriveSellTime + arriveBuyTime);
+                //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
+                if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {
+                    profit *= (1 + SAME_TARGET_REWARD_FACTOR);
+                }
+            }
+            if (profit > bestProfit) {
+                bestRobot = selectRobot;
+                bestWorkBench = buyWorkbench;
+                bestWorkBerth = sellBerth;
+                bestProfit = profit;
+            }
+        }
+
+        if (bestRobot == null)
+            return false;
+        //锁住买家
+        assignRobot(bestWorkBench, bestWorkBerth, bestRobot, RA_BUY);
+        return true;
+    }
+
+
+    private boolean greedySell() {
+        Robot bestRobot = null;
+        Berth bestBerth = null;
+        double bestProfit = -GAME_FRAME;
+        for (Robot robot : robots) {
+            if (robot.assigned || !robot.carry) {
+                continue;
+            }
+
+            //选择折现价值最大的
+            Berth select = null;
+            double maxProfit = -GAME_FRAME;
+            for (Berth sellBerth : berths) {
+                if (!sellBerth.robotCanReach(robot.pos)) {
+                    continue; //不能到达
+                }
+                //assert fixTime != Integer.MAX_VALUE;
+                int arriveTime = sellBerth.getRobotMinDistance(robot.pos);
+                double profit;
+                //包裹被揽收的最小需要的时间
+                int collectTime = arriveTime;
+                int sellTime = collectTime + sellBerth.minSellDistance;
+                if (frameId + sellTime >= GAME_FRAME) {
+                    //如果不能到达，收益为负到达时间
+                    profit = -sellTime;
+                } else {
+                    double value = robot.carryValue;
+                    //防止走的特别近马上切泊位了
+                    profit = value / arriveTime;
+                    if (robot.targetBerthId == sellBerth.id) {//同一泊位
+                        profit *= (1 + SAME_TARGET_REWARD_FACTOR);
+                    }
+                }
+                if (profit > maxProfit) {
+                    maxProfit = profit;
+                    select = sellBerth;
+                }
+            }
+            if (select != null && maxProfit > bestProfit) {
+                bestRobot = robot;
+                bestBerth = select;
+                bestProfit = maxProfit;
+            }
+        }
+        if (bestRobot == null) return false;
+        assignRobot(null, bestBerth, bestRobot, RA_SELL);
+        return true;
+    }
+
+    private void assignRobot(Workbench2 workbench, Berth berth, Robot robot, RobotAction action) {
+        robot.assigned = true;
+        if (!robot.carry || action == RA_SELL) {
+            //没携带物品，或者是卖，需要改变目标
+            robot.targetBerthId = berth.id;
+        }
+        if (action == RA_BUY) {
+            robot.buyAssign = true;
+            workbenchesLock.add(workbench.id);//锁住，别人不准选择
+            robot.targetWorkBenchId = workbench.id;
+            if (!robot.carry) {
+                //携带了物品不管
+                int toWorkbenchDist = robotMinToWorkbenchDistance(robot, workbench);
+                robot.redundancy = toWorkbenchDist != workbench.remainTime;
+            }
+            robot.priority = workbench.value;
+            if (!robot.carry && robot.pos.equal(workbench.pos)) {
+                //没带物品，且到目标，一定买，然后重新决策一个下一个目标买
+                robot.buy();
+                robot.buyAssign = false;
+            }
+        } else {
+            robot.redundancy = true;
+            if (gameMap.getBelongToBerthId(robot.pos) == berth.id) {
+                printError("error,no pre sell");
+                robot.pull();
+            }
+        }
+    }
+
+    //
 //    private int getFastestCollectTime(int goodArriveTime, Berth berth) {
 //        //这个泊位这个物品到达的时候泊位的数量
 ////        return goodArriveTime;
@@ -2262,9 +2149,10 @@ public class Strategy {
 //
     int totalCount = 0;
 
-    Dijkstra commonDij = new Dijkstra();
+    Dijkstra2 commonDij = new Dijkstra2();
 
     int[][] fastQueue = new int[MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS][2];
+    long frameStartTime = 0;
 
     private boolean input() throws IOException {
         frameStartTime = System.currentTimeMillis();
@@ -2273,15 +2161,16 @@ public class Strategy {
         if (line == null) {
             return false;
         }
-        String[] parts = line.trim().split(" ");
+
+        String[] parts = line.split(" ");
         int tmp = frameId;
         frameId = Integer.parseInt(parts[0]);
         curFrameDiff = frameId - tmp;
         if (tmp + 1 != frameId) {
             jumpCount += frameId - tmp - 1;
+            printError("frame:" + frameId + ",jumpCount");
         }
         money = Integer.parseInt(parts[1]);
-
 
         //新增工作台
         int num = getIntInput();
@@ -2293,7 +2182,6 @@ public class Strategy {
         HashSet<Integer> deleteIds = new HashSet<>();//满足为0的删除
         ArrayList<Point> deletePos = new ArrayList<>();//满足为0的删除
         ArrayList<Integer> deleteValue = new ArrayList<>();//满足为0的删除
-        long l = System.currentTimeMillis();
         for (Workbench2 workbench : workbenches.values()) {
             if (workbench.remainTime <= 0) {
                 deleteIds.add(workbench.id);
@@ -2301,6 +2189,7 @@ public class Strategy {
                 deleteValue.add(workbench.value);
             }
         }
+        long l = System.currentTimeMillis();
         for (int i = 1; i <= num; i++) {
             if (workbenchCache.isEmpty()) {
                 workbenchCache.offer(new Workbench2(-1));
@@ -2328,14 +2217,16 @@ public class Strategy {
                 //回收
                 continue;
             }
+            workbench.remainTime = WORKBENCH_EXIST_TIME;
             //最小卖距离
             int minDistance = Integer.MAX_VALUE;
             for (Berth berth : berths) {
                 if (berth.getRobotMinDistance(workbench.pos) < minDistance) {
                     minDistance = berth.getRobotMinDistance(workbench.pos);
+                    workbench.minSellBerthId = berth.id;
+                    workbench.minSellDistance = minDistance;
                 }
             }
-            workbench.minSellDistance = minDistance;
             if (minDistance != Integer.MAX_VALUE) {
                 totalValidWorkBenchCount++;
                 totalWorkbenchLoopDistance += 2 * workbench.minSellDistance;//买了卖
@@ -2345,6 +2236,8 @@ public class Strategy {
             workbenchId++;
             goodAvgValue = totalValue / workbenchId;
         }
+        long r = System.currentTimeMillis();
+        printError("workbech:" + (r - l));
         for (Integer deleteId : deleteIds) {
             workbenchCache.offer(workbenches.get(deleteId));
             workbenches.remove(deleteId);
@@ -2448,6 +2341,12 @@ public class Strategy {
 
 
         ROBOTS_PER_PLAYER = getIntInput();
+        if (robots.size() < ROBOTS_PER_PLAYER) {
+            int size = robots.size();
+            for (int i = size; i < ROBOTS_PER_PLAYER; i++) {
+                robots.add(pendingRobots.poll());
+            }
+        }
         //机器人
         for (int i = 0; i < ROBOTS_PER_PLAYER; i++) {
             int id = getIntInput();
@@ -2458,7 +2357,7 @@ public class Strategy {
         }
         PENDING_ROBOT_NUMS = getIntInput();
         for (int i = 0; i < PENDING_ROBOT_NUMS; i++) {
-            line = inStream.readLine();
+
             parts = line.split(" ");
             int id = Integer.parseInt(parts[0]);
             String question = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
@@ -2476,11 +2375,24 @@ public class Strategy {
             robot.isPending = true;
         }
 
-        while (robots.size() > ROBOTS_PER_PLAYER) {
-            robots.remove(robots.size() - 1);
+        if (robots.size() > ROBOTS_PER_PLAYER) {
+            int size = robots.size();
+            for (int i = ROBOTS_PER_PLAYER; i < size; i++) {
+                pendingRobots.add(robots.get(i));
+            }
+            for (int i = ROBOTS_PER_PLAYER; i < size; i++) {
+                robots.remove(robots.size() - 1);
+            }
             printError("error,no buy robot");
         }
         BOATS_PER_PLAYER = getIntInput();
+
+        if (boats.size() < BOATS_PER_PLAYER) {
+            int size = boats.size();
+            for (int i = size; i < BOATS_PER_PLAYER; i++) {
+                boats.add(pendingBoats.poll());
+            }
+        }
         //船
         for (int i = 0; i < BOATS_PER_PLAYER; i++) {
             int id = getIntInput();
@@ -2489,12 +2401,20 @@ public class Strategy {
             boat.globalId = id;
             boat.input(totalBoats.get(id));
         }
-        while (boats.size() > BOATS_PER_PLAYER) {
-            boats.remove(boats.size() - 1);
+        if (boats.size() > BOATS_PER_PLAYER) {
+            int size = boats.size();
+            for (int i = BOATS_PER_PLAYER; i < size; i++) {
+                pendingBoats.add(boats.get(i));
+            }
+            for (int i = BOATS_PER_PLAYER; i < size; i++) {
+                boats.remove(boats.size() - 1);
+            }
             printError("error,no buy boats");
         }
         String okk = inStream.readLine();
         printMost(okk);
+        long e = System.currentTimeMillis();
+//        printError("frameId:" + frameId + ",inputTime:" + (e - frameStartTime));
 //        printError("frame:" + frameId + ",size:" + workbenches.size());
         return true;
     }

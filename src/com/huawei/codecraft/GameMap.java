@@ -14,12 +14,22 @@ public class GameMap {
 
     private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//列到行
     private final boolean[][] robotDiscreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
+
+    public final short[][] robotCommonHeuristicCs
+            = new short[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
+
+    int curVisitId = 0;
+    public final int[][] visits
+            = new int[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
+    public final short[][] robotCommonCs
+            = new short[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
+
     public final int[][] robotCommonDiscreteCs
             = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//寻路得时候复用cs
     public final boolean[][] robotDiscreteMainChannel
             = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//robot离散化之后是不是主干道
     private final boolean[][][] boatCanReach_
-            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//船是否能到达
+            = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS][DIR.length / 2];//船是否能到达
     private final boolean[][][] boatIsAllInMainChannel_
             = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//整艘船都在主航道上
     private final boolean[][][] boatHasOneInMainChannel_
@@ -118,7 +128,6 @@ public class GameMap {
     public int getBelongToBerthId(Point point) {
         return partOfBerthId[point.x][point.y];
     }
-
 
 
     public int getDiscreteBelongToBerthId(int x, int y) {

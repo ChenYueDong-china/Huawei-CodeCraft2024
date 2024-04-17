@@ -126,25 +126,25 @@ public class Berth {
 
     @SuppressWarnings("all")
     public boolean robotCanReach(Point pos) {
-        return false;
+        return getRobotMinDistance(pos) != Short.MAX_VALUE;
     }
 
     public int getRobotMinDistance(Point pos) {
-        return 0;
+        return robotMinDistance[pos.x][pos.y];
     }
 
     public boolean boatCanReach(Point pos, int dir) {
-        return false;
+        return getBoatMinDistance(pos, dir) != Short.MAX_VALUE;
     }
 
     public int getBoatMinDistance(Point pos, int dir) {
-        return 0;
+        return boatMinDistance[pos.x][pos.y][dir];
     }
 
 
     public boolean inBerth(Point point) {
         //在berth范围内
-        return false;
+        return gameMap.getBelongToBerthId(point) == id;
     }
 
 
