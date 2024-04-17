@@ -140,8 +140,13 @@ public class BackgroundThread {
             httpPost.setEntity(entity);
             CloseableHttpResponse responseBody = client.execute(httpPost);
             Map responseMap = new ObjectMapper().readValue(EntityUtils.toString(responseBody.getEntity()), Map.class);
-            String text = (String) responseMap.get("text");
-            printDebug("question:" + question + "ans:" + text);
+            Object object = responseMap.get("text");
+            if (object == null) {
+                printError("error in send message");
+                return 0;
+            }
+            String text = (String) object;
+            printError("question:" + question + ",LLMAns:" + text);
             // add some additional practice here
             for (int i = 0; i < text.length(); i++) {
                 if (text.charAt(i) == 'A' || text.charAt(i) == 'a') {

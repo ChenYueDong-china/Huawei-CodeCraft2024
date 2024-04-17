@@ -38,6 +38,8 @@ public class Constants {
     public static final int SIMPLE_ROBOT_PATH_LENGTH = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
     public static final int SIMPLE_BOAT_PATH_LENGTH = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
 
+    public static final int PRECIOUS_WORKBENCH_BOUNDARY = 1000;    // 只搜800深度以内的点，一旦有某个方向到达800
+
     public static final int FPS = 20;                   // 每秒运行帧数
     public static final int GAME_FRAME = 5 * 200 * FPS;
     public static final int WORKBENCH_EXIST_TIME = 50 * FPS;//1000帧

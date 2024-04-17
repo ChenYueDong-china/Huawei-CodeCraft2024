@@ -63,11 +63,15 @@ public class Robot {
 
     public void buy() {
         outStream.printf("get %d\n", id);
-        carry = true;
-        carryValue = strategy.workbenches.get(targetWorkBenchId).value;
-        lastBuyPos = new Point(strategy.workbenches.get(targetWorkBenchId).pos);
-        //不销毁，可以加锁
-        targetWorkBenchId = -1;
+        int value = strategy.workbenches.get(targetWorkBenchId).value;
+        if (value < PRECIOUS_WORKBENCH_BOUNDARY) {
+            //珍贵物品，啥都不干，会进入问答状态
+            carry = true;
+            lastBuyPos = new Point(strategy.workbenches.get(targetWorkBenchId).pos);
+            carryValue = value;
+            //不销毁，可以加锁
+            targetWorkBenchId = -1;
+        }
     }
 
     public void finish() {
@@ -80,6 +84,13 @@ public class Robot {
         Point target = strategy.gameMap.discreteToPos(path.get(2));
         assert strategy.gameMap.robotCanReach(target.x, target.y);
         if (target.equal(pos)) {
+            if (isPending && ans != -1) {
+                //回答问题
+                outStream.printf("ans %d %d\n", id, ans);
+                printDebug("frame:" + frameId + ",question:" + question + ",id:" + id + ",ans:" + ans);
+                strategy.workbenchesPermanentLock.add(targetWorkBenchId);
+                //可能没有成功回答？，理论上pending下一帧一定能回答，判题器有问题，下一帧继续回答一下
+            }
             return;
         }
         int dir = getDir(target.sub(pos));

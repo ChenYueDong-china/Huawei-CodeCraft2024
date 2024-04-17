@@ -26,6 +26,8 @@ public class Strategy {
     public static int workbenchId = 0;
     public final HashMap<Integer, Workbench2> workbenches = new HashMap<>();
     public final HashSet<Integer> workbenchesLock = new HashSet<>();//锁住某些工作台
+    public final HashSet<Integer> workbenchesPermanentLock = new HashSet<>();//万一自己,没拿到，永久锁住
+
 
     public int totalValue = 0;
     public int goodAvgValue = 0;
@@ -141,7 +143,7 @@ public class Strategy {
             }
         }
         avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
-//        BackgroundThread.Instance().init();
+        BackgroundThread.Instance().init();
 
         long l1 = System.currentTimeMillis();
         boatFlashCandidates = new ArrayList<>();
@@ -305,7 +307,7 @@ public class Strategy {
         long l = System.currentTimeMillis();
         robotDoAction();
         long r = System.currentTimeMillis();
-        printError("frame:" + frameId + ",robotRunTime:" + (r - l));
+        printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
             for (int i = 0; i < 1; i++) {
                 outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
@@ -1714,7 +1716,7 @@ public class Strategy {
             }
         }
         long r = System.currentTimeMillis();
-        printError("frame:" + frameId + ",robotDecision:" + (r - l));
+        printDebug("frame:" + frameId + ",robotDecision:" + (r - l));
         l = System.currentTimeMillis();
         //选择路径，碰撞避免
         Robot[] tmpRobots = new Robot[ROBOTS_PER_PLAYER];
@@ -1726,7 +1728,7 @@ public class Strategy {
         ArrayList<ArrayList<Point>> otherPaths = new ArrayList<>();
         for (int i = 0; i < tmpRobots.length; i++) {
             Robot robot = tmpRobots[i];
-            if (!robot.assigned) {
+            if (!robot.assigned || robot.isPending) {
                 continue;
             }
             ArrayList<Point> path;
@@ -1774,7 +1776,7 @@ public class Strategy {
             //预测他未来两个格子就行，四下，如果冲突，则他未来一个格子自己不能走，未来第二个格子自己尽量也不走
             Robot robot = tmpRobots[i];
             robotsPredictPath[robot.id] = new ArrayList<>();
-            if (!robot.assigned) {
+            if (!robot.assigned || robot.isPending) {
                 //未来一格子在这里不动，如果别人撞过来，则自己避让
                 robot.path.add(gameMap.posToDiscrete(robot.pos));
                 for (int j = 1; j <= 2; j++) {
@@ -1899,7 +1901,7 @@ public class Strategy {
             }
         }
         r = System.currentTimeMillis();
-        printError("frame:" + frameId + ",robotOther:" + (r - l));
+        printDebug("frame:" + frameId + ",robotOther:" + (r - l));
     }
 
     private void sortRobots(Robot[] robots) {
@@ -1939,14 +1941,30 @@ public class Strategy {
         Workbench2 bestWorkBench = null;
         Berth bestWorkBerth = null;
         double bestProfit = -GAME_FRAME;
+        for (Robot robot : robots) {
+            if (robot.buyAssign) {
+                continue;
+            }
+            if (robot.isPending) {
+                //答题状态优先决策
+                assert robot.targetWorkBenchId != -1;
+                assert robot.targetBerthId != -1;
+                bestWorkBench = workbenches.get(robot.targetWorkBenchId);
+                bestWorkBerth = berths.get(robot.targetBerthId);
+                bestRobot = robot;
+                assignRobot(bestWorkBench, bestWorkBerth, bestRobot, RA_BUY);
+                return true;
+            }
+        }
+
         //选择折现价值最大的
         for (Workbench2 buyWorkbench : workbenches.values()) {
             //存在就一定有产品
+            if (workbenchesPermanentLock.contains(buyWorkbench.id)) {
+                continue;//回答错误的workbench；
+            }
             if (workbenchesLock.contains(buyWorkbench.id)) {
                 continue;//别人选择过了
-            }
-            if (buyWorkbench.value > 100) {
-                continue;
             }
             //贪心，选择最近的机器人
 
@@ -2002,7 +2020,10 @@ public class Strategy {
                 profit = -sellTime;//最近的去决策，万一到了之后能卖就ok，买的时候检测一下
             } else {
                 double value = buyWorkbench.value;
-                value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
+                if (buyWorkbench.value < PRECIOUS_WORKBENCH_BOUNDARY) {
+                    //高价值不会消失，但是需要跟别人抢
+                    value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
+                }
                 profit = value / (arriveSellTime + arriveBuyTime);
                 //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
                 if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {
@@ -2090,10 +2111,12 @@ public class Strategy {
                 robot.redundancy = toWorkbenchDist != workbench.remainTime;
             }
             robot.priority = workbench.value;
-            if (!robot.carry && robot.pos.equal(workbench.pos)) {
-                //没带物品，且到目标，一定买，然后重新决策一个下一个目标买
+            if (!robot.carry && robot.pos.equal(workbench.pos) && !robot.isPending) {
+                //没带物品，且到目标，一定买，然后重新决策一个下一个目标买,已经pending没必要再get
                 robot.buy();
-                robot.buyAssign = false;
+                if (workbench.value < PRECIOUS_WORKBENCH_BOUNDARY) {
+                    robot.buyAssign = false;
+                }
             }
         } else {
             robot.redundancy = true;
@@ -2217,7 +2240,7 @@ public class Strategy {
                 //回收
                 continue;
             }
-            workbench.remainTime = WORKBENCH_EXIST_TIME;
+            workbench.remainTime = workbench.value > PRECIOUS_WORKBENCH_BOUNDARY ? GAME_FRAME : WORKBENCH_EXIST_TIME;
             //最小卖距离
             int minDistance = Integer.MAX_VALUE;
             for (Berth berth : berths) {
@@ -2237,7 +2260,7 @@ public class Strategy {
             goodAvgValue = totalValue / workbenchId;
         }
         long r = System.currentTimeMillis();
-        printError("workbech:" + (r - l));
+        printDebug("workbech:" + (r - l));
         for (Integer deleteId : deleteIds) {
             workbenchCache.offer(workbenches.get(deleteId));
             workbenches.remove(deleteId);
@@ -2356,13 +2379,14 @@ public class Strategy {
             robot.input(totalRobots.get(id));
         }
         PENDING_ROBOT_NUMS = getIntInput();
+        HashSet<Integer> pendingIds = new HashSet<>();
         for (int i = 0; i < PENDING_ROBOT_NUMS; i++) {
-
+            line = inStream.readLine();
             parts = line.split(" ");
             int id = Integer.parseInt(parts[0]);
+            pendingIds.add(id);
             String question = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
             Robot robot = robots.get(id);
-
             if (!robot.isPending) {
                 //上一帧不处于答题状态，则发送题目给背景线程回答
                 robot.questionId = BackgroundThread.Instance().sendQuestion(question);
@@ -2373,6 +2397,11 @@ public class Strategy {
                 robot.ans = BackgroundThread.Instance().getAnswer(robot.questionId);
             }
             robot.isPending = true;
+        }
+        for (Robot robot : robots) {//回答完毕的重置为false
+            if (!pendingIds.contains(robot.id)) {
+                robot.isPending = false;
+            }
         }
 
         if (robots.size() > ROBOTS_PER_PLAYER) {

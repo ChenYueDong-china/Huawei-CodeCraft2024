@@ -14,7 +14,14 @@ public class Utils {
 //            throw new RuntimeException(e);
 //        }
 //    }
+    private static final boolean DEBUG = false;
 
+    @SuppressWarnings("all")
+    public static void printDebug(String s) {
+        if (DEBUG) {
+            System.err.println(s);
+        }
+    }
     private static final boolean ERROR = true;
 
     public static void printError(String s) {
@@ -31,14 +38,7 @@ public class Utils {
         }
     }
 
-    private static final boolean DEBUG = false;
 
-    @SuppressWarnings("all")
-    public static void printDebug(String s) {
-        if (DEBUG) {
-            System.err.println(s);
-        }
-    }
 
     public static final PrintStream outStream = System.out;
 
