@@ -72,57 +72,89 @@ public class RobotUtils {
 //    }
 //
 
+    @SuppressWarnings("all")
+    public static ArrayList<Point> robotMoveToPointBerth(GameMap gameMap, Point start, int berthId
+            , Point end, int maxDeep
+            , ArrayList<ArrayList<Point>> otherPaths
+            , short[][] heuristicCs) {
+        //已经在了，直接返回，防止cs消耗
+        Point s = new Point(start);
+        Queue<Point> queue = new ArrayDeque<>();
+        gameMap.curVisitId++;
+        int curVisitId = gameMap.curVisitId;
+        int[][] visits = gameMap.visits;
+        short[][] cs = gameMap.robotCommonCs;
+        queue.offer(s);
+        cs[s.x][s.y] = 0;
+        visits[s.x][s.y] = curVisitId;
+        int deep = 0;
+        int count = 0;
+        //从目标映射的四个点开始搜
+        while (!queue.isEmpty()) {
+            if (deep > maxDeep) {
+                break;
+            }
+            deep += 1;
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                count++;
+                Point top = queue.poll();
+                assert top != null;
+                if (heuristicCs != null && deep - 1 + heuristicCs[top.x][top.y] > maxDeep) {
+                    continue;
+                }
+                boolean arrive = false;
+                if (berthId != -1) {
+                    if (gameMap.getBelongToBerthId(top) == berthId) {
+                        //回溯路径
+                        arrive = true;
+                    }
+                } else {
+                    if (top.equal(end)) {
+                        //回溯路径
+                        arrive = true;
+                    }
+                }
+                if (arrive) {
+                    ArrayList<Point> result = getRobotPathByCs(cs, top);
+                    Collections.reverse(result);
+                    if (result.size() == 1) {
+                        result.add(result.get(0));
+                    }
+                    return gameMap.toDiscretePath(result);
+                }
+                Point pre = gameMap.posToDiscrete(top);
+                for (int j = 0; j < DIR.length / 2; j++) {
+                    //四方向的
+                    int lastDirIdx = cs[top.x][top.y] & 3;
+                    int dirIdx = j ^ lastDirIdx; // 优先遍历上一次过来的方向
+                    Point dir = DIR[dirIdx];
+                    int dx = top.x + dir.x;
+                    int dy = top.y + dir.y;//第一步
+                    if (!gameMap.robotCanReach(dx, dy) || visits[dx][dy] == curVisitId) {
+                        continue;
+                    }
+                    //转成离散去避让
+                    Point next = gameMap.posToDiscrete(dx, dy);
+                    Point mid = pre.add(dir);
+                    int midDeep = 2 * deep - 1;
+                    int nextDeep = 2 * deep;
+                    if (otherPaths != null) {
+                        if (robotCheckCrashInDeep(gameMap, midDeep, mid.x, mid.y, otherPaths)
+                                || robotCheckCrashInDeep(gameMap, nextDeep, next.x, next.y, otherPaths)) {
+                            continue;
+                        }
+                    }
+                    cs[dx][dy] = (short) ((deep << 2) + dirIdx);
+                    visits[dx][dy] = curVisitId;
+                    queue.offer(new Point(dx, dy));
+                }
+            }
+        }
+        return new ArrayList<>();
+    }
 
-    //    private static ArrayList<Point> robotMoveToPoint(GameMap gameMap, Point start, Point end, int berthId
-//            , int maxDeep, ArrayList<ArrayList<Point>> otherPaths) {
-//        //已经在了，直接返回，防止cs消耗
-//        start = gameMap.posToDiscrete(start);
-//        end = gameMap.posToDiscrete(end);
-//        if ((berthId == -1 && start.equal(end)) || (berthId != -1 && gameMap.getDiscreteBelongToBerthId(start.x, start.y) == berthId)) {
-//            //输出路径
-//            ArrayList<Point> result = new ArrayList<>();
-//            for (int i = 0; i < 3; i++) {
-//                result.add(start);//3个
-//            }
-//            return result;
-//        }
-//        int[][] cs = gameMap.robotCommonDiscreteCs;
-//        for (int[] c : cs) {
-//            Arrays.fill(c, Integer.MAX_VALUE);
-//        }
-//        //从目标映射的四个点开始搜
-//        Point s = new Point(start);
-//        Queue<Point> queue = new ArrayDeque<>();
-//        queue.offer(s);
-//        cs[s.x][s.y] = 0;
-//        int deep = 0;
-//        int count = 0;
-//        while (!queue.isEmpty()) {
-//            if (deep > maxDeep) {
-//                break;
-//            }
-//            int size = queue.size();
-//            for (int i = 0; i < size; i++) {
-//                count++;
-//                Point top = queue.poll();
-//                assert top != null;
-//                if ((berthId == -1 && top.equal(end)) || (berthId != -1 && gameMap.getDiscreteBelongToBerthId(top.x, top.y) == berthId)) {
-//                    //回溯路径
-//                    ArrayList<Point> result = getRobotPathByCs(cs, top);
-//                    Collections.reverse(result);
-//                    return result;
-//                }
-//                for (int j = 0; j < DIR.length / 2; j++) {
-//                    //四方向的
-//                    Point point = getNextPoint(gameMap, otherPaths, cs, top, j, deep, null);
-//                    if (point == null) continue;
-//                    queue.offer(point);
-//                }
-//            }
-//            deep += 2;
-//        }
-//        return new ArrayList<>();
-//    }
+    @SuppressWarnings("all")
     public static ArrayList<Point> robotMoveToBerth(GameMap gameMap, Point start, int berthId, short[][] heuristicCs) {
         //已经在了，直接返回，防止cs消耗
         //从目标映射的四个点开始搜
@@ -174,41 +206,6 @@ public class RobotUtils {
             }
         }
         return new ArrayList<>();
-    }
-
-    private static Point getNextPoint(GameMap gameMap, ArrayList<ArrayList<Point>> otherPaths, int[][] discreteCs
-            , Point top, int index
-            , int deep, int[][] heuristicCs) {
-        int lastDirIdx = discreteCs[top.x][top.y] & 3;
-        int dirIdx = index ^ lastDirIdx; // 优先遍历上一次过来的方向
-        Point dir = DIR[dirIdx];
-        int dx = top.x + dir.x;
-        int dy = top.y + dir.y;//第一步
-        if (discreteCs[dx][dy] != Integer.MAX_VALUE || !gameMap.robotCanReachDiscrete(dx, dy)) {
-            return null;
-        }
-        if (discreteCs[dx + dir.x][dy + dir.y] != Integer.MAX_VALUE
-                || !gameMap.robotCanReachDiscrete(dx + dir.x, dy + dir.y)
-        ) {
-            return null;
-        }
-        if (robotCheckCrashInDeep(gameMap, deep + 1, dx, dy, otherPaths)
-                || robotCheckCrashInDeep(gameMap, deep + 2, dx + dir.x, dy + dir.y, otherPaths)) {
-            return null;
-        }
-        if (heuristicCs != null) {
-            Point cur = gameMap.discreteToPos(top.x, top.y);
-            Point next = gameMap.discreteToPos(dx + dir.x, dy + dir.y);
-            if ((heuristicCs[cur.x][cur.y] >> 2) != (heuristicCs[next.x][next.y] >> 2) + 1) {
-                //启发式剪枝，不是距离更近则直接结束
-                return null;
-            }
-        }
-        discreteCs[dx][dy] = ((deep + 1) << 2) + dirIdx;//第一步
-        dx += dir.x;
-        dy += dir.y;
-        discreteCs[dx][dy] = ((deep + 2) << 2) + dirIdx;//第一步
-        return new Point(dx, dy);
     }
 
 

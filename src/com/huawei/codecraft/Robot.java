@@ -52,8 +52,11 @@ public class Robot {
         pos.x = simpleRobot.p.x;
         pos.y = simpleRobot.p.y;
         assigned = false;
-        if (num == 0) {
-            carryValue = 0;
+        carryValue = 0;
+        if (num != 0) {
+            for (Integer i : simpleRobot.goodList) {
+                carryValue += i;
+            }
         }
         redundancy = true;//到目标点有冗余时间
         avoid = false;
@@ -66,9 +69,10 @@ public class Robot {
         int value = strategy.workbenches.get(targetWorkBenchId).value;
         if (value < PRECIOUS_WORKBENCH_BOUNDARY) {
             //珍贵物品，啥都不干，会进入问答状态
-            carry = true;
+            num += 1;
+            carry = num == maxNum;
             lastBuyPos = new Point(strategy.workbenches.get(targetWorkBenchId).pos);
-            carryValue = value;
+            strategy.workbenchesLock.add(targetWorkBenchId);//锁住不能再次决策
             //不销毁，可以加锁
             targetWorkBenchId = -1;
         }
@@ -87,9 +91,6 @@ public class Robot {
             if (isPending && ans != -1) {
                 //回答问题
                 outStream.printf("ans %d %d\n", id, ans);
-//                printError("frame:" + frameId + ",question:" + question + ",id:" + id + ",ans:" + ans);
-                strategy.workbenchesPermanentLock.add(targetWorkBenchId);
-                //可能没有成功回答？，理论上pending下一帧一定能回答，判题器有问题，下一帧继续回答一下
             }
             return;
         }
@@ -119,10 +120,6 @@ public class Robot {
     }
 
     public void pull() {
-        strategy.totalPullGoodsCount++;
-        strategy.totalPullGoodsValues += carryValue;
-        strategy.avgPullGoodsValue = 1.0 * strategy.totalPullGoodsValues / strategy.totalPullGoodsCount;
-        strategy.pullScore += carryValue;
         targetBerthId = -1;
         targetWorkBenchId = -1;
         carry = false;

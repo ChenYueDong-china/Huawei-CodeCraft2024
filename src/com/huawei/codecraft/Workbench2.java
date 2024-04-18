@@ -84,14 +84,14 @@ public class Workbench2 {
     //获得这个workbench到任意一个位置的最小距离
     public void setHeuristicCs(short[][] heuristicCs) {
         int leftTopX = pos.x - MAP_FILE_ROW_NUMS / 4;
-        int leftTopY = pos.x - MAP_FILE_COL_NUMS / 4;
+        int leftTopY = pos.y - MAP_FILE_COL_NUMS / 4;
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
                 int fakeX = i - leftTopX;
                 int fakeY = j - leftTopY;
                 if (fakeX >= 0 && fakeX <= (MAP_FILE_ROW_NUMS / 2) &&
                         fakeY >= 0 && fakeY <= (MAP_FILE_COL_NUMS / 2)) {
-                    heuristicCs[i][j] = cs[fakeX][fakeY];
+                    heuristicCs[i][j] = (short) (cs[fakeX][fakeY] >> 2);
                 } else {
                     heuristicCs[i][j] = Short.MAX_VALUE;
                 }

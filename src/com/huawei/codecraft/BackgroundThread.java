@@ -165,7 +165,7 @@ public class BackgroundThread {
         } catch (JsonProcessingException e) {
             printError(e.toString());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            printError(e.toString());
         }
         return 0;
     }

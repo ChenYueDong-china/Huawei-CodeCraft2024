@@ -1,8 +1,6 @@
 package com.huawei.codecraft;
 
 
-import com.huawei.codecraft2.Robot;
-
 import java.io.IOException;
 import java.util.*;
 
@@ -11,6 +9,8 @@ import static com.huawei.codecraft.Constants.*;
 
 
 public class SimpleRobot {
+    public int type = 0;
+    public boolean belongToMe = false;
     public int id;
     public Point lastP = new Point();
     public Point p = new Point();
