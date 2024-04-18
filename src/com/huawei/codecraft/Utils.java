@@ -16,6 +16,7 @@ public class Utils {
 //            throw new RuntimeException(e);
 //        }
 //    }
+
     private static final boolean DEBUG = false;
 
     @SuppressWarnings("all")
@@ -24,6 +25,7 @@ public class Utils {
             System.err.println(s);
         }
     }
+
     private static final boolean ERROR = true;
 
     public static void printError(String s) {
@@ -39,7 +41,6 @@ public class Utils {
             System.err.println(s);
         }
     }
-
 
 
     public static final PrintStream outStream = System.out;

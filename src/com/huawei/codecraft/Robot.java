@@ -9,6 +9,8 @@ import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.min;
 
 public class Robot {
+    public int avoidOtherTime = 0;//在避让别人时间
+
     public int type = 0;
     public int maxNum = 1;
     public int id = -1;
@@ -38,6 +40,8 @@ public class Robot {
     String question;
     int questionId;
     int ans = -1;
+    boolean lastFrameMove = true; //上一帧是否移动
+    int noMoveTime = 0;
 
     public Robot(Strategy strategy, int type) {
         this.strategy = strategy;
@@ -53,6 +57,11 @@ public class Robot {
         pos.y = simpleRobot.p.y;
         assigned = false;
         carryValue = 0;
+        if (lastFrameMove && simpleRobot.lastP.equal(simpleRobot.p)) {
+            noMoveTime++;
+        } else {
+            noMoveTime = 0;
+        }
         if (num != 0) {
             for (Integer i : simpleRobot.goodList) {
                 carryValue += i;
@@ -83,6 +92,7 @@ public class Robot {
 
         if (path.size() <= 2) {
             printError("frameId:" + frameId + ",error");
+            lastFrameMove = false;
             return;
         }
         Point target = strategy.gameMap.discreteToPos(path.get(2));
@@ -92,10 +102,12 @@ public class Robot {
                 //回答问题
                 outStream.printf("ans %d %d\n", id, ans);
             }
+            lastFrameMove = false;
             return;
         }
         int dir = getDir(target.sub(pos));
         outStream.printf("move %d %d\n", id, dir);
+        lastFrameMove = true;
         if (!assigned) {
             //没任务，但是避让了
             return;

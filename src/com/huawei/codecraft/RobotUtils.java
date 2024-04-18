@@ -76,7 +76,7 @@ public class RobotUtils {
     public static ArrayList<Point> robotMoveToPointBerth(GameMap gameMap, Point start, int berthId
             , Point end, int maxDeep
             , ArrayList<ArrayList<Point>> otherPaths
-            , short[][] heuristicCs) {
+            , short[][] heuristicCs,boolean[][] conflictPoints) {
         //已经在了，直接返回，防止cs消耗
         Point s = new Point(start);
         Queue<Point> queue = new ArrayDeque<>();
@@ -133,6 +133,11 @@ public class RobotUtils {
                     int dy = top.y + dir.y;//第一步
                     if (!gameMap.robotCanReach(dx, dy) || visits[dx][dy] == curVisitId) {
                         continue;
+                    }
+                    if(conflictPoints!=null){
+                        if(conflictPoints[dx][dy]){
+                            continue;//这个点被锁死了
+                        }
                     }
                     //转成离散去避让
                     Point next = gameMap.posToDiscrete(dx, dy);

@@ -146,7 +146,7 @@ public class BackgroundThread {
                 return 0;
             }
             String text = (String) object;
-            printError("question:" + question + ",LLMAns:" + text);
+            printDebug("question:" + question + ",LLMAns:" + text);
             // add some additional practice here
             for (int i = 0; i < text.length(); i++) {
                 if (text.charAt(i) == 'A' || text.charAt(i) == 'a') {
