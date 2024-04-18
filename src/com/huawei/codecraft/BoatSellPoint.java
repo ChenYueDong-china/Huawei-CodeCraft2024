@@ -19,25 +19,25 @@ public class BoatSellPoint {
 
     public void init(int id, GameMap gameMap) {
         this.id = id;
-        BoatDijkstra dijkstra = new BoatDijkstra();
-        dijkstra.init(point, gameMap);
-        dijkstra.update(SELL_POINT_MAX_SEARCH_DEEP);
-        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                Arrays.fill(boatMinDistance[i][j], Short.MAX_VALUE);
-            }
-        }
-        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                Point point = new Point(i, j);
-                for (int k = 0; k < DIR.length / 2; k++) {
-                    int distance = dijkstra.getMoveDistance(point, k);
-                    if (distance < boatMinDistance[i][j][k]) {
-                        boatMinDistance[i][j][k] = (short) distance;
-                    }
-                }
-            }
-        }
+//        BoatDijkstra dijkstra = new BoatDijkstra();
+//        dijkstra.init(point, gameMap);
+//        dijkstra.update(SELL_POINT_MAX_SEARCH_DEEP);
+//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+//                Arrays.fill(boatMinDistance[i][j], Short.MAX_VALUE);
+//            }
+//        }
+//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+//                Point point = new Point(i, j);
+//                for (int k = 0; k < DIR.length / 2; k++) {
+//                    int distance = dijkstra.getMoveDistance(point, k);
+//                    if (distance < boatMinDistance[i][j][k]) {
+//                        boatMinDistance[i][j][k] = (short) distance;
+//                    }
+//                }
+//            }
+//        }
     }
 
 

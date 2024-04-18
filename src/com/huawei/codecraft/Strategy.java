@@ -147,20 +147,20 @@ public class Strategy {
             }
         }
         avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
-        BackgroundThread.Instance().init();
+        //BackgroundThread.Instance().init();
 
         long l1 = System.currentTimeMillis();
         boatFlashCandidates = new ArrayList<>();
-        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-                for (int k = 0; k < DIR.length / 2; k++) {
-                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
-                        boatFlashCandidates.add(new Point(i, j));
-                        break;
-                    }
-                }
-            }
-        }
+//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+//                for (int k = 0; k < DIR.length / 2; k++) {
+//                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
+//                        boatFlashCandidates.add(new Point(i, j));
+//                        break;
+//                    }
+//                }
+//            }
+//        }
 //        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
 //            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
 //                if (gameMap.boatCanReach(i, j)) {
@@ -329,7 +329,7 @@ public class Strategy {
         long r = System.currentTimeMillis();
         printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
-            for (int i = 0; i < 12; i++) {
+            for (int i = 0; i < 4; i++) {
                 outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
                 Robot robot = new Robot(this, 0);
                 robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
@@ -1728,7 +1728,7 @@ public class Strategy {
 ////    }
 //
     private void robotDoAction() {
-        long l = System.currentTimeMillis();
+
         workbenchesLock.clear();//动态需要解锁
         for (HashSet<Integer> set : robotLock) {
             set.clear();
@@ -1738,6 +1738,7 @@ public class Strategy {
                 break;
             }  //决策
         }
+        long l = System.currentTimeMillis();
         while (true) {
             if (!greedyBuy()) {
                 break;
@@ -1946,90 +1947,90 @@ public class Strategy {
         }
 
         //todo 机器人避让其他人
-        for (Robot robot : robots) {
-            if (robot.noMoveTime < ROBOT_AVOID_OTHER_TRIGGER_THRESHOLD) {
-                continue;
-            }
-            if (robot.path.size() <= 2) {
-                printError("erro robot:size<=2");
-                continue;
-            }
-            //大于判断是否其他人也不动
-            //我的下一个点四周有至少一个机器人不动
-            ArrayList<Point> candidates = new ArrayList<>();
-            Point point = gameMap.discreteToPos(robot.path.get(2));
-            if (point.equal(robot.pos)) {
-                printError("error in avoid other");
-                continue;
-            }
-            candidates.add(point);
-            for (int j = 0; j < DIR.length / 2; j++) {
-                Point e = point.add(DIR[j]);
-                if (e.equal(robot.pos)) {
-                    continue;
-                }
-                candidates.add(e);
-            }
-            ArrayList<Point> avoidPoints = new ArrayList<>();
-            for (Point candidate : candidates) {
-                for (SimpleRobot other : totalRobots) {
-                    if (other.belongToMe) {
-                        continue;
-                    }
-                    if (other.p.equal(other.lastP) && other.p.equal(candidate)) {
-                        avoidPoints.add(candidate);
-                        break;
-                    }
-                }
-            }
-            //得到需要避让的点,重新寻路
-            if (!avoidPoints.isEmpty()) {
-                avoidPoints.add(point);//自己的下一个点也不能走
-                for (Point avoidPoint : avoidPoints) {
-                    boolean contain = false;
-                    for (Point point2 : robotsAvoidOtherPoints[robot.id]) {
-                        if (avoidPoint.equal(point2)) {
-                            contain = true;
-                            break;
-                        }
-                    }
-                    if (!contain) {
-                        //加入进去
-                        robotsAvoidOtherPoints[robot.id].add(avoidPoint);
-                    }
-                    gameMap.commonConflictPoints[avoidPoint.x][avoidPoint.y] = true;
-                }
-                //保持目标不变，重新寻路,启发式搜
-                ArrayList<Point> avoidPath = new ArrayList<>();
-                if (robot.assigned) {
-                    if (robot.carry) {
-                        //to berth
-                        avoidPath = robotToBerthHeuristic(robot, robot.targetWorkBenchId, null, gameMap.commonConflictPoints);
-                    } else {
-                        avoidPath = robotToWorkBenchHeuristic(robot, robot.targetWorkBenchId, null, gameMap.commonConflictPoints);
-                    }
-                    if (!avoidPath.isEmpty()) {
-                        robot.path = avoidPath;
-                    }
-                }
-                if (avoidPath.isEmpty()) {
-                    //随机找一个位置去避让，没办法了
-                    int index = random.nextInt(4);
-                    Point next = robot.pos.add(DIR[index]);
-                    Point mid = next.add(robot.pos).div(2);
-                    robot.path.clear();
-                    robot.path.add(gameMap.posToDiscrete(robot.pos));
-                    robot.path.add(gameMap.posToDiscrete(mid));
-                    robot.path.add(gameMap.posToDiscrete(next));
-                }
-                //回退
-                for (Point avoidPoint : avoidPoints) {
-                    gameMap.commonConflictPoints[avoidPoint.x][avoidPoint.y] = false;
-                }
-                //避让
-                robot.avoidOtherTime = ROBOT_AVOID_OTHER_DURATION;
-            }
-        }
+//        for (Robot robot : robots) {
+//            if (robot.noMoveTime < ROBOT_AVOID_OTHER_TRIGGER_THRESHOLD) {
+//                continue;
+//            }
+//            if (robot.path.size() <= 2) {
+//                printError("erro robot:size<=2");
+//                continue;
+//            }
+//            //大于判断是否其他人也不动
+//            //我的下一个点四周有至少一个机器人不动
+//            ArrayList<Point> candidates = new ArrayList<>();
+//            Point point = gameMap.discreteToPos(robot.path.get(2));
+//            if (point.equal(robot.pos)) {
+//                printError("error in avoid other");
+//                continue;
+//            }
+//            candidates.add(point);
+//            for (int j = 0; j < DIR.length / 2; j++) {
+//                Point e = point.add(DIR[j]);
+//                if (e.equal(robot.pos)) {
+//                    continue;
+//                }
+//                candidates.add(e);
+//            }
+//            ArrayList<Point> avoidPoints = new ArrayList<>();
+//            for (Point candidate : candidates) {
+//                for (SimpleRobot other : totalRobots) {
+//                    if (other.belongToMe) {
+//                        continue;
+//                    }
+//                    if (other.p.equal(other.lastP) && other.p.equal(candidate)) {
+//                        avoidPoints.add(candidate);
+//                        break;
+//                    }
+//                }
+//            }
+//            //得到需要避让的点,重新寻路
+//            if (!avoidPoints.isEmpty()) {
+//                avoidPoints.add(point);//自己的下一个点也不能走
+//                for (Point avoidPoint : avoidPoints) {
+//                    boolean contain = false;
+//                    for (Point point2 : robotsAvoidOtherPoints[robot.id]) {
+//                        if (avoidPoint.equal(point2)) {
+//                            contain = true;
+//                            break;
+//                        }
+//                    }
+//                    if (!contain) {
+//                        //加入进去
+//                        robotsAvoidOtherPoints[robot.id].add(avoidPoint);
+//                    }
+//                    gameMap.commonConflictPoints[avoidPoint.x][avoidPoint.y] = true;
+//                }
+//                //保持目标不变，重新寻路,启发式搜
+//                ArrayList<Point> avoidPath = new ArrayList<>();
+//                if (robot.assigned) {
+//                    if (robot.carry) {
+//                        //to berth
+//                        avoidPath = robotToBerthHeuristic(robot, robot.targetWorkBenchId, null, gameMap.commonConflictPoints);
+//                    } else {
+//                        avoidPath = robotToWorkBenchHeuristic(robot, robot.targetWorkBenchId, null, gameMap.commonConflictPoints);
+//                    }
+//                    if (!avoidPath.isEmpty()) {
+//                        robot.path = avoidPath;
+//                    }
+//                }
+//                if (avoidPath.isEmpty()) {
+//                    //随机找一个位置去避让，没办法了
+//                    int index = random.nextInt(4);
+//                    Point next = robot.pos.add(DIR[index]);
+//                    Point mid = next.add(robot.pos).div(2);
+//                    robot.path.clear();
+//                    robot.path.add(gameMap.posToDiscrete(robot.pos));
+//                    robot.path.add(gameMap.posToDiscrete(mid));
+//                    robot.path.add(gameMap.posToDiscrete(next));
+//                }
+//                //回退
+//                for (Point avoidPoint : avoidPoints) {
+//                    gameMap.commonConflictPoints[avoidPoint.x][avoidPoint.y] = false;
+//                }
+//                //避让
+//                robot.avoidOtherTime = ROBOT_AVOID_OTHER_DURATION;
+//            }
+//        }
 
 
         for (Robot robot : robots) {
