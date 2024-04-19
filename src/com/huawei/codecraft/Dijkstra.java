@@ -144,12 +144,12 @@ public class Dijkstra {
 
 
     //非细化目标到这里的移动时间
-    public int getMoveDistance(Point target) {
+    public short getMoveDistance(Point target) {
         return getMoveDistance(target.x, target.y);
     }
 
     public short getMoveDistance(int x, int y) {
-        if (cs[x][y] == Integer.MAX_VALUE) {
+        if (cs[x][y] == Short.MAX_VALUE) {
             return Short.MAX_VALUE;
         }
         return (short) (cs[x][y] >> 2);

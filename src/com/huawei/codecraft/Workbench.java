@@ -37,11 +37,11 @@ public class Workbench {
     }
 
     //获得这个workbench到任意一个位置的最小距离
-    int getMinDistance(Point point) {
+    short getMinDistance(Point point) {
         return dijkstra.getMoveDistance(point);
     }
 
     public boolean canReach(Point pos) {
-        return getMinDistance(pos) != Integer.MAX_VALUE;
+        return getMinDistance(pos) != Short.MAX_VALUE;
     }
 }

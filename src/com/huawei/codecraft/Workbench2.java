@@ -52,9 +52,9 @@ public class Workbench2 {
         int fakeY = point.y - leftTopY;
         if (fakeX >= 0 && fakeX <= (MAP_FILE_ROW_NUMS / 2) &&
                 fakeY >= 0 && fakeY <= (MAP_FILE_COL_NUMS / 2)) {
-            return cs[fakeX][fakeY] == Short.MAX_VALUE ? Integer.MAX_VALUE : cs[fakeX][fakeY] >> 2;
+            return cs[fakeX][fakeY] == Short.MAX_VALUE ? Short.MAX_VALUE : cs[fakeX][fakeY] >> 2;
         }
-        return Integer.MAX_VALUE;
+        return Short.MAX_VALUE;
     }
 
     //获得这个workbench到任意一个位置的最小距离
@@ -101,6 +101,6 @@ public class Workbench2 {
     }
 
     public boolean canReach(Point pos) {
-        return getMinDistance(pos) != Integer.MAX_VALUE;
+        return getMinDistance(pos) != Short.MAX_VALUE;
     }
 }

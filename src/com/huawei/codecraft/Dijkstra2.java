@@ -150,7 +150,7 @@ public class Dijkstra2 {
     }
 
     public short getMoveDistance(int x, int y) {
-        if (cs[x][y] == Integer.MAX_VALUE) {
+        if (cs[x][y] == Short.MAX_VALUE) {
             return Short.MAX_VALUE;
         }
         return (short) (cs[x][y] >> 2);
