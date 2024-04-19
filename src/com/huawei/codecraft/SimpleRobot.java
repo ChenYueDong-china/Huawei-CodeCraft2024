@@ -20,6 +20,7 @@ public class SimpleRobot {
     public Stack<Integer> goodList = new Stack<>();//保存50帧路径
 
     public int lastDir = -1;
+    public int noMoveTime = 0;
 
     public void input() throws IOException {
         String line = inStream.readLine();
@@ -32,8 +33,14 @@ public class SimpleRobot {
         p.x = Integer.parseInt(parts[2]);
         p.y = Integer.parseInt(parts[3]);
         if (!lastP.equal(p)) {
+            noMoveTime++;
             //移动了
             lastDir = getDir(p.sub(lastP));
+            if (lastDir == -1) {
+                lastDir = 0;
+            }
+        } else {
+            noMoveTime = 0;
         }
         path.offer(new Point(p));
         if (path.size() > SIMPLE_ROBOT_PATH_LENGTH) {

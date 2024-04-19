@@ -46,6 +46,8 @@ public class GameMap {
 
     public final boolean[][] commonNoResultPoints
             = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
+    public final int[][] curWorkbenchId
+            = new int[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
 
     public int boatGetFlashBerthId(int x, int y) {
         return boatAroundBerthId[x][y];
@@ -175,7 +177,7 @@ public class GameMap {
                         || mapData[x][y] == 'c'));//不是海洋或者障碍
     }
 
-    private boolean isRobotMainChannel(int x, int y) {
+    public boolean isRobotMainChannel(int x, int y) {
         return x >= 0 && x < MAP_FILE_ROW_NUMS && y >= 0 && y < MAP_FILE_COL_NUMS &&
                 (mapData[x][y] == '>'//陆地主干道
                         || mapData[x][y] == 'R'//机器人购买处
@@ -231,7 +233,9 @@ public class GameMap {
         for (int[] around : boatAroundBerthId) {
             Arrays.fill(around, -1);
         }
-
+        for (int[] id : curWorkbenchId) {
+            Arrays.fill(id, -1);
+        }
         return true;
     }
 

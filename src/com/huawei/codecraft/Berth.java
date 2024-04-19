@@ -75,51 +75,51 @@ public class Berth {
         for (short[] distance : robotMinDistance) {
             Arrays.fill(distance, Short.MAX_VALUE);
         }
-//        Dijkstra dijkstra = new Dijkstra();
-//        for (Point berthPoint : berthPoints) {
-//            dijkstra.init(berthPoint, gameMap);
-//            dijkstra.update();
-//            for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//                for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                    short distance = dijkstra.getMoveDistance(i, j);
-//                    if (distance < robotMinDistance[i][j]) {
-//                        robotMinDistance[i][j] = distance;
-//                    }
-//                }
-//            }
-//        }
+        Dijkstra dijkstra = new Dijkstra();
+        for (Point berthPoint : berthPoints) {
+            dijkstra.init(berthPoint, gameMap);
+            dijkstra.update();
+            for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+                for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                    short distance = dijkstra.getMoveDistance(i, j);
+                    if (distance < robotMinDistance[i][j]) {
+                        robotMinDistance[i][j] = distance;
+                    }
+                }
+            }
+        }
 
-//        BoatDijkstra commonDij = new BoatDijkstra();
-//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                Arrays.fill(boatMinDistance[i][j], Short.MAX_VALUE);
-//            }
-//        }
+        BoatDijkstra commonDij = new BoatDijkstra();
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                Arrays.fill(boatMinDistance[i][j], Short.MAX_VALUE);
+            }
+        }
         //船路径
-//        long l1 = System.currentTimeMillis();
-//        ArrayList<Point> searchPoint = new ArrayList<>();
-//        searchPoint.add(berthAroundPoints.get(0));//起始点和离船最远2个点，因为竞争很可能需要闪现
-////        for (int i = berthAroundPoints.size() - 4; i < berthAroundPoints.size(); i++) {
-////            searchPoint.add(berthAroundPoints.get(i));
-////        }
-//        for (Point aroundPoint : searchPoint) {
-//            commonDij.init(aroundPoint, gameMap);
-//            commonDij.update(BERTH_MAX_BOAT_SEARCH_DEEP);
-//            short flashDistance = (short) (1 + 2 * (abs(corePoint.x - aroundPoint.x) + abs(corePoint.y - aroundPoint.y)));
-//            for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//                for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                    Point point = new Point(i, j);
-//                    for (int k = 0; k < DIR.length / 2; k++) {
-//                        short distance = commonDij.getMoveDistance(point, k);
-//                        distance += flashDistance;
-//                        if (distance < boatMinDistance[i][j][k]) {
-//                            boatMinDistance[i][j][k] = distance;
-//                        }
-//                    }
-//                }
-//            }
+        long l1 = System.currentTimeMillis();
+        ArrayList<Point> searchPoint = new ArrayList<>();
+        searchPoint.add(berthAroundPoints.get(0));//起始点和离船最远2个点，因为竞争很可能需要闪现
+//        for (int i = berthAroundPoints.size() - 4; i < berthAroundPoints.size(); i++) {
+//            searchPoint.add(berthAroundPoints.get(i));
 //        }
-//        long l2 = System.currentTimeMillis();
+        for (Point aroundPoint : searchPoint) {
+            commonDij.init(aroundPoint, gameMap);
+            commonDij.update(BERTH_MAX_BOAT_SEARCH_DEEP);
+            short flashDistance = (short) (1 + 2 * (abs(corePoint.x - aroundPoint.x) + abs(corePoint.y - aroundPoint.y)));
+            for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+                for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                    Point point = new Point(i, j);
+                    for (int k = 0; k < DIR.length / 2; k++) {
+                        short distance = commonDij.getMoveDistance(point, k);
+                        distance += flashDistance;
+                        if (distance < boatMinDistance[i][j][k]) {
+                            boatMinDistance[i][j][k] = distance;
+                        }
+                    }
+                }
+            }
+        }
+        long l2 = System.currentTimeMillis();
 //        printError("berthInitTime:" + (l2 - l1));
         gameMap.updateBerthAndAround(berthAroundPoints, berthPoints, id);
     }
