@@ -188,6 +188,7 @@ public class Strategy {
         printError("Free Memory (bytes): " + freeMemory);
         printError("Used Memory (bytes): " + usedMemory);
         printError("--------------------------");
+        System.gc();
         outStream.print("OK\n");
         outStream.flush();
     }
@@ -288,7 +289,7 @@ public class Strategy {
             if (conflictPoints != null) {
                 maxDeep += 5;//多5帧能让对面也行,不然只能随机了
             }
-            return robotMoveToPointBerth(gameMap, robot.pos, berthId, null, maxDeep, otherPath, null, conflictPoints);
+            return robotMoveToPointBerth(gameMap, robot.pos, berthId, null, maxDeep, otherPath, berths.get(berthId).robotMinDistance, conflictPoints);
         }
     }
 
@@ -332,7 +333,7 @@ public class Strategy {
         long r = System.currentTimeMillis();
         printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 12; i++) {
                 outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
                 Robot robot = new Robot(this, 0);
                 robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
@@ -2078,7 +2079,7 @@ public class Strategy {
             }
         }
         r = System.currentTimeMillis();
-//        printError("frame:" + frameId + ",robotOther:" + (r - l));
+        printDebug("frame:" + frameId + ",robotOther:" + (r - l));
     }
 
     private ArrayList<Point> robotToWorkBenchHeuristic(Robot robot, int targetWorkBenchId, ArrayList<ArrayList<Point>> otherPaths, boolean[][] conflictPoints) {
@@ -2228,7 +2229,7 @@ public class Strategy {
                     //高价值不会消失，但是需要跟别人抢
                     value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime) / WORKBENCH_EXIST_TIME;
                 }
-                profit = value / (arriveSellTime + arriveBuyTime);
+                profit = value / (arriveSellTime + arriveBuyTime * 2);
                 //考虑注释掉，可能没啥用，因为所有泊位都可以卖，可能就应该选最近的物品去买
                 if (selectRobot.targetWorkBenchId == buyWorkbench.id && !selectRobot.carry) {
                     profit *= (1 + SAME_TARGET_REWARD_FACTOR);

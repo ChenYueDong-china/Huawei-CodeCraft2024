@@ -33,14 +33,15 @@ public class SimpleRobot {
         p.x = Integer.parseInt(parts[2]);
         p.y = Integer.parseInt(parts[3]);
         if (!lastP.equal(p)) {
-            noMoveTime++;
+            noMoveTime = 0;
             //移动了
             lastDir = getDir(p.sub(lastP));
             if (lastDir == -1) {
                 lastDir = 0;
             }
         } else {
-            noMoveTime = 0;
+            //没移动
+            noMoveTime++;
         }
         path.offer(new Point(p));
         if (path.size() > SIMPLE_ROBOT_PATH_LENGTH) {

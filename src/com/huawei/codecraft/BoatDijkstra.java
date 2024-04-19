@@ -12,7 +12,7 @@ public class BoatDijkstra {
     private Point mTarget;//目标点
     private GameMap mGameMap;
 
-    short[][][] minDistanceDirection = new short[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];
+    short[][][] minDistance = new short[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];
 
     void init(Point target, GameMap gameMap) {
         this.mTarget = target;
@@ -32,7 +32,7 @@ public class BoatDijkstra {
     }
 
     void update(int maxDeep) {
-        for (short[][] shorts : minDistanceDirection) {
+        for (short[][] shorts : minDistance) {
             for (short[] aShort : shorts) {
                 Arrays.fill(aShort, Short.MAX_VALUE);
             }
@@ -47,7 +47,7 @@ public class BoatDijkstra {
             if (!mGameMap.isLegalPoint(s.x, s.y) || !mGameMap.boatCanReach(s, i ^ 1)) {
                 continue;//起始点直接不可达，没得玩
             }
-            minDistanceDirection[s.x][s.y][i ^ 1] = 0;
+            minDistance[s.x][s.y][i ^ 1] = 0;
             queue.offer(new PointWithDirection(s, i ^ 1));
         }
         ArrayList<PointWithDirection> twoDistancesPoints = new ArrayList<>();
@@ -71,18 +71,18 @@ public class BoatDijkstra {
                     //合法性判断
                     if (!mGameMap.boatCanReach(next.point, next.direction)
                             ||
-                            deep >= minDistanceDirection[next.point.x][next.point.y][next.direction]) {
+                            deep >= minDistance[next.point.x][next.point.y][next.direction]) {
                         continue;
                     }
                     //是否到达之后需要恢复,有一个点进入了主航道
                     if (mGameMap.boatHasOneInMainChannel(next.point, next.direction)) {
-                        if (deep + 1 >= minDistanceDirection[next.point.x][next.point.y][next.direction]) {
+                        if (deep + 1 >= minDistance[next.point.x][next.point.y][next.direction]) {
                             continue;
                         }
-                        minDistanceDirection[next.point.x][next.point.y][next.direction] = (short) (deep + 1);
+                        minDistance[next.point.x][next.point.y][next.direction] = (short) (deep + 1);
                         twoDistancesPoints.add(next);
                     } else {
-                        minDistanceDirection[next.point.x][next.point.y][next.direction] = (short) deep;
+                        minDistance[next.point.x][next.point.y][next.direction] = (short) deep;
                         queue.offer(next);
                     }
                 }
@@ -98,8 +98,8 @@ public class BoatDijkstra {
                     }
                     if (!mGameMap.boatHasOneInMainChannel(corePoint, k)
                             &&
-                            minDistanceDirection[i][j][k] != Short.MAX_VALUE) {
-                        minDistanceDirection[i][j][k] += 1;//开始船不在主航道上，距离需要加一，因为到达目标点之后需要等待一帧
+                            minDistance[i][j][k] != Short.MAX_VALUE) {
+                        minDistance[i][j][k] += 1;//开始船不在主航道上，距离需要加一，因为到达目标点之后需要等待一帧
                     }
                 }
             }
@@ -114,8 +114,8 @@ public class BoatDijkstra {
             return Short.MAX_VALUE;
         }
         dir ^= 1;
-        return minDistanceDirection[start.x][start.y][dir] != Short.MAX_VALUE ?
-                minDistanceDirection[start.x][start.y][dir] :
+        return minDistance[start.x][start.y][dir] != Short.MAX_VALUE ?
+                minDistance[start.x][start.y][dir] :
                 Short.MAX_VALUE;
 
     }
