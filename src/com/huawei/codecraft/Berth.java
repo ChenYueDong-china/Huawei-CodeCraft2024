@@ -99,9 +99,9 @@ public class Berth {
         long l1 = System.currentTimeMillis();
         ArrayList<Point> searchPoint = new ArrayList<>();
         searchPoint.add(berthAroundPoints.get(0));//起始点和离船最远2个点，因为竞争很可能需要闪现
-//        for (int i = berthAroundPoints.size() - 4; i < berthAroundPoints.size(); i++) {
-//            searchPoint.add(berthAroundPoints.get(i));
-//        }
+        for (int i = berthAroundPoints.size() - 4; i < berthAroundPoints.size(); i++) {
+            searchPoint.add(berthAroundPoints.get(i));
+        }
         for (Point aroundPoint : searchPoint) {
             commonDij.init(aroundPoint, gameMap);
             commonDij.update(BERTH_MAX_BOAT_SEARCH_DEEP);

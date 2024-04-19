@@ -105,10 +105,6 @@ public class Strategy {
             }
         }
 
-//        for (int j = 0; j < 3500; j++) {
-//            workbenchCache.add(new Workbench2(-1));
-//        }
-
         gameMap.setMap(mapData);
 
         for (int i = 0; i < boatSellPoints.size(); i++) {
@@ -119,6 +115,7 @@ public class Strategy {
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             berths.add(new Berth());
         }
+
         for (Berth berth : berths) {
             String s = inStream.readLine();
             printMost(s);
@@ -335,7 +332,7 @@ public class Strategy {
         long r = System.currentTimeMillis();
         printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
-            for (int i = 0; i < 12; i++) {
+            for (int i = 0; i < 4; i++) {
                 outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
                 Robot robot = new Robot(this, 0);
                 robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
@@ -2420,7 +2417,7 @@ public class Strategy {
         ArrayList<Integer> deleteValue = new ArrayList<>();//满足为0的删除
         for (Workbench2 workbench : workbenches.values()) {
             if (workbench.remainTime <= 0) {
-                assert gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y] != -1;
+                assert gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y] == workbench.id;
                 deleteIds.add(gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y]);
                 deletePos.add(workbench.pos);
                 deleteValue.add(workbenches.get(gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y]).value);
@@ -2449,6 +2446,7 @@ public class Strategy {
                     deleteValue.add(workbenches.get(gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y]).value);
                 }
                 gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y] = -1;
+                workbenchCache.offer(workbench);
                 //回收
                 continue;
             }
