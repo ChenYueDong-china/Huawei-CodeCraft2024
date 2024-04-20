@@ -39,6 +39,7 @@ public class Constants {
     public static final int WORKBENCH_MAX_SEARCH_COUNT = 40000;    //最多搜4万个点，再搜容易超时,c++可以增大一些
     public static final int SIMPLE_ROBOT_PATH_LENGTH = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
     public static final int SIMPLE_BOAT_PATH_LENGTH = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
+    public static final int ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE = 50;    // 只搜800深度以内的点，一旦有某个方向到达800
 
     public static final int PRECIOUS_WORKBENCH_BOUNDARY = 1000;    // 只搜800深度以内的点，一旦有某个方向到达800
 

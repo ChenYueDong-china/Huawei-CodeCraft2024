@@ -1,8 +1,7 @@
 package com.huawei.codecraft;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.Point;
@@ -14,9 +13,10 @@ public class GameMap {
     private final char[][] mapData = new char[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//列到行
     private final boolean[][] robotDiscreteMapData = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//0不可达 1可达
 
-    public final short[][] robotCommonHeuristicCs
-            = new short[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
-
+    public final short[][][] robotCommonHeuristicCs
+            = new short[ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE][MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
+    public final HashMap<Integer, Integer> robotUseHeuristicCsWbIds = new HashMap<>();
+    public final Queue<Point> robotUseHeuristicCsWbIdList = new ArrayDeque<>();
     int curVisitId = 0;
     public final int[][] robotVisits
             = new int[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
@@ -234,6 +234,11 @@ public class GameMap {
         for (int[] id : curWorkbenchId) {
             Arrays.fill(id, -1);
         }
+        for (int i = -ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE; i < 0; i++) {
+            robotUseHeuristicCsWbIds.put(i, i + ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE);//-50,-1的workbench占用了0,49的空间
+            robotUseHeuristicCsWbIdList.offer(new Point(i, i + ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE));
+        }
+
         return true;
     }
 

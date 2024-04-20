@@ -2070,13 +2070,28 @@ public class Strategy {
     }
 
     private ArrayList<Point> robotToWorkBenchHeuristic(Robot robot, int targetWorkBenchId, ArrayList<ArrayList<Point>> otherPaths, boolean[][] conflictPoints) {
-        workbenches.get(targetWorkBenchId).setHeuristicCs(gameMap.robotCommonHeuristicCs);
-        short maxDeep = gameMap.robotCommonHeuristicCs[robot.pos.x][robot.pos.y];
+        short[][] robotCommonHeuristicCs;
+        //复用逻辑判断，保证一个workbench几乎只走一次
+        if (gameMap.robotUseHeuristicCsWbIds.containsKey(targetWorkBenchId)) {
+            int index = gameMap.robotUseHeuristicCsWbIds.get(targetWorkBenchId);
+            robotCommonHeuristicCs = gameMap.robotCommonHeuristicCs[index];
+        } else {
+            Point point = gameMap.robotUseHeuristicCsWbIdList.poll();
+            assert point != null;
+            int pre = point.x;
+            int index = point.y;
+            gameMap.robotUseHeuristicCsWbIds.remove(pre);
+            gameMap.robotUseHeuristicCsWbIds.put(targetWorkBenchId, index);
+            gameMap.robotUseHeuristicCsWbIdList.offer(new Point(targetWorkBenchId, index));
+            robotCommonHeuristicCs = gameMap.robotCommonHeuristicCs[index];
+            workbenches.get(targetWorkBenchId).setHeuristicCs(robotCommonHeuristicCs);
+        }
+        short maxDeep = robotCommonHeuristicCs[robot.pos.x][robot.pos.y];
         if (conflictPoints != null) {
             maxDeep += 5;
         }
         return robotMoveToPointBerth(gameMap, robot.pos, -1, workbenches.get(targetWorkBenchId).pos
-                , maxDeep, otherPaths, gameMap.robotCommonHeuristicCs, conflictPoints);
+                , maxDeep, otherPaths, robotCommonHeuristicCs, conflictPoints);
     }
 
     private void sortRobots(Robot[] robots) {
