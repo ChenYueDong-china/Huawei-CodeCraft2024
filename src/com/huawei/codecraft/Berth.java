@@ -119,6 +119,14 @@ public class Berth {
                 }
             }
         }
+        for (Point aroundPoint : berthAroundPoints) {
+            short flashDistance = (short) (1 + 2 * (abs(corePoint.x - aroundPoint.x) + abs(corePoint.y - aroundPoint.y)));
+            for (int k = 0; k < DIR.length / 2; k++) {
+                if (flashDistance < boatMinDistance[aroundPoint.x][aroundPoint.y][k]) {
+                    boatMinDistance[aroundPoint.x][aroundPoint.y][k] = flashDistance;
+                }
+            }
+        }
         long l2 = System.currentTimeMillis();
 //        printError("berthInitTime:" + (l2 - l1));
         gameMap.updateBerthAndAround(berthAroundPoints, berthPoints, id);
