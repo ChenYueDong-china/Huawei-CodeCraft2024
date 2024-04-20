@@ -16,7 +16,7 @@ public class GameMap {
     public final short[][][] robotCommonHeuristicCs
             = new short[ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE][MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
     public final HashMap<Integer, Integer> robotUseHeuristicCsWbIds = new HashMap<>();
-    public final Queue<Point> robotUseHeuristicCsWbIdList = new ArrayDeque<>();
+    public final Queue<Integer> robotUseHeuristicCsWbIdList = new ArrayDeque<>();
     int curVisitId = 0;
     public final int[][] robotVisits
             = new int[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
@@ -236,7 +236,7 @@ public class GameMap {
         }
         for (int i = -ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE; i < 0; i++) {
             robotUseHeuristicCsWbIds.put(i, i + ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE);//-50,-1的workbench占用了0,49的空间
-            robotUseHeuristicCsWbIdList.offer(new Point(i, i + ROBOT_FOR_WORKBENCH_HEURISTIC_SIZE));
+            robotUseHeuristicCsWbIdList.offer(i);//id列表，一旦超出，弹出最前面的
         }
 
         return true;

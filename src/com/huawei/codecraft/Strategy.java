@@ -2076,13 +2076,11 @@ public class Strategy {
             int index = gameMap.robotUseHeuristicCsWbIds.get(targetWorkBenchId);
             robotCommonHeuristicCs = gameMap.robotCommonHeuristicCs[index];
         } else {
-            Point point = gameMap.robotUseHeuristicCsWbIdList.poll();
-            assert point != null;
-            int pre = point.x;
-            int index = point.y;
+            Integer pre  = gameMap.robotUseHeuristicCsWbIdList.poll();
+            int index = gameMap.robotUseHeuristicCsWbIds.get(pre);
             gameMap.robotUseHeuristicCsWbIds.remove(pre);
             gameMap.robotUseHeuristicCsWbIds.put(targetWorkBenchId, index);
-            gameMap.robotUseHeuristicCsWbIdList.offer(new Point(targetWorkBenchId, index));
+            gameMap.robotUseHeuristicCsWbIdList.offer(targetWorkBenchId);
             robotCommonHeuristicCs = gameMap.robotCommonHeuristicCs[index];
             workbenches.get(targetWorkBenchId).setHeuristicCs(robotCommonHeuristicCs);
         }
