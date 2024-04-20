@@ -55,6 +55,7 @@ public class Robot {
         this.num = simpleRobot.num;
         pos.x = simpleRobot.p.x;
         pos.y = simpleRobot.p.y;
+        simpleRobot.type = type;
         assigned = false;
         carryValue = 0;
         if (lastFrameMove && simpleRobot.lastP.equal(simpleRobot.p)) {

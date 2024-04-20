@@ -3,7 +3,6 @@ package com.huawei.codecraft;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.TreeMap;
 
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.Point;
@@ -19,13 +18,11 @@ public class GameMap {
             = new short[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
 
     int curVisitId = 0;
-    public final int[][] visits
+    public final int[][] robotVisits
             = new int[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
     public final short[][] robotCommonCs
             = new short[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
 
-    public final int[][] robotCommonDiscreteCs
-            = new int[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//寻路得时候复用cs
     public final boolean[][] robotDiscreteMainChannel
             = new boolean[MAP_DISCRETE_HEIGHT][MAP_DISCRETE_WIDTH];//robot离散化之后是不是主干道
     private final boolean[][][] boatCanReach_
@@ -38,9 +35,10 @@ public class GameMap {
     private final int[][] boatAroundBerthId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//船闪现能到达得泊位,只有在靠泊区和泊位有值
     private final int[][] partOfBerthId = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];//这个点如果是泊位，那么id是啥
 
-
-    public final int[][][] boatCommonCs
-            = new int[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//寻路得时候复用cs
+    public final int[][][] boatVisits
+            = new int[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS][DIR.length / 2];//寻路得时候复用cs
+    public final short[][][] boatCommonCs
+            = new short[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS][DIR.length / 2];//寻路得时候复用cs
     public final boolean[][] commonConflictPoints
             = new boolean[MAP_FILE_ROW_NUMS][MAP_FILE_ROW_NUMS];//寻路得时候复用cs
 

@@ -17,21 +17,21 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         // 如果在本地调试时不需要重启，在启动参数中添加restart，如：java -jar main.jar restart
-        if (args.length == 0) {
-            ProcessBuilder pb = new ProcessBuilder();
-            //老年代3700-512,新生代512,超过32kb对象直接放入老年代
-            pb.command("java", "-jar", "-Xms3700m", "-Xmx3700m"
-                    , "main.jar", "restart");
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-            pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
-            Process p = pb.start();
-            p.waitFor();
-        } else if (!args[0].equals("restart")) {
-            System.out.println("err");
-        } else {
+//        if (args.length == 0) {
+//            ProcessBuilder pb = new ProcessBuilder();
+//            //老年代3700-512,新生代512,超过32kb对象直接放入老年代
+//            pb.command("java", "-jar", "-Xms3500m", "-Xms3500m"
+//                    , "main.jar", "restart");
+//            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+//            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+//            pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
+//            Process p = pb.start();
+//            p.waitFor();
+//        } else if (!args[0].equals("restart")) {
+//            System.out.println("err");
+//        } else {
             schedule();
-        }
+//        }
 //        schedule();
     }
 

@@ -26,6 +26,7 @@ public class Boat {
 
     int lastNum;//目前货物数量
     int num;//目前货物数量
+    int value;//货物金额
 
     final int capacity;//容量
     boolean assigned;
@@ -47,14 +48,15 @@ public class Boat {
         num = simpleBoat.num;
         corePoint.x = simpleBoat.corePoint.x;
         corePoint.y = simpleBoat.corePoint.y;
+        direction = simpleBoat.direction;
+        status = simpleBoat.status;
         for (BoatSellPoint boatSellPoint : strategy.boatSellPoints) {
             if (num == 0 && corePoint.equal(boatSellPoint.point)) {
                 targetSellId = -1;//卖完
                 carry = false;//不考虑金额，没必要
+                value = 0;
             }
         }
-        direction = simpleBoat.direction;
-        status = simpleBoat.status;
         if (lastFlashBerth && status == 0) {//闪现，且这一帧没等待或者出问题
             //没闪现成功
             assert strategy.berths.get(targetBerthId).curBoatId != -1;

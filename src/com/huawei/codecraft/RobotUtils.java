@@ -82,7 +82,7 @@ public class RobotUtils {
         Queue<Point> queue = new ArrayDeque<>();
         gameMap.curVisitId++;
         int curVisitId = gameMap.curVisitId;
-        int[][] visits = gameMap.visits;
+        int[][] visits = gameMap.robotVisits;
         short[][] cs = gameMap.robotCommonCs;
         queue.offer(s);
         cs[s.x][s.y] = 0;
@@ -167,7 +167,7 @@ public class RobotUtils {
         Queue<Point> queue = new ArrayDeque<>();
         gameMap.curVisitId++;
         int curVisitId = gameMap.curVisitId;
-        int[][] visits = gameMap.visits;
+        int[][] visits = gameMap.robotVisits;
         short[][] cs = gameMap.robotCommonCs;
         queue.offer(s);
         cs[s.x][s.y] = 0;
