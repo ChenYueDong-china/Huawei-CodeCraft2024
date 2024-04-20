@@ -132,21 +132,24 @@ public class BackgroundThread {
         Map<String, Object> body = new HashMap<>();
         question += " Answer no more than one word";
         body.put("prompt", question);
-        body.put("temperature", 0.0);
+//        body.put("temperature", 0.0);
+        body.put("top_k", 1);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String jsonString = objectMapper.writeValueAsString(body);
             StringEntity entity = new StringEntity(jsonString, ContentType.create("application/json", StandardCharsets.UTF_8));
             httpPost.setEntity(entity);
+            long l1 = System.currentTimeMillis();
             CloseableHttpResponse responseBody = client.execute(httpPost);
             Map responseMap = new ObjectMapper().readValue(EntityUtils.toString(responseBody.getEntity()), Map.class);
             Object object = responseMap.get("text");
+            long l2 = System.currentTimeMillis();
             if (object == null) {
                 printError("error in send message");
                 return 0;
             }
             String text = (String) object;
-            printDebug("question:" + question + ",LLMAns:" + text);
+            printError("question:" + question + ",LLMAns:" + text + ",runingTime:" + (l2 - l1));
             // add some additional practice here
             for (int i = 0; i < text.length(); i++) {
                 if (text.charAt(i) == 'A' || text.charAt(i) == 'a') {
