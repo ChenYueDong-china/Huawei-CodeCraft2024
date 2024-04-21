@@ -23,7 +23,7 @@ public class Workbench2 {
         remainTime = WORKBENCH_EXIST_TIME;
     }
 
-    public void input(GameMap map, Dijkstra2 dijkstra, int[][] fastQueue) throws IOException {
+    public void input(GameMap map, int[][] fastQueue) throws IOException {
         this.map = map;
         String line = inStream.readLine();
         printMost(line);
@@ -35,13 +35,9 @@ public class Workbench2 {
             return;
         }
         //初始化dij
+        Dijkstra dijkstra = new Dijkstra();
         dijkstra.init(pos, map);
-//        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP, WORKBENCH_MAX_SEARCH_COUNT);
-        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP, WORKBENCH_MAX_SEARCH_COUNT, fastQueue);
-        for (int i = 0; i <= (MAP_FILE_ROW_NUMS / 2); i++) {
-            System.arraycopy(dijkstra.cs[i], 0, cs[i], 0, MAP_FILE_COL_NUMS / 2 + 1);
-        }
-//        已自己为中心点更新
+        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP, WORKBENCH_MAX_SEARCH_COUNT, fastQueue,cs);
     }
 
     //获得这个workbench到任意一个位置的最小距离

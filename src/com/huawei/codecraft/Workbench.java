@@ -33,12 +33,12 @@ public class Workbench {
         //初始化dij
         dijkstra = new Dijkstra();
         dijkstra.init(pos, map);
-        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP,WORKBENCH_MAX_SEARCH_COUNT);
+//        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP,WORKBENCH_MAX_SEARCH_COUNT);
     }
 
     //获得这个workbench到任意一个位置的最小距离
     short getMinDistance(Point point) {
-        return dijkstra.getMoveDistance(point);
+        return 0;
     }
 
     public boolean canReach(Point pos) {

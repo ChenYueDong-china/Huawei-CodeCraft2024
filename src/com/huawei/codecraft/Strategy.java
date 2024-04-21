@@ -87,10 +87,8 @@ public class Strategy {
             fgets(mapData[i], inStream);
             String ok = inStream.readLine();
             printMost(ok);
-//            if (i < MAP_FILE_ROW_NUMS - 5) {
             outStream.print("OK\n");
             outStream.flush();
-
         }
 
         for (int i = 0; i < mapData.length; i++) {
@@ -105,8 +103,10 @@ public class Strategy {
                 }
             }
         }
-
         gameMap.setMap(mapData);
+        BackgroundThread.Instance().init();
+        int questionId = BackgroundThread.Instance().sendQuestion("下列哪种材质常用于制作快递袋，" +
+                "具有防水和防撕裂的特点？ A. 塑料 B. 纸板 C. 布料 D. 金属");
 
         for (int i = 0; i < boatSellPoints.size(); i++) {
             boatSellPoints.get(i).init(i, gameMap);
@@ -151,7 +151,6 @@ public class Strategy {
         }
 
         avgBerthLoopDistance = 1.0 * totalBerthLoopDistance / max(1, totalValidBerthCount);
-        BackgroundThread.Instance().init();
 
         long l1 = System.currentTimeMillis();
         boatFlashCandidates = new ArrayList<>();
@@ -177,6 +176,7 @@ public class Strategy {
 //                }
 //            }
 //        }
+
         long l2 = System.currentTimeMillis();
         printError("boat flash target update time:" + (l2 - l1));
         long l11 = System.currentTimeMillis();
@@ -190,6 +190,7 @@ public class Strategy {
         printError("Used Memory (bytes): " + usedMemory);
         printError("--------------------------");
         System.gc();
+        BackgroundThread.Instance().getAnswer(questionId);
         outStream.print("OK\n");
         outStream.flush();
     }
@@ -330,11 +331,11 @@ public class Strategy {
     private void dispatch() {
 
         long l = System.currentTimeMillis();
-        robotDoAction();
-        boatDoAction();
-        if (frameId > 14500 && money >= 3000) {
+//        robotDoAction();
+//        boatDoAction();
+        if (frameId > 19500 && money >= 3000) {
             //再买一个
-            outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
+            outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 1);
             Robot robot = new Robot(this, 1);
             robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
             robot.buyFrame = frameId;
@@ -2076,7 +2077,7 @@ public class Strategy {
             int index = gameMap.robotUseHeuristicCsWbIds.get(targetWorkBenchId);
             robotCommonHeuristicCs = gameMap.robotCommonHeuristicCs[index];
         } else {
-            Integer pre  = gameMap.robotUseHeuristicCsWbIdList.poll();
+            Integer pre = gameMap.robotUseHeuristicCsWbIdList.poll();
             int index = gameMap.robotUseHeuristicCsWbIds.get(pre);
             gameMap.robotUseHeuristicCsWbIds.remove(pre);
             gameMap.robotUseHeuristicCsWbIds.put(targetWorkBenchId, index);
@@ -2382,7 +2383,6 @@ public class Strategy {
 //
     int totalCount = 0;
 
-    Dijkstra2 commonDij = new Dijkstra2();
 
     int[][] fastQueue = new int[MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS][2];
     long frameStartTime = 0;
@@ -2431,7 +2431,7 @@ public class Strategy {
             Workbench2 workbench = workbenchCache.poll();
             assert workbench != null;
             workbench.id = workbenchId;
-            workbench.input(gameMap, commonDij, fastQueue);
+            workbench.input(gameMap, fastQueue);
             if (workbench.value > 0) {
                 totalCount++;
             } else {
