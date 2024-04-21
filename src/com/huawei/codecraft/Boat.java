@@ -49,8 +49,6 @@ public class Boat {
 
     public void input(SimpleBoat simpleBoat) throws IOException {
         num = simpleBoat.num;
-        Point lastPoint = new Point(corePoint);
-        int lastDirection = direction;
         corePoint.x = simpleBoat.corePoint.x;
         corePoint.y = simpleBoat.corePoint.y;
         direction = simpleBoat.direction;
@@ -62,7 +60,9 @@ public class Boat {
                 value = 0;
             }
         }
-        if (lastFrameMove && corePoint.equal(lastPoint) && direction == lastDirection) {
+        if (lastFrameMove && corePoint.equal(simpleBoat.lastPointWithDirection.point)
+                &&
+                direction == simpleBoat.lastPointWithDirection.direction) {
             noMoveTime++;
         } else {
             noMoveTime = 0;
@@ -74,8 +74,9 @@ public class Boat {
             assert strategy.berths.get(targetBerthId).curBoatId < globalId;
             //不一定是代码问题，可能同时闪现，自己没成功
             printError(frameId + "last frame flash berth default");
-        } else {
-            //闪现成功,这个泊位当前berth一定是我
+        }
+        if (lastFlashBerth && status != 0) {
+            //闪现成功,这个泊位当前boat一定是我
             strategy.berths.get(targetBerthId).curBoatId = globalId;
         }
         lastFlashBerth = false;

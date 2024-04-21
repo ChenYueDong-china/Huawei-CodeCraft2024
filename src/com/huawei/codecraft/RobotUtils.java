@@ -2,6 +2,8 @@ package com.huawei.codecraft;
 
 import java.util.*;
 
+import static com.huawei.codecraft.Constants.MAP_FILE_COL_NUMS;
+import static com.huawei.codecraft.Constants.MAP_FILE_ROW_NUMS;
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -71,6 +73,106 @@ public class RobotUtils {
 //        return robotMoveToPoint(gameMap, start, new Point(-1, -1), berthId, maxDeep, otherPaths);
 //    }
 //
+
+    public static ArrayList<Point> robotMoveToPointBerthHeuristicCs(GameMap gameMap, Point start, int berthId
+            , Point end, int maxDeep
+            , ArrayList<ArrayList<Point>> otherPaths
+            , short[][] heuristicCs, boolean[][] conflictPoints) {
+        //已经在了，直接返回，防止cs消耗
+        Point s = new Point(start);
+        gameMap.curVisitId++;
+        int curVisitId = gameMap.curVisitId;
+        int[][] visits = gameMap.robotVisits;
+        short[][] cs = gameMap.robotCommonCs;
+        class PointWithDeep {
+            final Point point;
+            final int deep;
+
+            public PointWithDeep(Point point, int deep) {
+                this.point = point;
+                this.deep = deep;
+            }
+        }
+        Deque<PointWithDeep> queue = new ArrayDeque<>();
+        queue.offer(new PointWithDeep(s, 0));
+        cs[s.x][s.y] = 0;
+        visits[s.x][s.y] = curVisitId;
+        int curDeep = heuristicCs[s.x][s.y];
+        TreeMap<Integer, Deque<PointWithDeep>> cacheMap = new TreeMap<>();
+        cacheMap.put(curDeep, queue);
+
+        int count = 0;
+        //从目标映射的四个点开始搜
+        while (!cacheMap.isEmpty()) {
+            Map.Entry<Integer, Deque<PointWithDeep>> dequeEntry = cacheMap.firstEntry();
+            Deque<PointWithDeep> q = dequeEntry.getValue();
+            PointWithDeep point = q.pollLast();
+            assert point != null;
+            int deep = point.deep;//最多8万个点,这个不是启发式，会一直搜
+            if (deep > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 8) {
+                break;
+            }
+            Point top = point.point;
+            boolean arrive = false;
+            if (berthId != -1) {
+                if (gameMap.getBelongToBerthId(top) == berthId) {
+                    //回溯路径
+                    arrive = true;
+                }
+            } else {
+                if (top.equal(end)) {
+                    //回溯路径
+                    arrive = true;
+                }
+            }
+            if (arrive) {
+                ArrayList<Point> result = getRobotPathByCs(cs, top);
+                Collections.reverse(result);
+                if (result.size() == 1) {
+                    result.add(result.get(0));
+                }
+                return gameMap.toDiscretePath(result);
+            }
+            Point pre = gameMap.posToDiscrete(top);
+            for (int j = DIR.length / 2 - 1; j >= 0; j--) {
+                //四方向的
+                count++;
+                Point dir = DIR[j];
+                int dx = top.x + dir.x;
+                int dy = top.y + dir.y;//第一步
+                if (!gameMap.robotCanReach(dx, dy) || visits[dx][dy] == curVisitId) {
+                    //不会发生后面有更近点得可能
+                    continue;
+                }
+                if (conflictPoints != null) {
+                    if (conflictPoints[dx][dy] && !gameMap.isRobotMainChannel(dx, dy)) {
+                        continue;//这个点被锁死了
+                    }
+                }
+                //转成离散去避让
+                Point next = gameMap.posToDiscrete(dx, dy);
+                Point mid = pre.add(dir);
+                int midDeep = 2 * deep - 1;
+                int nextDeep = 2 * deep;
+                if (otherPaths != null) {
+                    if (robotCheckCrashInDeep(gameMap, midDeep, mid.x, mid.y, otherPaths)
+                            || robotCheckCrashInDeep(gameMap, nextDeep, next.x, next.y, otherPaths)) {
+                        continue;
+                    }
+                }
+                cs[dx][dy] = (short) ((deep << 2) + j);
+                visits[dx][dy] = curVisitId;
+                nextDeep = deep + 1;
+                PointWithDeep pointWithDeep = new PointWithDeep(next, nextDeep);
+                nextDeep += heuristicCs[next.x][next.y];
+                if (!cacheMap.containsKey(nextDeep)) {
+                    cacheMap.put(nextDeep, new ArrayDeque<>());
+                }
+                cacheMap.get(nextDeep).addLast(pointWithDeep);
+            }
+        }
+        return new ArrayList<>();
+    }
 
     @SuppressWarnings("all")
     public static ArrayList<Point> robotMoveToPointBerth(GameMap gameMap, Point start, int berthId

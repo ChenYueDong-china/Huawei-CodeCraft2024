@@ -14,7 +14,8 @@ public class SimpleBoat {
     boolean belongToMe;
     int noMoveTime;
 
-    PointWithDirection pointWithDirection=new PointWithDirection(new Point(),-1);
+    PointWithDirection pointWithDirection = new PointWithDirection(new Point(), -1);
+    PointWithDirection lastPointWithDirection = new PointWithDirection(new Point(), -1);
 
     Point corePoint = new Point(-1, -1);
 
@@ -34,10 +35,11 @@ public class SimpleBoat {
         if (num == 0) {
             value = 0;
         }
+        lastPointWithDirection = pointWithDirection;
         corePoint.x = Integer.parseInt(parts[2]);
         corePoint.y = Integer.parseInt(parts[3]);
         direction = Integer.parseInt(parts[4]);
-        pointWithDirection=new PointWithDirection(new Point(corePoint), direction);
+        pointWithDirection = new PointWithDirection(new Point(corePoint), direction);
         lastStatus = status;
         status = Integer.parseInt(parts[5]);
         path.offer(pointWithDirection);

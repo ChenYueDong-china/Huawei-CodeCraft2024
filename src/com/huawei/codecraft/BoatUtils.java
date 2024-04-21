@@ -50,8 +50,9 @@ public class BoatUtils {
                         int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
                         int curDeep = deep - 1 + nextDeep;
                         assert heuristicCs != null;
-                        assert curDeep <= heuristicCs[start.point.x][start.point.y][start.direction];
-                        if (curDeep < bestDeep) {
+                        assert curDeep >= heuristicCs[start.point.x][start.point.y][start.direction];
+                        if (deep + nextDeep <= maxDeep && curDeep < bestDeep) {
+                            //否则继续往前走
                             bestPoint = top;
                             bestDeep = curDeep;
                         }
@@ -116,7 +117,138 @@ public class BoatUtils {
                 } else {
                     return backTrackPath(gameMap, bestPoint, cs, recoveryTime);
                 }
+            }
+        }
+        printError("error boat no find a path");
+        return new ArrayList<>();
+    }
 
+    public static ArrayList<PointWithDirection> boatMoveToBerthSellPointHeuristic(GameMap gameMap, PointWithDirection start,
+                                                                                  PointWithDirection end, int berthId
+            , PointWithDirection berthCorePoint
+            , int recoveryTime, int maxDeep, int curBoatId
+            , ArrayList<ArrayList<PointWithDirection>> otherPaths, ArrayList<Integer> otherIds
+            , short[][][] heuristicCs, boolean[][] conflictPoints) {
+        short[][][] cs = gameMap.boatCommonCs;
+        gameMap.curVisitId++;
+        int curVisitId = gameMap.curVisitId;
+        int[][][] visits = gameMap.boatVisits;
+        //从目标映射的四个点开始搜
+        class PointWithDeep {
+            final PointWithDirection point;
+            final int deep;
+
+            public PointWithDeep(PointWithDirection point, int deep) {
+                this.point = point;
+                this.deep = deep;
+            }
+        }
+        PointWithDeep s = new PointWithDeep(new PointWithDirection(new Point(start.point), start.direction), 0);
+        Deque<PointWithDeep> queue = new ArrayDeque<>();
+        queue.offer(s);
+        cs[s.point.point.x][s.point.point.y][s.point.direction] = (short) s.point.direction;
+        visits[s.point.point.x][s.point.point.y][s.point.direction] = curVisitId;
+        int curDeep = heuristicCs[s.point.point.x][s.point.point.y][s.point.direction] + s.deep;
+        TreeMap<Integer, Deque<PointWithDeep>> cacheMap = new TreeMap<>();
+        cacheMap.put(curDeep, queue);
+        PointWithDirection bestPoint = null;
+        int count = 0;
+        while (!cacheMap.isEmpty()) {
+            Map.Entry<Integer, Deque<PointWithDeep>> dequeEntry = cacheMap.firstEntry();
+            int totalDeep = dequeEntry.getKey();
+            Deque<PointWithDeep> q = dequeEntry.getValue();
+            PointWithDeep point = q.pollLast();
+            assert point != null;
+            int deep = point.deep;//最多16万个点,这个不是启发式，会一直搜
+            if (deep > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 4) {
+                break;
+            }
+            PointWithDirection top = point.point;
+            if (visits[top.point.x][top.point.y][top.direction] == curVisitId &&
+                    point.deep > (cs[top.point.x][top.point.y][top.direction] >> 2)) {
+                if (q.isEmpty()) {
+                    cacheMap.remove(totalDeep);
+                }
+                continue;
+            }
+            //2距离的下一个点,先保存起来，后面直接插进去
+            if (berthId != -1) {
+                if (gameMap.boatGetFlashBerthId(top.point.x, top.point.y) == berthId) {
+                    int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
+                    assert deep + nextDeep >= heuristicCs[start.point.x][start.point.y][start.direction];
+                    if (deep + nextDeep <= maxDeep) {
+                        //否则继续往前走
+                        bestPoint = top;
+                        break;
+                    }
+                }
+            } else {
+                if (top.equal(end) || (top.point.equal(end.point) && end.direction == -1)) {
+                    //回溯路径
+                    bestPoint = top;
+                    break;
+                }
+            }
+            deep += 1;
+            for (int k = 2; k >= 0; k--) {
+                count++;
+                PointWithDirection next = getNextPoint(top, k);
+                //合法性判断
+                if (!gameMap.boatCanReach(next.point, next.direction) ||
+                        (visits[next.point.x][next.point.y][next.direction] == curVisitId &&
+                                deep >= (cs[next.point.x][next.point.y][next.direction] >> 2))) {
+                    continue;
+                }
+                //检测碰撞。
+                if (otherPaths != null) {
+                    if (boatCheckCrashInDeep(gameMap, recoveryTime + deep, curBoatId, next, otherPaths, otherIds))
+                        continue;
+                }
+
+                //判断冲突点
+                if (conflictPoints != null) {
+                    boolean crash = checkIfExcludePoint(gameMap, conflictPoints, next);
+                    if (crash) {
+                        continue;
+                    }
+                }
+                //是否到达之后需要恢复,有一个点进入了主航道
+                int nextDeep = deep;
+                if (gameMap.boatHasOneInMainChannel(next.point, next.direction)) {
+                    if (visits[next.point.x][next.point.y][next.direction] == curVisitId &&
+                            deep + 1 >= (cs[next.point.x][next.point.y][next.direction] >> 2)) {
+                        continue;//visit过且深度大于已有的,剪枝
+                    }
+                    //检测碰撞。
+                    if (otherPaths != null) {
+                        if (boatCheckCrashInDeep(gameMap, recoveryTime + deep + 1, curBoatId, next, otherPaths, otherIds))
+                            continue;
+                    }
+                    cs[next.point.x][next.point.y][next.direction]
+                            = (short) (((deep + 1) << 2) + top.direction);
+                    nextDeep += 1;
+                } else {
+                    cs[next.point.x][next.point.y][next.direction]
+                            = (short) ((deep << 2) + top.direction);
+                }
+                visits[next.point.x][next.point.y][next.direction] = curVisitId;
+                PointWithDeep pointWithDeep = new PointWithDeep(next, nextDeep);
+                nextDeep += heuristicCs[next.point.x][next.point.y][next.direction];
+                if (!cacheMap.containsKey(nextDeep)) {
+                    cacheMap.put(nextDeep, new ArrayDeque<>());
+                }
+                cacheMap.get(nextDeep).addLast(pointWithDeep);
+            }
+            if (q.isEmpty()) {
+                cacheMap.remove(totalDeep);
+            }
+        }
+        if (bestPoint != null) {
+            //回溯路径
+            if (berthId != -1) {
+                return getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, bestPoint, cs);
+            } else {
+                return backTrackPath(gameMap, bestPoint, cs, recoveryTime);
             }
         }
         printError("error boat no find a path");

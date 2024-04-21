@@ -41,12 +41,12 @@ public class BoatSellPoint {
 
 
     //获得这个workbench到任意一个位置的最小距离
-    int getMinDistance(Point pos, int dir) {
+    short getMinDistance(Point pos, int dir) {
         return boatMinDistance[pos.x][pos.y][dir];
     }
 
 
     public boolean canReach(Point pos, int dir) {
-        return getMinDistance(pos, dir) != Integer.MAX_VALUE;
+        return getMinDistance(pos, dir) != Short.MAX_VALUE;
     }
 }
