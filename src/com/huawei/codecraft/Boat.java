@@ -10,6 +10,9 @@ import static com.huawei.codecraft.Constants.*;
 public class Boat {
 
     public int beConflicted = 0;
+    public int avoidOtherTime = 0;
+    public int noMoveTime = 0;//发了移动指令但没移动的帧数
+    boolean lastFrameMove = true; //上一帧是否移动
     public boolean carry = false;
     int id = -1;
     int globalId = -1;//需要，因为可能别人会占用泊位，会出问题
@@ -46,6 +49,8 @@ public class Boat {
 
     public void input(SimpleBoat simpleBoat) throws IOException {
         num = simpleBoat.num;
+        Point lastPoint = new Point(corePoint);
+        int lastDirection = direction;
         corePoint.x = simpleBoat.corePoint.x;
         corePoint.y = simpleBoat.corePoint.y;
         direction = simpleBoat.direction;
@@ -57,12 +62,21 @@ public class Boat {
                 value = 0;
             }
         }
+        if (lastFrameMove && corePoint.equal(lastPoint) && direction == lastDirection) {
+            noMoveTime++;
+        } else {
+            noMoveTime = 0;
+        }
+
         if (lastFlashBerth && status == 0) {//闪现，且这一帧没等待或者出问题
             //没闪现成功
             assert strategy.berths.get(targetBerthId).curBoatId != -1;
             assert strategy.berths.get(targetBerthId).curBoatId < globalId;
             //不一定是代码问题，可能同时闪现，自己没成功
             printError(frameId + "last frame flash berth default");
+        } else {
+            //闪现成功,这个泊位当前berth一定是我
+            strategy.berths.get(targetBerthId).curBoatId = globalId;
         }
         lastFlashBerth = false;
         if (lastFlashDept && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)) {
@@ -93,16 +107,19 @@ public class Boat {
                 && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)
                 && frameId > GAME_FRAME - 1000) {
             flashDept();
+            lastFrameMove = false;
             return;
         }
         if (path == null || path.size() < 2) {//啥都不动，可能有问题，就算避让也会多走一帧
             printError("error");
+            lastFrameMove = false;
             return;
         }
         if (status == 1 || (status == 2
                 && targetBerthId != -1
                 && strategy.berths.get(targetBerthId).curBoatId == id)) {
             //恢复状态，或者已经在目标泊位装货了
+            lastFrameMove = false;
             return;
         }
         PointWithDirection next = path.get(1);
@@ -111,25 +128,30 @@ public class Boat {
                 && strategy.berths.get(targetBerthId).curBoatId == -1
                 && next.point.equal(strategy.berths.get(targetBerthId).corePoint)) {
             flashBerth();//去泊位
+            lastFrameMove = false;//闪现泊位不能算动，因为可以跟别人抢位置
             return;
         }
         if (next.point.equal(corePoint)) {
             assert next.direction == direction;//避让或者已经在目标了
+            lastFrameMove = false;
             return;
         }
 
         if (next.direction == direction && corePoint.add(DIR[direction]).equal(next.point)) {
             ship();//前进
+            lastFrameMove = true;
         } else {
             int rotaDir = strategy.gameMap.getRotationDir(direction, next.direction);
             PointWithDirection rotationPoint = getBoatRotationPoint(new PointWithDirection(corePoint, direction)
                     , rotaDir == 0);
             if (rotationPoint.point.equal(next.point)) {
                 rotation(rotaDir);//旋转
+                lastFrameMove = true;
             } else {
                 //闪现去主航道
                 assert strategy.gameMap.boatIsAllInMainChannel(next.point, next.direction);
-                // flashDept();
+                flashDept();
+                lastFrameMove = false;
             }
         }
     }

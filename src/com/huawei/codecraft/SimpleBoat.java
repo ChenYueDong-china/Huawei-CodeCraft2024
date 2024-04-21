@@ -11,6 +11,10 @@ public class SimpleBoat {
     int id;
     int lastNum;
     int num;
+    boolean belongToMe;
+    int noMoveTime;
+
+    PointWithDirection pointWithDirection=new PointWithDirection(new Point(),-1);
 
     Point corePoint = new Point(-1, -1);
 
@@ -33,9 +37,10 @@ public class SimpleBoat {
         corePoint.x = Integer.parseInt(parts[2]);
         corePoint.y = Integer.parseInt(parts[3]);
         direction = Integer.parseInt(parts[4]);
+        pointWithDirection=new PointWithDirection(new Point(corePoint), direction);
         lastStatus = status;
         status = Integer.parseInt(parts[5]);
-        path.offer(new PointWithDirection(new Point(corePoint), direction));
+        path.offer(pointWithDirection);
         if (path.size() > SIMPLE_BOAT_PATH_LENGTH) {
             path.poll();
         }

@@ -49,6 +49,8 @@ public class BoatUtils {
                     if (gameMap.boatGetFlashBerthId(top.point.x, top.point.y) == berthId) {
                         int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
                         int curDeep = deep - 1 + nextDeep;
+                        assert heuristicCs != null;
+                        assert curDeep <= heuristicCs[start.point.x][start.point.y][start.direction];
                         if (curDeep < bestDeep) {
                             bestPoint = top;
                             bestDeep = curDeep;

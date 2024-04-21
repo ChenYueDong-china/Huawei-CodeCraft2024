@@ -15,11 +15,14 @@ public class Constants {
     //船只超参数
     //任意时刻可以切换泊位 or 到达泊位或者目标点或者在移动到目标点才能切泊位
     public static double BOAT_DYNAMIC_SAME_TARGET_FACTOR = 1;//有可能0更好
-    public static int BOAT_PREDICT_DISTANCE = 20;//预测距离,待测试
-    public static int BOAT_AVOID_DISTANCE = 10;//避让距离
+    public static int BOAT_PREDICT_DISTANCE = 16;//预测距离,待测试
+    public static int BOAT_AVOID_DISTANCE = 8;//避让距离，一人前进四格，就是4帧之内撞
     public static int BOAT_FIND_PATH_DEEP = 2;//避让距离
+    public static int BOAT_AVOID_OTHER_DEEP = 10;//避让对面增加的深度距离
     public static int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
-
+    public static int BOAT_FLASH_NO_MOVE_TIME = 20;//超过20帧动不了，直接闪现躲避
+    public static int BOAT_AVOID_OTHER_TRIGGER_THRESHOLD = 4;//等别人让五帧，还是不让说明问题很大，自己让吧
+    public static  int BOAT_AVOID_OTHER_DURATION = 12;//持续避让10帧
     //购买超参数
     public static int INIT_ROBOT_COUNT = 8; //初始化
     public static int INIT_BOAT_COUNT = 1;

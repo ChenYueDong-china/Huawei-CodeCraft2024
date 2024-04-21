@@ -48,13 +48,16 @@ public class Strategy {
     @SuppressWarnings("unchecked")
     public ArrayList<Point>[] robotsAvoidOtherPoints = new ArrayList[MAX_ROBOTS_PER_PLAYER];//避让其他人的点
 
+    @SuppressWarnings("unchecked")
+    public ArrayList<Point>[] boatsAvoidOtherPoints = new ArrayList[MAX_BOATS_PER_PLAYER];//避让其他人的点
+
     public int curFrameDiff = 1;
     int jumpCount = 0;
 
     //boat的闪现位置，闪现泊位不用算
 
     public ArrayList<Point> boatFlashCandidates;
-    //public PointWithDirection[][] boatFlashMainChannelPoint = new PointWithDirection[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
+    public PointWithDirection[][] boatFlashMainChannelPoint = new PointWithDirection[MAP_FILE_ROW_NUMS][MAP_FILE_COL_NUMS];
 
 
     public ArrayList<Point> robotPurchasePoint = new ArrayList<>();
@@ -109,7 +112,7 @@ public class Strategy {
                 "具有防水和防撕裂的特点？ A. 塑料 B. 纸板 C. 布料 D. 金属");
         BoatDijkstra boatDijkstra = new BoatDijkstra();
         for (int i = 0; i < boatSellPoints.size(); i++) {
-            boatSellPoints.get(i).init(i, gameMap,boatDijkstra);
+            boatSellPoints.get(i).init(i, gameMap, boatDijkstra);
         }
         BERTH_PER_PLAYER = getIntInput();
         //码头
@@ -125,7 +128,7 @@ public class Strategy {
             berth.corePoint.y = Integer.parseInt(parts[2]);
             berth.loadingSpeed = Integer.parseInt(parts[3]);
             berth.id = id;
-            berth.init(gameMap,boatDijkstra);
+            berth.init(gameMap, boatDijkstra);
         }
 
 
@@ -140,6 +143,9 @@ public class Strategy {
         for (int i = 0; i < robotsAvoidOtherPoints.length; i++) {
             robotsAvoidOtherPoints[i] = new ArrayList<>();
         }
+        for (int i = 0; i < boatsAvoidOtherPoints.length; i++) {
+            boatsAvoidOtherPoints[i] = new ArrayList<>();
+        }
         //更新berth循环距离
         int totalBerthLoopDistance = 0;
         for (Berth berth : berths) {
@@ -153,28 +159,24 @@ public class Strategy {
 
         long l1 = System.currentTimeMillis();
         boatFlashCandidates = new ArrayList<>();
-//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                for (int k = 0; k < DIR.length / 2; k++) {
-//                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
-//                        boatFlashCandidates.add(new Point(i, j));
-//                        break;
-//                    }
-//                }
-//            }
-//        }
-//        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
-//            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
-//                if (gameMap.boatCanReach(i, j)) {
-//                    //留200ms阈值,超时不更新，到时候再更新
-//                    long curTime = System.currentTimeMillis();
-//                    if (curTime - startTime > 1000 * 19 + 500) {
-//                        break;
-//                    }
-//                    boatUpdateFlashPoint(i, j);
-//                }
-//            }
-//        }
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                for (int k = 0; k < DIR.length / 2; k++) {
+                    if (gameMap.boatIsAllInMainChannel(new Point(i, j), k)) {
+                        boatFlashCandidates.add(new Point(i, j));
+                        break;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
+            for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
+                if (gameMap.boatCanReach(i, j)) {
+                    //留200ms阈值,超时不更新，到时候再更新
+                    boatUpdateFlashPoint(i, j);
+                }
+            }
+        }
 
         long l2 = System.currentTimeMillis();
         printError("boat flash target update time:" + (l2 - l1));
@@ -222,12 +224,12 @@ public class Strategy {
         }
         // 找到最好的点
         assert bestPoint != null;
-//        for (int k = 0; k < DIR.length / 2; k++) {
-//            if (gameMap.boatIsAllInMainChannel(bestPoint, k)) {
-//                //找到传送点
-//                boatFlashMainChannelPoint[i][j] = new PointWithDirection(bestPoint, k);
-//            }
-//        }
+        for (int k = 0; k < DIR.length / 2; k++) {
+            if (gameMap.boatIsAllInMainChannel(bestPoint, k)) {
+                //找到传送点
+                boatFlashMainChannelPoint[i][j] = new PointWithDirection(bestPoint, k);
+            }
+        }
     }
 
 //    public ArrayList<PointWithDirection> boatToBerthWithPruning(Boat boat, Berth berth, int maxDeep, ArrayList<ArrayList<PointWithDirection>> otherPath, ArrayList<Integer> otherIds
@@ -330,8 +332,8 @@ public class Strategy {
     private void dispatch() {
 
         long l = System.currentTimeMillis();
-//        robotDoAction();
-//        boatDoAction();
+        robotDoAction();
+        boatDoAction();
         if (frameId > 19500 && money >= 3000) {
             //再买一个
             outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 1);
@@ -660,192 +662,268 @@ public class Strategy {
             if (!boat.assigned) {
                 continue;
             }
-            //后面可以考虑启发式搜，目前强搜
+            //1.正常路径
             if (boat.carry) {
                 //卖
-                boat.path = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId));
-
+                boat.path = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
+                        , null, null, null);
             } else {
                 //买
                 assert boat.targetBerthId != -1;
-                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId));
-                assert !boat.path.isEmpty();
-                //不然肯定dij不对
+                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId), null, null, null);
+                //目标有船，且自己里目标就差5帧了，此时直接搜到目标，后面再闪现
+                Berth berth = berths.get(boat.targetBerthId);
+                if (berth.curBoatId != -1 && berth.curBoatId != boat.id) {
+                    for (int i = 0; i < min(boat.path.size(), 5); i++) {
+                        PointWithDirection next = boat.path.get(i);
+                        if (next.point.equal(berth.corePoint)) {
+                            //有船且不是你,先去核心点等着闪现
+                            ArrayList<PointWithDirection> toCorePath = boatToAnyPoint(boat,
+                                    new PointWithDirection(berth.corePoint, -1));
+                            if (!toCorePath.isEmpty()) {
+                                boat.path = toCorePath;
+                            }
+                            break;
+                        }
+                    }
+                }
             }
+
+            //2.避让队友
+            //检查是否与前面机器人相撞，如果是，则重新搜一条到目标点的路径，极端情况，去到物品消失不考虑
+            if (boatCheckCrash(gameMap, boat.id, boat.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
+                ArrayList<PointWithDirection> avoidPath;
+                if (boat.carry) {
+                    //to sellPoint
+                    avoidPath = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
+                            , otherPaths, otherIds, null);
+                } else {
+                    //to berth
+                    avoidPath = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId)
+                            , otherPaths, otherIds, null);
+                }
+                if (!avoidPath.isEmpty()) {
+                    boat.path = avoidPath;
+                }
+            }
+
+
+            //3.避让对方
+            if (boat.avoidOtherTime > 0) {
+                ArrayList<Point> avoidOtherPoints = boatsAvoidOtherPoints[boat.id];
+                if (avoidOtherPoints.isEmpty()) {
+                    printError("error in avoid OtherTime");
+                }
+                for (Point avoidPoint : avoidOtherPoints) {
+                    gameMap.commonConflictPoints[avoidPoint.x][avoidPoint.y] = true;
+                }
+                ArrayList<PointWithDirection> avoidPath;
+                if (boat.carry) {
+                    //to sellPoint
+                    avoidPath = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
+                            , otherPaths, otherIds, gameMap.commonConflictPoints);
+                } else {
+                    //to berth
+                    avoidPath = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId)
+                            , otherPaths, otherIds, gameMap.commonConflictPoints);
+                }
+                if (!avoidPath.isEmpty()) {
+                    boat.path = avoidPath;
+                }
+                for (Point avoidPoint : avoidOtherPoints) {
+                    gameMap.commonConflictPoints[avoidPoint.x][avoidPoint.y] = false;
+                }
+            }
+
             otherPaths.add(boat.path);
             otherIds.add(boat.id);
         }
 
         otherPaths = new ArrayList<>();
         otherIds = new ArrayList<>();
-//        for (int i = 0; i < tmpBoats.length; i++) {
-//            Boat boat = tmpBoats[i];
-//            ArrayList<PointWithDirection> myPath = new ArrayList<>();
-//            if (boat.assigned) {
-//                for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boat.path.size()); j++) {
-//                    myPath.add(boat.path.get(j));
-//                }
-//            } else {
-//                //没assign
-//                for (int j = 0; j < BOAT_PREDICT_DISTANCE; j++) {
-//                    myPath.add(new PointWithDirection(boat.corePoint, boat.direction));
-//                }
-//                boat.path.clear();
-//                boat.path.addAll(myPath);
-//            }
-//            int crashId = boatCheckCrash(gameMap, boat.id, myPath, otherPaths, otherIds, BOAT_AVOID_DISTANCE);
-//            if (crashId != -1) {
-//                boats.get(crashId).beConflicted = FPS;
-//            }
-//            if (crashId != -1 && boat.status != 1) {
-//                //此时可以避让，则开始避让
-//                //避让
-//                for (boolean[] conflictPoint : gameMap.commonConflictPoints) {
-//                    Arrays.fill(conflictPoint, false);
-//                }
-//                for (boolean[] commonNoResultPoint : gameMap.commonNoResultPoints) {
-//                    Arrays.fill(commonNoResultPoint, false);
-//                }
-//                for (ArrayList<PointWithDirection> otherPath : otherPaths) {
-//                    //别人所在位置锁住
-//                    PointWithDirection pointWithDirection = otherPath.get(0);
-//                    ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
-//                    for (Point point : points) {
-//                        if (!gameMap.isBoatMainChannel(point.x, point.y)) {
-//                            gameMap.commonConflictPoints[point.x][point.y] = true;
-//                        }
-//                    }
-//                }
-//                for (int j = 0; j < otherPaths.size(); j++) {
-//                    if (otherIds.get(j) == crashId) {
-//                        //撞到那个人的预测路径不是结果点
-//                        ArrayList<PointWithDirection> pointWithDirections = otherPaths.get(j);
-//                        for (PointWithDirection pointWithDirection : pointWithDirections) {
-//                            ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
-//                            for (Point point : points) {
-//                                if (!gameMap.isBoatMainChannel(point.x, point.y)) {
-//                                    gameMap.commonNoResultPoints[point.x][point.y] = true;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.boatCommonCs, myPath.get(0), gameMap.commonConflictPoints, gameMap.commonNoResultPoints, BOAT_AVOID_CANDIDATE_SIZE);
-//                if (!result.isEmpty()) {
-//                    PointWithDirection selectPoint = null;
-//                    double minDistance = Integer.MAX_VALUE;
-//                    for (PointWithDirection pointWithDirection : result) {
-//                        double curDis = (gameMap.boatCommonCs[pointWithDirection.point.x][pointWithDirection.point.y][pointWithDirection.direction] >> 2);
-//                        //到目标距离
-//                        if (boat.assigned) {
-//                            double toTargetDistance;
-//                            if (boat.carry) {
-//                                //买
-//                                toTargetDistance = boatSellPoints.get(boat.targetSellId).getMinDistance(pointWithDirection.point, pointWithDirection.direction);
-//                            } else {
-//                                toTargetDistance = berths.get(boat.targetBerthId).getBoatMinDistance(pointWithDirection.point, pointWithDirection.direction);
-//                            }
-//                            curDis = curDis + toTargetDistance / 2;
-//                        }
-//                        if (curDis < minDistance) {
-//                            selectPoint = pointWithDirection;
-//                            minDistance = curDis;
-//                        }
-//                    }
-//                    if (selectPoint != null) {
-//                        int oneDistance = (gameMap.boatCommonCs[selectPoint.point.x][selectPoint.point.y][selectPoint.direction] >> 2);
-//                        if (boat.assigned) {
-//                            if (boat.carry) {
-//                                oneDistance += boatSellPoints.get(boat.targetSellId).getMinDistance(selectPoint.point, selectPoint.direction);
-//                            } else {
-//                                oneDistance += berths.get(boat.targetBerthId).getBoatMinDistance(selectPoint.point, selectPoint.direction);
-//                            }
-//                        }
-//                        //计算闪现需要时间
-//                        PointWithDirection mid = getBoatFlashDeptPoint(boat.corePoint);
-//                        //计算到达时间
-//                        int waitTime = 1 + abs(boat.corePoint.x - mid.point.x) + abs(boat.corePoint.y - mid.point.y);
-//                        int twoDistance = waitTime;
-//                        if (waitTime == 1) {//闪现原地,一定不选
-//                            twoDistance += MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
-//                        }
-//                        if (boat.assigned) {
-//                            if (boat.carry) {
-//                                //买
-//                                twoDistance += boatSellPoints.get(boat.targetSellId).getMinDistance(mid.point, mid.direction);
-//                            } else {
-//                                twoDistance += berths.get(boat.targetBerthId).getBoatMinDistance(mid.point, mid.direction);
-//                            }
-//                        }
-//
-//                        if (twoDistance <= oneDistance) {
-//                            //闪现避让
-//                            myPath.clear();
-//                            myPath.add(new PointWithDirection(boat.corePoint, boat.direction));
-//                            for (int j = 0; j < waitTime; j++) {
-//                                myPath.add(mid);
-//                            }
-//                        } else {
-//                            //正常避让
-//                            myPath = backTrackPath(gameMap, result.get(0), gameMap.boatCommonCs, 0);
-//                            if (myPath.size() == 1) {
-//                                myPath.add(myPath.get(0));
-//                            }
-//                            while (myPath.size() > BOAT_PREDICT_DISTANCE) {
-//                                myPath.remove(myPath.size() - 1);
-//                            }
-//                        }
-//                        boat.avoid = true;
-//                    }
-//                } else {
-//                    //无路可走，可以尝试提高优先级，不然就
-//                    if (boat.forcePri > 2) {
-//                        //闪现避让
-//                        //计算闪现需要时间
-//                        printError("no path can go, flash");
-//                        PointWithDirection mid = getBoatFlashDeptPoint(boat.corePoint);
-//                        //计算到达时间
-//                        int waitTime = 1 + abs(boat.corePoint.x - mid.point.x) + abs(boat.corePoint.y - mid.point.y);
-//                        myPath.clear();
-//                        myPath.add(new PointWithDirection(boat.corePoint, boat.direction));
-//                        for (int j = 0; j < waitTime; j++) {
-//                            myPath.add(mid);
-//                        }
-//                        boat.avoid = true;
-//                    } else {
-//                        boat.beConflicted = FPS;
-//                        boat.forcePri += 1;
-//                        otherPaths.clear();
-//                        otherIds.clear();
-//                        sortBoats(tmpBoats);
-//                        i = -1;
-//                        continue;
-//                    }
-//                }
-//            }
-//            //自己不动，切高优先级的撞到你，则不动
-//            PointWithDirection cur = myPath.get(0);
-//            PointWithDirection next = myPath.get(1);
-//            //不是整个船在主隧道上，且自己不动，则需要别人检查是否这个帧id小于他，或者id大于这一帧撞你移动后,都是同一个位置
-//            if (cur.equals(next) && !gameMap.boatIsAllInMainChannel(cur.point, cur.direction)) {
-//                for (int j = 0; j < otherPaths.size(); j++) {
-//                    assert otherPaths.get(j).size() >= 2;
-//                    PointWithDirection myStart = myPath.get(0);
-//                    assert myStart.equals(myPath.get(1));
-//                    PointWithDirection otherNext = otherPaths.get(j).get(1);
-//                    if (boatCheckCrash(gameMap, otherNext, myStart)) {
-//                        PointWithDirection otherStart = otherPaths.get(j).get(0);
-//                        otherPaths.get(j).clear();
-//                        for (int k = 0; k < 2; k++) {
-//                            otherPaths.get(j).add(otherStart);
-//                        }
-//                        boats.get(otherIds.get(j)).avoid = true;
-//                    }
-//                }
-//            }
-//            otherPaths.add(myPath);
-//            otherIds.add(boat.id);
-//        }
+        for (int i = 0; i < tmpBoats.length; i++) {
+            Boat boat = tmpBoats[i];
+            ArrayList<PointWithDirection> myPath = new ArrayList<>();
+            if (boat.assigned) {
+                for (int j = 0; j < min(BOAT_PREDICT_DISTANCE, boat.path.size()); j++) {
+                    myPath.add(boat.path.get(j));
+                }
+            } else {
+                //没assign
+                for (int j = 0; j < BOAT_PREDICT_DISTANCE; j++) {
+                    myPath.add(new PointWithDirection(boat.corePoint, boat.direction));
+                }
+                boat.path.clear();
+                boat.path.addAll(myPath);
+            }
+            int crashId = boatCheckCrash(gameMap, boat.id, myPath, otherPaths, otherIds, BOAT_AVOID_DISTANCE);
+            if (crashId != -1) {
+                boats.get(crashId).beConflicted = FPS;
+            }
+            if (crashId != -1 && boat.status != 1) {
+                //此时可以避让，则开始避让
+                //避让
+                //todo
+                for (boolean[] conflictPoint : gameMap.commonConflictPoints) {
+                    Arrays.fill(conflictPoint, false);
+                }
+                for (boolean[] commonNoResultPoint : gameMap.commonNoResultPoints) {
+                    Arrays.fill(commonNoResultPoint, false);
+                }
+                ArrayList<Point> conflictPoints = new ArrayList<>();
+                ArrayList<Point> noResultPoints = new ArrayList<>();
+                for (ArrayList<PointWithDirection> otherPath : otherPaths) {
+                    //别人所在位置锁住
+                    PointWithDirection pointWithDirection = otherPath.get(0);
+                    ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
+                    for (Point point : points) {
+                        if (!gameMap.isBoatMainChannel(point.x, point.y)) {
+                            conflictPoints.add(point);
+                        }
+                    }
+                }
+                for (int j = 0; j < otherPaths.size(); j++) {
+                    if (otherIds.get(j) == crashId) {
+                        //撞到那个人的预测路径不是结果点
+                        ArrayList<PointWithDirection> pointWithDirections = otherPaths.get(j);
+                        for (PointWithDirection pointWithDirection : pointWithDirections) {
+                            ArrayList<Point> points = gameMap.getBoatPoints(pointWithDirection.point, pointWithDirection.direction);
+                            for (Point point : points) {
+                                if (!gameMap.isBoatMainChannel(point.x, point.y)) {
+                                    noResultPoints.add(point);
+                                }
+                            }
+                        }
+                    }
+                }
+                for (Point point : conflictPoints) {
+                    gameMap.commonConflictPoints[point.x][point.y] = true;
+                }
+                for (Point point : noResultPoints) {
+                    gameMap.commonNoResultPoints[point.x][point.y] = true;
+                }
+                ArrayList<PointWithDirection> result = boatGetSafePoints(gameMap, gameMap.boatCommonCs, myPath.get(0), gameMap.commonConflictPoints, gameMap.commonNoResultPoints, BOAT_AVOID_CANDIDATE_SIZE);
+                for (Point point : conflictPoints) {
+                    gameMap.commonConflictPoints[point.x][point.y] = false;
+                }
+                for (Point point : noResultPoints) {
+                    gameMap.commonNoResultPoints[point.x][point.y] = false;
+                }
+                if (!result.isEmpty()) {
+                    PointWithDirection selectPoint = null;
+                    double minDistance = Integer.MAX_VALUE;
+                    for (PointWithDirection pointWithDirection : result) {
+                        double curDis = (gameMap.boatCommonCs[pointWithDirection.point.x][pointWithDirection.point.y][pointWithDirection.direction] >> 2);
+                        //到目标距离
+                        if (boat.assigned) {
+                            double toTargetDistance;
+                            if (boat.carry) {
+                                //买
+                                toTargetDistance = boatSellPoints.get(boat.targetSellId).getMinDistance(pointWithDirection.point, pointWithDirection.direction);
+                            } else {
+                                toTargetDistance = berths.get(boat.targetBerthId).getBoatMinDistance(pointWithDirection.point, pointWithDirection.direction);
+                            }
+                            curDis = curDis + toTargetDistance / 2;
+                        }
+                        if (curDis < minDistance) {
+                            selectPoint = pointWithDirection;
+                            minDistance = curDis;
+                        }
+                    }
+                    if (selectPoint != null) {
+                        int oneDistance = (gameMap.boatCommonCs[selectPoint.point.x][selectPoint.point.y][selectPoint.direction] >> 2);
+                        if (boat.assigned) {
+                            if (boat.carry) {
+                                oneDistance += boatSellPoints.get(boat.targetSellId).getMinDistance(selectPoint.point, selectPoint.direction);
+                            } else {
+                                oneDistance += berths.get(boat.targetBerthId).getBoatMinDistance(selectPoint.point, selectPoint.direction);
+                            }
+                        }
+                        //计算闪现需要时间
+                        PointWithDirection mid = getBoatFlashDeptPoint(boat.corePoint);
+                        //计算到达时间
+                        int waitTime = 1 + abs(boat.corePoint.x - mid.point.x) + abs(boat.corePoint.y - mid.point.y);
+                        int twoDistance = waitTime;
+                        if (waitTime == 1) {//闪现原地,一定不选
+                            twoDistance += MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS;
+                        }
+                        if (boat.assigned) {
+                            if (boat.carry) {
+                                //买
+                                twoDistance += boatSellPoints.get(boat.targetSellId).getMinDistance(mid.point, mid.direction);
+                            } else {
+                                twoDistance += berths.get(boat.targetBerthId).getBoatMinDistance(mid.point, mid.direction);
+                            }
+                        }
+
+                        if (twoDistance <= oneDistance) {
+                            //闪现避让
+                            myPath.clear();
+                            myPath.add(new PointWithDirection(boat.corePoint, boat.direction));
+                            for (int j = 0; j < waitTime; j++) {
+                                myPath.add(mid);
+                            }
+                        } else {
+                            //正常避让
+                            myPath = backTrackPath(gameMap, result.get(0), gameMap.boatCommonCs, 0);
+                            if (myPath.size() == 1) {
+                                myPath.add(myPath.get(0));
+                            }
+                            while (myPath.size() > BOAT_PREDICT_DISTANCE) {
+                                myPath.remove(myPath.size() - 1);
+                            }
+                        }
+                        boat.avoid = true;
+                    }
+                } else {
+                    //无路可走，可以尝试提高优先级，不然就
+                    if (boat.forcePri > 2) {
+                        //闪现避让
+                        //计算闪现需要时间
+                        printError("no path can go, flash");
+                        PointWithDirection mid = getBoatFlashDeptPoint(boat.corePoint);
+                        //计算到达时间
+                        int waitTime = 1 + abs(boat.corePoint.x - mid.point.x) + abs(boat.corePoint.y - mid.point.y);
+                        myPath.clear();
+                        myPath.add(new PointWithDirection(boat.corePoint, boat.direction));
+                        for (int j = 0; j < waitTime; j++) {
+                            myPath.add(mid);
+                        }
+                        boat.avoid = true;
+                    } else {
+                        boat.beConflicted = FPS * 2;
+                        boat.forcePri += 1;
+                        otherPaths.clear();
+                        otherIds.clear();
+                        sortBoats(tmpBoats);
+                        i = -1;
+                        continue;
+                    }
+                }
+            }
+            //自己不动，切高优先级的撞到你，则不动
+            PointWithDirection cur = myPath.get(0);
+            PointWithDirection next = myPath.get(1);
+            //不是整个船在主隧道上，且自己不动，则需要别人检查是否这个帧id小于他，或者id大于这一帧撞你移动后,都是同一个位置
+            if (cur.equals(next) && !gameMap.boatIsAllInMainChannel(cur.point, cur.direction)) {
+                for (int j = 0; j < otherPaths.size(); j++) {
+                    assert otherPaths.get(j).size() >= 2;
+                    PointWithDirection myStart = myPath.get(0);
+                    assert myStart.equals(myPath.get(1));
+                    PointWithDirection otherNext = otherPaths.get(j).get(1);
+                    if (boatCheckCrash(gameMap, otherNext, myStart)) {
+                        PointWithDirection otherStart = otherPaths.get(j).get(0);
+                        otherPaths.get(j).clear();
+                        for (int k = 0; k < 2; k++) {
+                            otherPaths.get(j).add(otherStart);
+                        }
+                        boats.get(otherIds.get(j)).avoid = true;
+                    }
+                }
+            }
+            otherPaths.add(myPath);
+            otherIds.add(boat.id);
+        }
         for (int i = 0; i < otherPaths.size(); i++) {
             int id = otherIds.get(i);//改成避让路径
             if (boats.get(id).avoid) {
@@ -853,39 +931,235 @@ public class Strategy {
                 boats.get(id).path.addAll(otherPaths.get(i));
             }
         }
+        //todo 船避让其他船
+        for (Boat boat : boats) {
+            if (boat.noMoveTime == 0) {
+                continue;
+            }
+            PointWithDirection next = boat.path.get(1);
+            if (next.point.equal(boat.corePoint) && next.direction == boat.direction) {
+                continue;
+            }
+            //下一个点,一定要是移动的点,闪现啥的不算
+            int index = -1;
+            for (int i = 0; i < 3; i++) {
+                PointWithDirection nextPoint = getNextPoint(new PointWithDirection(boat.corePoint, boat.direction), i);
+                if (nextPoint.equal(next)) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index == -1) {
+                continue;
+            }
+            //1.超过一定时间动不了，比较大
+            if (boat.noMoveTime > BOAT_FLASH_NO_MOVE_TIME) {
+                //直接闪现避让
+                printError("error no path to avoid other ,flash avoid");
+                PointWithDirection mid = getBoatFlashDeptPoint(boat.corePoint);
+                //计算到达时间
+                int waitTime = 1 + abs(boat.corePoint.x - mid.point.x) + abs(boat.corePoint.y - mid.point.y);
+                boat.path.clear();
+                boat.path.add(new PointWithDirection(boat.corePoint, boat.direction));
+                for (int j = 0; j < waitTime; j++) {
+                    boat.path.add(mid);
+                }
+                continue;
+            }
+            //2.超过一定时间自己动不了，或者自己的下一个位置撞到一个不动的人，说明其他人一定没在避让，自己得让
+            boolean avoidOther = false;
+
+            for (SimpleBoat other : totalBoats) {
+                if (other.belongToMe) {
+                    continue;
+                }
+                //撞到一个超过五帧不动的人
+                if (other.noMoveTime > 6 && boatCheckCrash(gameMap, next, other.pointWithDirection)) {
+                    avoidOther = true;
+                    break;
+                }
+            }
+
+            if (boat.noMoveTime >= BOAT_AVOID_OTHER_TRIGGER_THRESHOLD && !avoidOther) {
+                boolean otherAvoid = false;
+                if (boat.noMoveTime < 2 * BOAT_AVOID_OTHER_TRIGGER_THRESHOLD) {
+                    //超过8帧直接让，对面让不了
+                    for (SimpleBoat other : totalBoats) {
+                        if (other.belongToMe) {
+                            continue;
+                        }
+                        //撞到一个还在动得人，说明对面可能在让,自己稍微等一下
+                        if (other.noMoveTime == 0
+                                && boatCheckCrash(gameMap,
+                                next, other.pointWithDirection)) {
+                            otherAvoid = true;
+                            break;
+                        }
+                    }
+                }
+                if (!otherAvoid) {
+                    avoidOther = true;
+                }
+            }
+            if (!avoidOther) {
+                //对面超过10帧没动，或者自己没动超过2帧，则避让
+                continue;
+            }
+            //3个方向，只要撞到一个就锁
+
+
+            ArrayList<Point> curPoints = gameMap.getBoatPoints(boat.corePoint, boat.direction);
+            for (Point point : curPoints) {
+                gameMap.commonConflictPoints[point.x][point.y] = true;
+            }
+            ArrayList<Point> avoidPoints = new ArrayList<>();
+            ArrayList<Point> nextPoints = gameMap.getBoatPoints(next.point, next.direction);
+            for (Point point : nextPoints) {
+                if (!gameMap.commonConflictPoints[point.x][point.y]
+                        && !gameMap.isBoatMainChannel(point.x, point.y)) {
+                    avoidPoints.add(point);
+                }
+            }
+            for (int i = 0; i < 3; i++) {
+                PointWithDirection nextPoint = getNextPoint(new PointWithDirection(boat.corePoint, boat.direction), i);
+                //是否撞到别人
+                for (SimpleBoat simpleBoat : totalBoats) {
+                    if (simpleBoat.belongToMe) {
+                        continue;
+                    }
+                    if (i != index && simpleBoat.noMoveTime < 6) {
+                        continue;
+                    }
+                    if (!boatCheckCrash(gameMap, simpleBoat.pointWithDirection, nextPoint)) {
+                        continue;
+                    }
+                    ArrayList<Point> candidates = gameMap.getBoatPoints(simpleBoat.corePoint, simpleBoat.direction);
+                    for (Point point : candidates) {
+                        if (!gameMap.commonConflictPoints[point.x][point.y]
+                                && !gameMap.isBoatMainChannel(point.x, point.y)) {
+                            avoidPoints.add(point);
+                        }
+                    }
+                }
+            }
+            for (Point point : curPoints) {
+                gameMap.commonConflictPoints[point.x][point.y] = false;
+            }
+            //加入避让路径进去
+            for (Point avoidPoint : avoidPoints) {
+                boolean contain = false;
+                for (Point point2 : boatsAvoidOtherPoints[boat.id]) {
+                    if (avoidPoint.equal(point2)) {
+                        contain = true;
+                        break;
+                    }
+                }
+                if (!contain) {
+                    //加入进去
+                    robotsAvoidOtherPoints[boat.id].add(avoidPoint);
+                }
+            }
+            for (Point point2 : robotsAvoidOtherPoints[boat.id]) {
+                gameMap.commonConflictPoints[point2.x][point2.y] = true;
+            }
+            //保持目标不变，重新寻路,启发式搜
+            ArrayList<PointWithDirection> avoidPath = new ArrayList<>();
+            if (boat.assigned) {
+                if (boat.carry) {
+                    //to sellPoint
+                    avoidPath = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
+                            , otherPaths, otherIds, gameMap.commonConflictPoints);
+                } else {
+                    //to berth
+                    avoidPath = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId)
+                            , otherPaths, otherIds, gameMap.commonConflictPoints);
+                }
+                if (!avoidPath.isEmpty()) {
+                    boat.path = avoidPath;
+                }
+            }
+            if (avoidPath.isEmpty()) {
+                //随机找一个位置去避让，没办法了
+                printError("frame:" + frameId + "boatId:" + boat.id + ",can not avoid suiji");
+                index = random.nextInt(3);
+                PointWithDirection curPoint = boat.path.get(0);
+                PointWithDirection nextPoint = getNextPoint(boat.path.get(0), index);
+                while (!gameMap.boatCanReach(nextPoint.point, nextPoint.direction)) {
+                    index = random.nextInt(3);
+                    getNextPoint(boat.path.get(0), index);
+                }
+                boat.path.clear();
+                boat.path.add(curPoint);
+                boat.path.add(nextPoint);
+            }
+            //回退
+            for (Point point2 : boatsAvoidOtherPoints[boat.id]) {
+                gameMap.commonConflictPoints[point2.x][point2.y] = false;
+            }
+            //避让
+            boat.avoidOtherTime = BOAT_AVOID_OTHER_DURATION;
+        }
+
         for (Boat boat : boats) {
             boat.finish();
+            if (boat.avoidOtherTime-- < 0) {
+                //清空锁死点
+                boatsAvoidOtherPoints[boat.id].clear();
+            }
             if (boat.beConflicted-- < 0 && boat.forcePri != 0) {
                 boat.forcePri = 0;
             }
         }
     }
 
-    private ArrayList<PointWithDirection> boatToBerthHeuristic(Boat boat, Berth berth) {
+    private ArrayList<PointWithDirection> boatToAnyPoint(Boat boat, PointWithDirection end) {
+        int maxDeep = Integer.MAX_VALUE;
+        return boatMoveToBerthSellPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
+                , end, -1
+                , null, boat.remainRecoveryTime
+                , maxDeep, boat.id, null, null, null, null);
+    }
+
+    private ArrayList<PointWithDirection> boatToBerthHeuristic(Boat boat, Berth berth,
+                                                               ArrayList<ArrayList<PointWithDirection>> otherPaths
+            , ArrayList<Integer> otherIds, boolean[][] conflictPoints) {
         short[][][] heuristicCs = berth.boatMinDistance;
         int maxDeep = heuristicCs[boat.corePoint.x][boat.corePoint.y][boat.direction];
-        maxDeep += 5;//碰到就会立马闪现，这个不一定准，所以加一点
+        maxDeep += 4;//碰到就会立马闪现，这个不一定准，所以加一点
+        if (otherPaths != null) {
+            maxDeep += BOAT_FIND_PATH_DEEP;//避让自己深度
+        }
+        if (conflictPoints != null) {
+            maxDeep += BOAT_AVOID_OTHER_DEEP - 2;//减去一点点，太大也不好
+        }
         return boatMoveToBerthSellPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
                 , null, berth.id
                 , new PointWithDirection(berth.corePoint, berth.coreDirection), boat.remainRecoveryTime
-                , maxDeep, -1, null, null, heuristicCs, null);
+                , maxDeep, boat.id, otherPaths, otherIds, heuristicCs, conflictPoints);
     }
 
-    private ArrayList<PointWithDirection> boatToSellPointHeuristic(Boat boat, BoatSellPoint boatSellPoint) {
+    private ArrayList<PointWithDirection> boatToSellPointHeuristic(Boat boat, BoatSellPoint boatSellPoint,
+                                                                   ArrayList<ArrayList<PointWithDirection>> otherPaths
+            , ArrayList<Integer> otherIds, boolean[][] conflictPoints) {
         short[][][] heuristicCs = boatSellPoint.boatMinDistance;
         int maxDeep = heuristicCs[boat.corePoint.x][boat.corePoint.y][boat.direction];
+        if (otherPaths != null) {
+            maxDeep += BOAT_FIND_PATH_DEEP;//避让自己深度
+        }
+        if (conflictPoints != null) {
+            maxDeep += BOAT_AVOID_OTHER_DEEP;
+        }
         return boatMoveToBerthSellPoint(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
                 , new PointWithDirection(new Point(boatSellPoint.point), -1), -1
                 , null, boat.remainRecoveryTime
-                , maxDeep, -1, null, null, heuristicCs, null);
+                , maxDeep, boat.id, otherPaths, otherIds, heuristicCs, conflictPoints);
     }
 
     public PointWithDirection getBoatFlashDeptPoint(Point point) {
-//        if (boatFlashMainChannelPoint[point.x][point.y] == null) {
-//            boatUpdateFlashPoint(point.x, point.y);
-//        }
-//        return boatFlashMainChannelPoint[point.x][point.y];
-        return null;
+        if (boatFlashMainChannelPoint[point.x][point.y] == null) {
+            boatUpdateFlashPoint(point.x, point.y);
+        }
+        return boatFlashMainChannelPoint[point.x][point.y];
     }
 
 
@@ -2600,6 +2874,17 @@ public class Strategy {
             simpleBoat.input();
             //掉帧解锁泊位
 //            for (Berth berth : berths) {
+//            //悲观估计，只要别人所在的方向和位置都和泊位核心点一样，且状态不为0，则认为别人在泊位
+//            for (Berth berth : berths) {
+//                if (simpleboat.status != 0 &&
+//                        simpleboat.corePoint.equal(berth.corePoint)
+//                        && simpleboat.direction == berth.coreDirection
+//                        && berth.curBoatId == -1) {
+//                    //此时我不能发berth指令，因为会导致慢
+//                    berth.curBoatId = simpleboat.id;
+//                }
+//            }
+//
 //                if (berth.curBoatId == simpleboat.id) {
 //                    if (!(simpleboat.corePoint.equal(berth.corePoint)
 //                            && //不在泊位上，一定是离开了泊位
@@ -2612,7 +2897,7 @@ public class Strategy {
 //                    }
 //                }
 //            }
-//            if (simpleboat.status != 2 && simpleboat.lastStatus == 2) {
+//            if (simpleboat.status != 2 && simpleboat.lastStatus == 2) { //别人可能一致在闪现，自己又机会的
 //                //从装货到进入恢复状态或者行驶状态，说明船舶离开泊位，解锁,别人可以闪现过去
 //                for (Berth berth : berths) {
 //                    if (berth.curBoatId == simpleboat.id) {
@@ -2621,22 +2906,8 @@ public class Strategy {
 //                    }
 //                }
 //            }
-//            //悲观估计，只要别人所在的方向和位置都和泊位核心点一样，且状态不为0，则认为别人在泊位
-//            for (Berth berth : berths) {
-//                if (simpleboat.status != 0 &&
-//                        simpleboat.corePoint.equal(berth.corePoint)
-//                        && simpleboat.direction == berth.coreDirection
-//                        && berth.curBoatId == -1) {
-//                    //此时我不能发berth指令，因为会导致慢
-//                    berth.curBoatId = simpleboat.id;
-//                }
-//            }
-//
-//            if (simpleboat.status == 2) {
-//                int berthId = gameMap.getBelongToBerthId(simpleboat.corePoint);
-//                assert berthId != -1;
-//                berths.get(berthId).curBoatId = simpleboat.id;//一定进入泊位
-//            }
+
+
 //            if (simpleboat.lastNum < simpleboat.num) {
 //                //在装货
 //                int berthId = gameMap.getBelongToBerthId(simpleboat.corePoint);
@@ -2663,6 +2934,15 @@ public class Strategy {
 //                    simpleboat.value += poll;
 //                }
 //            }
+        }
+
+        for (SimpleBoat boat : totalBoats) {
+            //进入装货状态的一定是到达泊位的
+            if (boat.status == 2) {
+                int berthId = gameMap.getBelongToBerthId(boat.corePoint);
+                assert berthId != -1;
+                berths.get(berthId).curBoatId = boat.id;//一定进入泊位
+            }
         }
 
         //我方机器人
