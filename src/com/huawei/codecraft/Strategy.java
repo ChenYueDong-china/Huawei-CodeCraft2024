@@ -2670,6 +2670,10 @@ public class Strategy {
         if (robots.size() < ROBOTS_PER_PLAYER) {
             int size = robots.size();
             for (int i = size; i < ROBOTS_PER_PLAYER; i++) {
+                if (pendingRobots.isEmpty()) {
+                    printError("error no pending robots");
+                    System.exit(-1);
+                }
                 robots.add(pendingRobots.poll());
             }
         }
@@ -2730,6 +2734,10 @@ public class Strategy {
         if (boats.size() < BOATS_PER_PLAYER) {
             int size = boats.size();
             for (int i = size; i < BOATS_PER_PLAYER; i++) {
+                if (pendingBoats.isEmpty()) {
+                    printError("error no pending boats");
+                    System.exit(-1);
+                }
                 boats.add(pendingBoats.poll());
             }
         }
