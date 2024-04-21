@@ -20,7 +20,7 @@ public class Main {
         if (args.length == 0) {
             ProcessBuilder pb = new ProcessBuilder();
             //老年代3700-512,新生代512,超过32kb对象直接放入老年代
-            pb.command("java", "-jar", "-Xmn128m", "-Xms3500m", "-Xms3500m"
+            pb.command("java", "-jar", "-Xmn512m", "-Xms3800m", "-Xms3800m"
                     , "main.jar", "restart");
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
