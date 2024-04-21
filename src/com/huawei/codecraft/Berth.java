@@ -29,7 +29,7 @@ public class Berth {
     private GameMap gameMap;
 
 
-    public void init(GameMap gameMap) {
+    public void init(GameMap gameMap,BoatDijkstra boatDijkstra) {
         this.gameMap = gameMap;
         Point start = new Point(corePoint);
         Queue<Point> queue = new ArrayDeque<>();
@@ -78,7 +78,6 @@ public class Berth {
         dijkstra.berthUpdate(berthPoints, robotMinDistance);
 
         //船路径
-        BoatDijkstra boatDijkstra = new BoatDijkstra();
         boatDijkstra.init(corePoint,gameMap);
         boatDijkstra.berthUpdate(berthAroundPoints, corePoint, BERTH_MAX_BOAT_SEARCH_DEEP);
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {

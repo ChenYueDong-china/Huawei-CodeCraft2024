@@ -107,16 +107,15 @@ public class Strategy {
         BackgroundThread.Instance().init();
         int questionId = BackgroundThread.Instance().sendQuestion("下列哪种材质常用于制作快递袋，" +
                 "具有防水和防撕裂的特点？ A. 塑料 B. 纸板 C. 布料 D. 金属");
-
+        BoatDijkstra boatDijkstra = new BoatDijkstra();
         for (int i = 0; i < boatSellPoints.size(); i++) {
-            boatSellPoints.get(i).init(i, gameMap);
+            boatSellPoints.get(i).init(i, gameMap,boatDijkstra);
         }
         BERTH_PER_PLAYER = getIntInput();
         //码头
         for (int i = 0; i < BERTH_PER_PLAYER; i++) {
             berths.add(new Berth());
         }
-
         for (Berth berth : berths) {
             String s = inStream.readLine();
             printMost(s);
@@ -126,7 +125,7 @@ public class Strategy {
             berth.corePoint.y = Integer.parseInt(parts[2]);
             berth.loadingSpeed = Integer.parseInt(parts[3]);
             berth.id = id;
-            berth.init(gameMap);
+            berth.init(gameMap,boatDijkstra);
         }
 
 

@@ -17,9 +17,8 @@ public class BoatSellPoint {
         this.point = point;
     }
 
-    public void init(int id, GameMap gameMap) {
+    public void init(int id, GameMap gameMap,BoatDijkstra dijkstra) {
         this.id = id;
-        BoatDijkstra dijkstra = new BoatDijkstra();
         dijkstra.init(point, gameMap);
         dijkstra.update(SELL_POINT_MAX_SEARCH_DEEP);
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
