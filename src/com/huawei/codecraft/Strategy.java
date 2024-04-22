@@ -2471,6 +2471,10 @@ public class Strategy {
             if (workbenchesLock.contains(buyWorkbench.id)) {
                 continue;//别人选择过了
             }
+            if (2.0 * buyWorkbench.value / buyWorkbench.minSellDistance < bestProfit
+                    && !lastTimeBuyId.contains(buyWorkbench.id)) {
+                continue;
+            }
             if (buyWorkbench.curMaxProfitRobotId != -1) {
                 //计算过了
                 if (buyWorkbench.curMaxProfitRobotId == -2) {
