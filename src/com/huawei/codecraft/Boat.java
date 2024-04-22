@@ -75,7 +75,8 @@ public class Boat {
             //不一定是代码问题，可能同时闪现，自己没成功
             printError(frameId + "last frame flash berth default");
         }
-        if (lastFlashBerth && status != 0) {
+        if (lastFlashBerth && status != 0 && strategy.berths.get(targetBerthId).corePoint.equal(corePoint) &&
+                strategy.berths.get(targetBerthId).coreDirection == direction) {
             //闪现成功,这个泊位当前boat一定是我
             strategy.berths.get(targetBerthId).curBoatId = globalId;
         }
