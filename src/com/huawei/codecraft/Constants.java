@@ -21,7 +21,7 @@ public class Constants {
     public static int BOAT_AVOID_OTHER_DEEP = 10;//避让对面增加的深度距离
     public static int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
     public static int BOAT_FLASH_NO_MOVE_TIME = 20;//超过20帧动不了，直接闪现躲避
-    public static int BOAT_AVOID_OTHER_TRIGGER_THRESHOLD = 4;//等别人让五帧，还是不让说明问题很大，自己让吧
+    public static int BOAT_AVOID_OTHER_TRIGGER_THRESHOLD = 3;//等别人让五帧，还是不让说明问题很大，自己让吧
     public static  int BOAT_AVOID_OTHER_DURATION = 12;//持续避让10帧
     //购买超参数
     public static int INIT_ROBOT_COUNT = 8; //初始化

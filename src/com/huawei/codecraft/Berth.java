@@ -117,8 +117,9 @@ public class Berth {
         return getRobotMinDistance(pos) != Short.MAX_VALUE;
     }
 
-    public int getRobotMinDistance(Point pos) {
-        return robotMinDistance[pos.x][pos.y];
+    public short getRobotMinDistance(Point pos) {
+        return robotMinDistance[pos.x][pos.y] == Short.MAX_VALUE ?
+                Short.MAX_VALUE : (short) (robotMinDistance[pos.x][pos.y] >> 2);
     }
 
     public boolean boatCanReach(Point pos, int dir) {
@@ -168,11 +169,23 @@ public class Berth {
         for (int i = 0; i < waitTime; i++) {
             result.add(end);
         }
-        if(result.size()==1){
+        if (result.size() == 1) {
             printError("error berth start equal end");
             result.add(result.get(0));
         }
         return result;
+    }
+
+    public ArrayList<Point> robotMoveFrom(Point point) {
+        Point source = new Point(point);
+        ArrayList<Point> result = getRobotPathByCs(robotMinDistance, source);
+        if (result.size() == 1) {
+            //此时大概率有问题
+            printError("error start equal end");
+            result.add(new Point(source));//多加一个
+        }
+        //细化，转成精细坐标
+        return gameMap.toDiscretePath(result);
     }
 
 

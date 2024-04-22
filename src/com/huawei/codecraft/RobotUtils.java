@@ -97,7 +97,7 @@ public class RobotUtils {
         queue.offer(new PointWithDeep(s, 0));
         cs[s.x][s.y] = 0;
         visits[s.x][s.y] = curVisitId;
-        int curDeep = heuristicCs[s.x][s.y];
+        int curDeep = (heuristicCs[s.x][s.y] >> 2);
         TreeMap<Integer, Deque<PointWithDeep>> cacheMap = new TreeMap<>();
         cacheMap.put(curDeep, queue);
 
@@ -109,7 +109,7 @@ public class RobotUtils {
             PointWithDeep point = q.pollLast();
             assert point != null;
             int deep = point.deep;//最多8万个点,这个不是启发式，会一直搜
-            if (deep > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 8) {
+            if (dequeEntry.getKey() > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 8) {
                 break;
             }
             Point top = point.point;
@@ -164,7 +164,7 @@ public class RobotUtils {
                 visits[dx][dy] = curVisitId;
                 nextDeep = deep + 1;
                 PointWithDeep pointWithDeep = new PointWithDeep(next, nextDeep);
-                nextDeep += heuristicCs[next.x][next.y];
+                nextDeep += (heuristicCs[next.x][next.y] >> 2);
                 if (!cacheMap.containsKey(nextDeep)) {
                     cacheMap.put(nextDeep, new ArrayDeque<>());
                 }
@@ -202,7 +202,7 @@ public class RobotUtils {
                 count++;
                 Point top = queue.poll();
                 assert top != null;
-                if (heuristicCs != null && deep - 1 + heuristicCs[top.x][top.y] > maxDeep) {
+                if (heuristicCs != null && deep - 1 + (heuristicCs[top.x][top.y] >> 2) > maxDeep) {
                     continue;
                 }
                 boolean arrive = false;
@@ -302,7 +302,7 @@ public class RobotUtils {
                     if (!gameMap.robotCanReach(dx, dy) || visits[dx][dy] == curVisitId) {
                         continue;
                     }
-                    if (heuristicCs[dx][dy] >= heuristicCs[top.x][top.y]) {
+                    if ((heuristicCs[dx][dy] >> 2) >= (heuristicCs[top.x][top.y] >> 2)) {
                         //启发式剪枝，不是距离更近则直接结束
                         continue;
                     }

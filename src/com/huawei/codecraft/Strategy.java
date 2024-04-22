@@ -240,7 +240,7 @@ public class Strategy {
     }
 
     public ArrayList<Point> robotToBerthHeuristic(Robot robot, int berthId, ArrayList<ArrayList<Point>> otherPath, boolean[][] conflictPoints) {
-        short maxDeep = berths.get(berthId).robotMinDistance[robot.pos.x][robot.pos.y];
+        short maxDeep = (short) (berths.get(berthId).robotMinDistance[robot.pos.x][robot.pos.y]>>2);
         if (conflictPoints != null) {
             maxDeep += 5;//多5帧能让对面也行,不然只能随机了
         }
@@ -287,7 +287,7 @@ public class Strategy {
     private void dispatch() {
 
         long l = System.currentTimeMillis();
-        //robotDoAction();
+        robotDoAction();
         boatDoAction();
         long l2 = System.currentTimeMillis();
         if (l2 - l > 20) {
@@ -307,15 +307,15 @@ public class Strategy {
         long r = System.currentTimeMillis();
         printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
-//            for (int i = 0; i < 11; i++) {
-//                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
-//                Robot robot = new Robot(this, 0);
-//                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
-//                robot.buyFrame = frameId;
-//                robot.id = robots.size();
-//                robots.add(robot);
-//            }
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 4; i++) {
+                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
+                Robot robot = new Robot(this, 0);
+                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
+                robot.buyFrame = frameId;
+                robot.id = robots.size();
+                robots.add(robot);
+            }
+            for (int i = 0; i < 2; i++) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats.add(new Boat(this, boatCapacity));
                 money -= BOAT_PRICE;
@@ -911,6 +911,10 @@ public class Strategy {
             if (boat.noMoveTime == 0) {
                 continue;
             }
+            if (boat.path.size() < 2) {
+                printError("error boat path size <2");
+                continue;
+            }
             PointWithDirection next = boat.path.get(1);
             if (next.point.equal(boat.corePoint) && next.direction == boat.direction) {
                 continue;
@@ -948,7 +952,7 @@ public class Strategy {
                 if (other.belongToMe) {
                     continue;
                 }
-                //撞到一个超过五帧不动的人
+                //撞到一个超过五帧不动的人,
                 if (other.noMoveTime > 6 && boatCheckCrash(gameMap, next, other.pointWithDirection)) {
                     avoidOther = true;
                     break;
@@ -957,7 +961,7 @@ public class Strategy {
 
             if (boat.noMoveTime >= BOAT_AVOID_OTHER_TRIGGER_THRESHOLD && !avoidOther) {
                 boolean otherAvoid = false;
-                if (boat.noMoveTime < 2 * BOAT_AVOID_OTHER_TRIGGER_THRESHOLD) {
+                if (boat.noMoveTime < 3 * BOAT_AVOID_OTHER_TRIGGER_THRESHOLD) {
                     //超过8帧直接让，对面让不了
                     for (SimpleBoat other : totalBoats) {
                         if (other.belongToMe) {
@@ -2012,7 +2016,7 @@ public class Strategy {
 
             if (robot.carry) {
                 //启发式寻路,如果保存的话太多了
-                path = robotToBerthHeuristic(robot, robot.targetBerthId, null, null);
+                path = berths.get(robot.targetBerthId).robotMoveFrom(robot.pos);
             } else {
                 path = workbenches.get(robot.targetWorkBenchId).moveFrom(robot.pos);
             }
@@ -2341,7 +2345,7 @@ public class Strategy {
             robotCommonHeuristicCs = gameMap.robotCommonHeuristicCs[index];
             workbenches.get(targetWorkBenchId).setHeuristicCs(robotCommonHeuristicCs);
         }
-        short maxDeep = robotCommonHeuristicCs[robot.pos.x][robot.pos.y];
+        short maxDeep = (short) (robotCommonHeuristicCs[robot.pos.x][robot.pos.y]>>2);
         if (conflictPoints != null) {
             maxDeep += 5;
         }
@@ -2782,7 +2786,7 @@ public class Strategy {
                             berthId = gameMap.getBelongToBerthId(curP);
                         }
                         if (berthId == -1) {
-                            int minDistance = Integer.MAX_VALUE;
+                            short minDistance = Short.MAX_VALUE;
                             for (Berth berth : berths) {
                                 if (berth.getRobotMinDistance(simpleRobot.p) < minDistance) {
                                     berthId = berth.id;

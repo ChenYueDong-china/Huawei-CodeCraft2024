@@ -83,8 +83,7 @@ public class Robot {
             carry = num == maxNum;
             lastBuyPos = new Point(strategy.workbenches.get(targetWorkBenchId).pos);
             strategy.workbenchesLock.add(targetWorkBenchId);//锁住不能再次决策
-            //不销毁，可以加锁
-            targetWorkBenchId = -1;
+            //不一定能买的到，不能删除，也不能把自己得目标改了
         }
     }
 

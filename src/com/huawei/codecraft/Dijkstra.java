@@ -19,9 +19,9 @@ public class Dijkstra {
     }
 
 
-    void berthUpdate(ArrayList<Point> berthPoints, short[][] cs2) {
+    void berthUpdate(ArrayList<Point> berthPoints, short[][] cs) {
         // 求最短路径
-        for (short[] c : cs2) {
+        for (short[] c : cs) {
             Arrays.fill(c, Short.MAX_VALUE);
         }
         long l2 = System.currentTimeMillis();
@@ -30,7 +30,7 @@ public class Dijkstra {
         Queue<Point> queue = new ArrayDeque<>();
         for (Point point : berthPoints) {
             queue.offer(point);
-            cs2[point.x][point.y] = 0;//距离为0
+            cs[point.x][point.y] = 0;//距离为0
         }
         int count = 0;
         while (!queue.isEmpty()) {
@@ -43,15 +43,15 @@ public class Dijkstra {
                 assert top != null;
                 for (int j = 0; j < DIR.length / 2; j++) {
                     //四方向的
-                    int lastDirIdx = cs2[top.x][top.y] & 3;
+                    int lastDirIdx = cs[top.x][top.y] & 3;
                     int dirIdx = j ^ lastDirIdx; // 优先遍历上一次过来的方向
                     Point dir = DIR[dirIdx];
                     int dx = top.x + dir.x;
                     int dy = top.y + dir.y;//第一步
-                    if (!mGameMap.robotCanReach(dx, dy) || cs2[dx][dy] != Short.MAX_VALUE) {
+                    if (!mGameMap.robotCanReach(dx, dy) || cs[dx][dy] != Short.MAX_VALUE) {
                         continue; // 因为一次一定距离是1
                     }
-                    cs2[dx][dy] = deep ;//第一步家的优先级大于移位
+                    cs[dx][dy] =(short) ((deep << 2) + dirIdx) ;//第一步家的优先级大于移位
                     queue.offer(new Point(dx, dy));
                 }
             }

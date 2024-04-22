@@ -37,7 +37,7 @@ public class Workbench2 {
         //初始化dij
         Dijkstra dijkstra = new Dijkstra();
         dijkstra.init(pos, map);
-        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP, WORKBENCH_MAX_SEARCH_COUNT, fastQueue,cs);
+        dijkstra.update(WORKBENCH_MAX_SEARCH_DEEP, WORKBENCH_MAX_SEARCH_COUNT, fastQueue, cs);
     }
 
     //获得这个workbench到任意一个位置的最小距离
@@ -87,7 +87,7 @@ public class Workbench2 {
                 int fakeY = j - leftTopY;
                 if (fakeX >= 0 && fakeX <= (MAP_FILE_ROW_NUMS / 2) &&
                         fakeY >= 0 && fakeY <= (MAP_FILE_COL_NUMS / 2)) {
-                    heuristicCs[i][j] = (short) (cs[fakeX][fakeY] >> 2);
+                    heuristicCs[i][j] = cs[fakeX][fakeY];
                 } else {
                     heuristicCs[i][j] = Short.MAX_VALUE;
                 }

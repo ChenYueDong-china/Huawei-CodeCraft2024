@@ -132,8 +132,7 @@ public class Boat {
             lastFrameMove = false;//闪现泊位不能算动，因为可以跟别人抢位置
             return;
         }
-        if (next.point.equal(corePoint)) {
-            assert next.direction == direction;//避让或者已经在目标了
+        if (next.point.equal(corePoint) && next.direction == direction) {
             lastFrameMove = false;
             return;
         }
