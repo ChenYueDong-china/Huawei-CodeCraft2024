@@ -112,10 +112,14 @@ public class BoatUtils {
             }
             if (bestPoint != null) {
                 //回溯路径
+                ArrayList<PointWithDirection> path;
                 if (berthId != -1) {
-                    return getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, bestPoint, cs);
+                    path = getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, bestPoint, cs);
                 } else {
-                    return backTrackPath(gameMap, bestPoint, cs, recoveryTime);
+                    path = backTrackPath(gameMap, bestPoint, cs, recoveryTime);
+                }
+                if (path.size() == 1) {
+                    path.add(path.get(0));
                 }
             }
         }
@@ -245,10 +249,14 @@ public class BoatUtils {
         }
         if (bestPoint != null) {
             //回溯路径
+            ArrayList<PointWithDirection> path;
             if (berthId != -1) {
-                return getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, bestPoint, cs);
+                path = getBoatToBerthBackPath(gameMap, berthCorePoint, recoveryTime, bestPoint, cs);
             } else {
-                return backTrackPath(gameMap, bestPoint, cs, recoveryTime);
+                path = backTrackPath(gameMap, bestPoint, cs, recoveryTime);
+            }
+            if (path.size() == 1) {
+                path.add(path.get(0));
             }
         }
         printError("error boat no find a path");

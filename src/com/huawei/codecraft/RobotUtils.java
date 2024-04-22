@@ -109,7 +109,8 @@ public class RobotUtils {
             PointWithDeep point = q.pollLast();
             assert point != null;
             int deep = point.deep;//最多8万个点,这个不是启发式，会一直搜
-            if (dequeEntry.getKey() > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 8) {
+            int totalDeep = dequeEntry.getKey();
+            if (totalDeep > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 8) {
                 break;
             }
             Point top = point.point;
@@ -163,12 +164,16 @@ public class RobotUtils {
                 cs[dx][dy] = (short) ((deep << 2) + j);
                 visits[dx][dy] = curVisitId;
                 nextDeep = deep + 1;
+                next = new Point(dx, dy);
                 PointWithDeep pointWithDeep = new PointWithDeep(next, nextDeep);
                 nextDeep += (heuristicCs[next.x][next.y] >> 2);
                 if (!cacheMap.containsKey(nextDeep)) {
                     cacheMap.put(nextDeep, new ArrayDeque<>());
                 }
                 cacheMap.get(nextDeep).addLast(pointWithDeep);
+            }
+            if (q.isEmpty()) {
+                cacheMap.remove(totalDeep);
             }
         }
         return new ArrayList<>();
