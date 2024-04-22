@@ -2,6 +2,8 @@ package com.huawei.codecraft;
 
 import java.util.*;
 
+import static com.huawei.codecraft.BoatDijkstra.map2RelativePoint;
+import static com.huawei.codecraft.BoatUtils.*;
 import static com.huawei.codecraft.Constants.*;
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.abs;
@@ -29,7 +31,7 @@ public class Berth {
     private GameMap gameMap;
 
 
-    public void init(GameMap gameMap,BoatDijkstra boatDijkstra) {
+    public void init(GameMap gameMap, BoatDijkstra boatDijkstra) {
         this.gameMap = gameMap;
         Point start = new Point(corePoint);
         Queue<Point> queue = new ArrayDeque<>();
@@ -78,7 +80,7 @@ public class Berth {
         dijkstra.berthUpdate(berthPoints, robotMinDistance);
 
         //船路径
-        boatDijkstra.init(corePoint,gameMap);
+        boatDijkstra.init(corePoint, gameMap);
         boatDijkstra.berthUpdate(berthAroundPoints, corePoint, BERTH_MAX_BOAT_SEARCH_DEEP);
         for (int i = 0; i < MAP_FILE_ROW_NUMS; i++) {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
@@ -89,9 +91,16 @@ public class Berth {
             for (int j = 0; j < MAP_FILE_COL_NUMS; j++) {
                 Point point = new Point(i, j);
                 for (int k = 0; k < DIR.length / 2; k++) {
-                    short distance = boatDijkstra.getMoveDistance(point, k);
-                    if (distance < boatMinDistance[i][j][k]) {
-                        boatMinDistance[i][j][k] = distance;
+                    if (gameMap.boatCanReach(i, j, k)) {
+                        Point point1 = map2RelativePoint(point, k);
+                        int dir = (k ^ 1);
+                        if (boatDijkstra.minDistance[point1.x][point1.y][dir] == Short.MAX_VALUE) {
+                            continue;
+                        }
+                        int deep = (boatDijkstra.minDistance[point1.x][point1.y][dir] >> 2);
+                        int lastDir = (boatDijkstra.minDistance[point1.x][point1.y][dir] & 3);
+                        lastDir ^= 1;//回溯用
+                        boatMinDistance[i][j][k] = (short) ((deep << 2) + lastDir);
                     }
                 }
             }
@@ -116,8 +125,54 @@ public class Berth {
         return getBoatMinDistance(pos, dir) != Short.MAX_VALUE;
     }
 
-    public int getBoatMinDistance(Point pos, int dir) {
-        return boatMinDistance[pos.x][pos.y][dir];
+    public short getBoatMinDistance(Point pos, int dir) {
+        return boatMinDistance[pos.x][pos.y][dir] == Short.MAX_VALUE ?
+                Short.MAX_VALUE : (short) (boatMinDistance[pos.x][pos.y][dir] >> 2);
+    }
+
+    public ArrayList<PointWithDirection> boatMoveFrom(Point pos, int dir, int recoveryTime, boolean comeBreak) {
+        ArrayList<PointWithDirection> tmp = new ArrayList<>();
+        PointWithDirection t = new PointWithDirection(new Point(pos), dir);
+        tmp.add(t);
+        while ((boatMinDistance[t.point.x][t.point.y][t.direction] >> 2) != 0) {
+            //特殊标记过
+            if (gameMap.getBelongToBerthId(t.point) == id) {
+                int waitTime = 1 + 2 * (abs(t.point.x - corePoint.x) + abs(t.point.y - corePoint.y));
+                if ((boatMinDistance[t.point.x][t.point.y][t.direction] >> 2)
+                        == waitTime) {
+                    break;
+                }
+            }
+            if (comeBreak) {
+                if (gameMap.getBelongToBerthId(t.point) == id) {
+                    break;
+                }
+            }
+            int lastDir = boatMinDistance[t.point.x][t.point.y][t.direction] & 3;
+            //求k,相当于从这个位置走到上一个位置
+            int k;
+            if (lastDir == t.direction) {
+                k = 0;
+            } else {
+                k = gameMap.getRotationDir(t.direction, lastDir) == 0 ? 1 : 2;
+            }
+            t = getNextPoint(t, k);
+            tmp.add(t);
+        }
+        ArrayList<PointWithDirection> result = boatFixedPath(gameMap, recoveryTime, tmp);
+        //结束点添加
+        PointWithDirection end = new PointWithDirection(corePoint, coreDirection);
+        PointWithDirection lastTwoPoint = result.get(result.size() - 1);
+        //一帧闪现到达，剩下的是闪现恢复时间
+        int waitTime = 1 + 2 * (abs(lastTwoPoint.point.x - end.point.x) + abs(lastTwoPoint.point.y - end.point.y));
+        for (int i = 0; i < waitTime; i++) {
+            result.add(end);
+        }
+        if(result.size()==1){
+            printError("error berth start equal end");
+            result.add(result.get(0));
+        }
+        return result;
     }
 
 

@@ -100,15 +100,16 @@ public class GameMap {
         return boatCanReach(corePoint.x, corePoint.y, dir);
     }
 
+    private static final int[] ROTATION_DIR = {0, 3, 1, 2, 0};
+
     public int getRotationDir(int curDir, int nextDir) {
-        int[] data = {0, 3, 1, 2, 0};
-        for (int i = 1; i < data.length; i++) {
-            if (data[i] == nextDir && data[i - 1] == curDir) {
+        for (int i = 1; i < ROTATION_DIR.length; i++) {
+            if (ROTATION_DIR[i] == nextDir && ROTATION_DIR[i - 1] == curDir) {
                 return 0;
             }
         }
-        for (int i = 1; i < data.length; i++) {
-            if (data[i - 1] == nextDir && data[i] == curDir) {
+        for (int i = 1; i < ROTATION_DIR.length; i++) {
+            if (ROTATION_DIR[i - 1] == nextDir && ROTATION_DIR[i] == curDir) {
                 return 1;
             }
         }

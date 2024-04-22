@@ -42,7 +42,7 @@ public class BoatUtils {
                 count++;
                 PointWithDirection top = queue.poll();
                 assert top != null;
-                if (heuristicCs != null && deep - 1 + heuristicCs[top.point.x][top.point.y][top.direction] > maxDeep) {
+                if (heuristicCs != null && deep - 1 + (heuristicCs[top.point.x][top.point.y][top.direction] >> 2) > maxDeep) {
                     continue;
                 }
                 if (berthId != -1) {
@@ -50,7 +50,7 @@ public class BoatUtils {
                         int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
                         int curDeep = deep - 1 + nextDeep;
                         assert heuristicCs != null;
-                        assert curDeep >= heuristicCs[start.point.x][start.point.y][start.direction];
+                        assert curDeep >= (heuristicCs[start.point.x][start.point.y][start.direction] >> 2);
                         if (deep + nextDeep <= maxDeep && curDeep < bestDeep) {
                             //否则继续往前走
                             bestPoint = top;
@@ -148,7 +148,7 @@ public class BoatUtils {
         queue.offer(s);
         cs[s.point.point.x][s.point.point.y][s.point.direction] = (short) s.point.direction;
         visits[s.point.point.x][s.point.point.y][s.point.direction] = curVisitId;
-        int curDeep = heuristicCs[s.point.point.x][s.point.point.y][s.point.direction] + s.deep;
+        int curDeep = (heuristicCs[s.point.point.x][s.point.point.y][s.point.direction] >> 2) + s.deep;
         TreeMap<Integer, Deque<PointWithDeep>> cacheMap = new TreeMap<>();
         cacheMap.put(curDeep, queue);
         PointWithDirection bestPoint = null;
@@ -175,7 +175,7 @@ public class BoatUtils {
             if (berthId != -1) {
                 if (gameMap.boatGetFlashBerthId(top.point.x, top.point.y) == berthId) {
                     int nextDeep = 1 + 2 * (abs(top.point.x - berthCorePoint.point.x) + abs(top.point.y - berthCorePoint.point.y));
-                    assert deep + nextDeep >= heuristicCs[start.point.x][start.point.y][start.direction];
+                    assert deep + nextDeep >= (heuristicCs[start.point.x][start.point.y][start.direction] >> 2);
                     if (deep + nextDeep <= maxDeep) {
                         //否则继续往前走
                         bestPoint = top;
@@ -233,7 +233,7 @@ public class BoatUtils {
                 }
                 visits[next.point.x][next.point.y][next.direction] = curVisitId;
                 PointWithDeep pointWithDeep = new PointWithDeep(next, nextDeep);
-                nextDeep += heuristicCs[next.point.x][next.point.y][next.direction];
+                nextDeep += (heuristicCs[next.point.x][next.point.y][next.direction] >> 2);
                 if (!cacheMap.containsKey(nextDeep)) {
                     cacheMap.put(nextDeep, new ArrayDeque<>());
                 }
@@ -464,6 +464,11 @@ public class BoatUtils {
             t = getLastPointWithDirection(gameMap, result, t, lastDir);
         }
         Collections.reverse(result);
+        result = boatFixedPath(gameMap, recoveryTime, result);
+        return result;
+    }
+
+    static ArrayList<PointWithDirection> boatFixedPath(GameMap gameMap, int recoveryTime, ArrayList<PointWithDirection> result) {
         ArrayList<PointWithDirection> tmp = new ArrayList<>();
         tmp.add(result.get(0));
         for (int i = 0; i < recoveryTime; i++) {
@@ -475,8 +480,7 @@ public class BoatUtils {
             }
             tmp.add(result.get(i));
         }
-        result = tmp;
-        return result;
+        return tmp;
     }
 
     private static boolean boatCheckCrashInDeep(GameMap gameMap, int deep, int boatId, PointWithDirection point

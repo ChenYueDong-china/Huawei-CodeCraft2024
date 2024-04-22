@@ -255,7 +255,6 @@ public class Strategy {
     }
 
 
-
     public void mainLoop() throws IOException, InterruptedException {
         while (input()) {
             //todo 测试多机器人避让，测试多船避让，测试买船，测试最优的决策
@@ -288,7 +287,7 @@ public class Strategy {
     private void dispatch() {
 
         long l = System.currentTimeMillis();
-        robotDoAction();
+        //robotDoAction();
         boatDoAction();
         long l2 = System.currentTimeMillis();
         if (l2 - l > 20) {
@@ -632,13 +631,19 @@ public class Strategy {
             //1.正常路径
             if (boat.carry) {
                 //卖
-                boat.path = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
-                        , null, null, null);
+//                boat.path = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
+//                        , null, null, null);
+                boat.path = boatSellPoints.get(boat.targetSellId).boatMoveFrom(boat.corePoint, boat.direction, boat.remainRecoveryTime);
+//                assert boat.path.size() == paths2.size();
+
                 assert !boat.path.isEmpty();
             } else {
                 //买
                 assert boat.targetBerthId != -1;
-                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId), null, null, null);
+//                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId), null, null, null);
+//                ArrayList<PointWithDirection> paths2 = berths.get(boat.targetBerthId).boatMoveFrom(boat.corePoint, boat.direction, boat.remainRecoveryTime, false);
+                boat.path = berths.get(boat.targetBerthId).boatMoveFrom(boat.corePoint,
+                        boat.direction, boat.remainRecoveryTime, true);
                 assert !boat.path.isEmpty();
                 //目标有船，且自己里目标就差5帧了，此时直接搜到目标，后面再闪现
                 Berth berth = berths.get(boat.targetBerthId);
@@ -1080,7 +1085,7 @@ public class Strategy {
                 boat.forcePri = 0;
             }
         }
-        printError("frame:" + frameId + ",di:" + (l2 - l1) + "，path：" + (l3 - l2) + ",avoid:" + (l4 - l3) + ",avoidOther:" + (l5 - l4));
+        printDebug("frame:" + frameId + ",di:" + (l2 - l1) + "，path：" + (l3 - l2) + ",avoid:" + (l4 - l3) + ",avoidOther:" + (l5 - l4));
     }
 
     private ArrayList<PointWithDirection> boatToAnyPoint(Boat boat, PointWithDirection end) {
@@ -1095,13 +1100,12 @@ public class Strategy {
                                                                ArrayList<ArrayList<PointWithDirection>> otherPaths
             , ArrayList<Integer> otherIds, boolean[][] conflictPoints) {
         short[][][] heuristicCs = berth.boatMinDistance;
-        int maxDeep = heuristicCs[boat.corePoint.x][boat.corePoint.y][boat.direction];
-        maxDeep += 4;//碰到就会立马闪现，这个不一定准，所以加一点
+        int maxDeep = (heuristicCs[boat.corePoint.x][boat.corePoint.y][boat.direction] >> 2);
         if (otherPaths != null) {
             maxDeep += BOAT_FIND_PATH_DEEP;//避让自己深度
         }
         if (conflictPoints != null) {
-            maxDeep += BOAT_AVOID_OTHER_DEEP - 2;//减去一点点，太大也不好
+            maxDeep += BOAT_AVOID_OTHER_DEEP;//减去一点点，太大也不好
         }
         return boatMoveToBerthSellPointHeuristic(gameMap, new PointWithDirection(new Point(boat.corePoint), boat.direction)
                 , null, berth.id
