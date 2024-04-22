@@ -151,11 +151,12 @@ public class RobotUtils {
                     }
                 }
                 //转成离散去避让
-                Point next = gameMap.posToDiscrete(dx, dy);
-                Point mid = pre.add(dir);
-                int midDeep = 2 * deep - 1;
-                int nextDeep = 2 * deep;
+
                 if (otherPaths != null) {
+                    Point next = gameMap.posToDiscrete(dx, dy);
+                    Point mid = pre.add(dir);
+                    int midDeep = 2 * (deep + 1) - 1;
+                    int nextDeep = 2 * (deep + 1);
                     if (robotCheckCrashInDeep(gameMap, midDeep, mid.x, mid.y, otherPaths)
                             || robotCheckCrashInDeep(gameMap, nextDeep, next.x, next.y, otherPaths)) {
                         continue;
@@ -163,8 +164,8 @@ public class RobotUtils {
                 }
                 cs[dx][dy] = (short) ((deep << 2) + j);
                 visits[dx][dy] = curVisitId;
-                nextDeep = deep + 1;
-                next = new Point(dx, dy);
+                int nextDeep = deep + 1;
+                Point next = new Point(dx, dy);
                 PointWithDeep pointWithDeep = new PointWithDeep(next, nextDeep);
                 nextDeep += (heuristicCs[next.x][next.y] >> 2);
                 if (!cacheMap.containsKey(nextDeep)) {
@@ -247,11 +248,11 @@ public class RobotUtils {
                         }
                     }
                     //转成离散去避让
-                    Point next = gameMap.posToDiscrete(dx, dy);
-                    Point mid = pre.add(dir);
-                    int midDeep = 2 * deep - 1;
-                    int nextDeep = 2 * deep;
                     if (otherPaths != null) {
+                        Point next = gameMap.posToDiscrete(dx, dy);
+                        Point mid = pre.add(dir);
+                        int midDeep = 2 * deep - 1;
+                        int nextDeep = 2 * deep;
                         if (robotCheckCrashInDeep(gameMap, midDeep, mid.x, mid.y, otherPaths)
                                 || robotCheckCrashInDeep(gameMap, nextDeep, next.x, next.y, otherPaths)) {
                             continue;
