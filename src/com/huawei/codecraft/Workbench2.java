@@ -18,6 +18,7 @@ public class Workbench2 {
     int remainTime;
     double curMaxProfit;
     int curMaxProfitRobotId = -1;//-2表示最近的机器人都不可达
+    boolean lastFrameSelect = false;//-2表示最近的机器人都不可达
     GameMap map;
 
     public Workbench2(int id) {
@@ -26,8 +27,6 @@ public class Workbench2 {
     }
 
     public void input(GameMap map, int[][] fastQueue) throws IOException {
-        curMaxProfitRobotId = -1;
-        curMaxProfit = -GAME_FRAME - 1;
         this.map = map;
         String line = inStream.readLine();
         printMost(line);
