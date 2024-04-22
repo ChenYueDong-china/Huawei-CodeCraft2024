@@ -22,14 +22,16 @@ public class Constants {
     public static int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
     public static int BOAT_FLASH_NO_MOVE_TIME = 20;//超过20帧动不了，直接闪现躲避
     public static int BOAT_AVOID_OTHER_TRIGGER_THRESHOLD = 3;//等别人让五帧，还是不让说明问题很大，自己让吧
-    public static  int BOAT_AVOID_OTHER_DURATION = 12;//持续避让10帧
+    public static int BOAT_AVOID_OTHER_DURATION = 12;//持续避让10帧
     //购买超参数
-    public static int INIT_ROBOT_COUNT = 8; //初始化
+    public static int INIT_ROBOT_TYPE0_COUNT = 7; //初始化
+    public static int INIT_ROBOT_TYPE1_COUNT = 1; //初始化
     public static int INIT_BOAT_COUNT = 1;
-    public static int MIN_ROBOT_COUNT = 8; //最小的
+    public static int MIN_ROBOT_TYPE0_COUNT = 7; //最小的
+    public static int MIN_ROBOT_TYPE1_COUNT = 1; //最小的
     public static int MIN_BOAT_COUNT = 1;
-    public static double BUY_ROBOT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买机器人
-    public static double BUY_BOAT_FACTOR = 1;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
+    public static double BUY_ROBOT_FACTOR = 10;//动态的，0.5-1.5为好，越大越不容易买机器人
+    public static double BUY_BOAT_FACTOR = 10;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
 
 
     //调调超参数，打不过的话
@@ -60,6 +62,7 @@ public class Constants {
     public static final int MAP_DISCRETE_WIDTH = 2 * MAP_FILE_COL_NUMS + 1;    // 离散列
     public static final int MAP_DISCRETE_HEIGHT = 2 * MAP_FILE_ROW_NUMS + 1;    // 离散行
     public static final int ROBOT_PRICE = 2000;    // 离散行
+    public static final int ROBOT_TYPE1_PRICE = 3000;    // 离散行
     public static final int BOAT_PRICE = 8000;    // 离散行
     public static final int BOAT_LENGTH = 3;    // 离散行
     public static final int BOAT_WIDTH = 2;    // 离散行

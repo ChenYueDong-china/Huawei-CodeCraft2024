@@ -36,9 +36,9 @@ public class Main {
     }
 
     private static void schedule() throws IOException, InterruptedException {
-        testLLM();
-//        strategy.init();
-//        strategy.mainLoop();
+//        testLLM();
+        strategy.init();
+        strategy.mainLoop();
     }
 
     public static void testLLM() throws IOException, InterruptedException {
