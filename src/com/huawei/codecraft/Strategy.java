@@ -294,9 +294,9 @@ public class Strategy {
     private void dispatch() {
 
         long l = System.currentTimeMillis();
-        robotDoAction();
+        //robotDoAction();
         boatDoAction();
-        robotAndBoatBuy();
+        //robotAndBoatBuy();
         long l2 = System.currentTimeMillis();
         if (l2 - l > 20) {
             printError("frame:" + frameId + ",runTime:" + (l2 - l));
@@ -691,7 +691,9 @@ public class Strategy {
 //                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId), null, null, null);
 //                ArrayList<PointWithDirection> paths2 = berths.get(boat.targetBerthId).boatMoveFrom(boat.corePoint, boat.direction, boat.remainRecoveryTime, false);
                 boat.path = berths.get(boat.targetBerthId).boatMoveFrom(boat.corePoint,
-                        boat.direction, boat.remainRecoveryTime, true);
+                        boat.direction, boat.remainRecoveryTime, false);
+                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId)
+                        , null, null, null);
                 assert !boat.path.isEmpty();
                 //目标有船，且自己里目标就差5帧了，此时直接搜到目标，后面再闪现
                 Berth berth = berths.get(boat.targetBerthId);
@@ -1173,7 +1175,7 @@ public class Strategy {
                                                                    ArrayList<ArrayList<PointWithDirection>> otherPaths
             , ArrayList<Integer> otherIds, boolean[][] conflictPoints) {
         short[][][] heuristicCs = boatSellPoint.boatMinDistance;
-        int maxDeep = heuristicCs[boat.corePoint.x][boat.corePoint.y][boat.direction];
+        int maxDeep = heuristicCs[boat.corePoint.x][boat.corePoint.y][boat.direction] >> 2;
         if (otherPaths != null) {
             maxDeep += BOAT_FIND_PATH_DEEP;//避让自己深度
         }
@@ -2212,7 +2214,6 @@ public class Strategy {
                     } else {
                         dist = berths.get(robot.targetBerthId).getRobotMinDistance(candidate);
                     }
-                    assert dist != Integer.MAX_VALUE;
                     Point tmp = gameMap.posToDiscrete(candidate);
                     for (Point point : robotsPredictPath[crashId]) {
                         if (tmp.equal(point) && !gameMap.isRobotDiscreteMainChannel(candidate.x, candidate.y)) {
@@ -2256,6 +2257,9 @@ public class Strategy {
 
         //todo 机器人避让其他人
         for (Robot robot : robots) {
+            if (robot.isPending || !robot.assigned) {
+                continue;
+            }
             boolean avoidOther = false;
             Point point = gameMap.discreteToPos(robot.path.get(2));
             if (!point.equal(robot.pos)) {
@@ -2663,8 +2667,8 @@ public class Strategy {
                 //上一帧移动成功，且发了buy指令，这种时候没有买到，说明一定被别人拿了
                 if (workbench.id == robotLastFrameId) {
                     //上一帧的目标还是他，因为一定提前buy，此时如果没进入pending或者买到了，说明一定是别人拿走了
-                    workbenches.remove(workbench.id);//重新决策
                     gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y] = -1;
+                    workbenches.remove(workbench.id);//重新决策
                     robot.buyAssign = false;
                     robot.assigned = false;
                     return;
@@ -2780,11 +2784,6 @@ public class Strategy {
             assert workbench != null;
             workbench.id = workbenchId;
             workbench.input(gameMap, fastQueue);
-            if (workbench.value > 0) {
-                totalCount++;
-            } else {
-                totalCount--;
-            }
             if (workbench.value == 0) {
                 //被别人拿了，或者消失
                 if (gameMap.curWorkbenchId[workbench.pos.x][workbench.pos.y] != -1) {

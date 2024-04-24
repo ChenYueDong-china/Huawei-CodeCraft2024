@@ -127,7 +127,6 @@ public class Boat {
         PointWithDirection next = path.get(1);
         if (!carry
                 && targetBerthId != -1
-                && strategy.berths.get(targetBerthId).curBoatId == -1
                 && next.point.equal(strategy.berths.get(targetBerthId).corePoint)) {
             flashBerth();//去泊位
             lastFrameMove = false;//闪现泊位不能算动，因为可以跟别人抢位置

@@ -162,7 +162,7 @@ public class RobotUtils {
                         continue;
                     }
                 }
-                cs[dx][dy] = (short) ((deep << 2) + j);
+                cs[dx][dy] = (short) (((deep + 1) << 2) + j);
                 visits[dx][dy] = curVisitId;
                 int nextDeep = deep + 1;
                 Point next = new Point(dx, dy);
