@@ -44,14 +44,14 @@ public class Workbench2 {
     }
 
     //获得这个workbench到任意一个位置的最小距离
-    int getMinDistance(Point point) {
+    short getMinDistance(Point point) {
         int leftTopX = pos.x - MAP_FILE_ROW_NUMS / 4;
         int leftTopY = pos.y - MAP_FILE_COL_NUMS / 4;
         int fakeX = point.x - leftTopX;
         int fakeY = point.y - leftTopY;
         if (fakeX >= 0 && fakeX <= (MAP_FILE_ROW_NUMS / 2) &&
                 fakeY >= 0 && fakeY <= (MAP_FILE_COL_NUMS / 2)) {
-            return cs[fakeX][fakeY] == Short.MAX_VALUE ? Short.MAX_VALUE : cs[fakeX][fakeY] >> 2;
+            return cs[fakeX][fakeY] == Short.MAX_VALUE ? Short.MAX_VALUE : (short) (cs[fakeX][fakeY] >> 2);
         }
         return Short.MAX_VALUE;
     }
