@@ -261,7 +261,7 @@ public class BoatUtils {
             }
             return path;
         }
-        printError("error boat no find a path");
+//        printError("error boat no find a path");
         return new ArrayList<>();
     }
 
@@ -293,6 +293,10 @@ public class BoatUtils {
         PointWithDirection s = new PointWithDirection(new Point(start.point), start.direction);
         Queue<PointWithDirection> queue = new ArrayDeque<>();
         queue.offer(s);
+        cs[s.point.x][s.point.y][s.direction]
+                = 0;
+        visits[s.point.x][s.point.y][s.direction]
+                = curVisitId;
         int deep = 0;
         ArrayList<PointWithDirection> twoDistancesPoints = new ArrayList<>();
         ArrayList<PointWithDirection> result = new ArrayList<>();

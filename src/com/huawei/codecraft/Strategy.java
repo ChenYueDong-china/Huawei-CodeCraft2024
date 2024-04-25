@@ -315,15 +315,15 @@ public class Strategy {
         long r = System.currentTimeMillis();
         printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
-            for (int i = 0; i < 4; i++) {
-                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
-                Robot robot = new Robot(this, 0);
-                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
-                robot.buyFrame = frameId;
-                robot.id = robots.size();
-                robots.add(robot);
-            }
-            for (int i = 0; i < 2; i++) {
+//            for (int i = 0; i < 4; i++) {
+//                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
+//                Robot robot = new Robot(this, 0);
+//                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
+//                robot.buyFrame = frameId;
+//                robot.id = robots.size();
+//                robots.add(robot);
+//            }
+            for (int i = 0; i < 3; i++) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats.add(new Boat(this, boatCapacity));
                 money -= BOAT_PRICE;
@@ -788,12 +788,6 @@ public class Strategy {
                 //此时可以避让，则开始避让
                 //避让
                 //todo
-                for (boolean[] conflictPoint : gameMap.commonConflictPoints) {
-                    Arrays.fill(conflictPoint, false);
-                }
-                for (boolean[] commonNoResultPoint : gameMap.commonNoResultPoints) {
-                    Arrays.fill(commonNoResultPoint, false);
-                }
                 ArrayList<Point> conflictPoints = new ArrayList<>();
                 ArrayList<Point> noResultPoints = new ArrayList<>();
                 for (ArrayList<PointWithDirection> otherPath : otherPaths) {
@@ -889,7 +883,7 @@ public class Strategy {
                             }
                         } else {
                             //正常避让
-                            myPath = backTrackPath(gameMap, result.get(0), gameMap.boatCommonCs, 0);
+                            myPath = backTrackPath(gameMap, selectPoint, gameMap.boatCommonCs, 0);
                             if (myPath.size() == 1) {
                                 myPath.add(myPath.get(0));
                             }
@@ -1097,11 +1091,11 @@ public class Strategy {
                 if (boat.carry) {
                     //to sellPoint
                     avoidPath = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
-                            , otherPaths, otherIds, gameMap.commonConflictPoints);
+                            , null, null, gameMap.commonConflictPoints);
                 } else {
                     //to berth
                     avoidPath = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId)
-                            , otherPaths, otherIds, gameMap.commonConflictPoints);
+                            , null, null, gameMap.commonConflictPoints);
                 }
                 if (!avoidPath.isEmpty()) {
                     boat.path = avoidPath;
