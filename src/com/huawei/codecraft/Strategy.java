@@ -1194,7 +1194,7 @@ public class Strategy {
             if (selectPoint == null) {
                 continue;
             }
-            if (boat.num == boat.capacity || frameId + minSellDistance >= GAME_FRAME - min(FPS / 5, boats.size() * 5)) {
+            if (boat.num == boat.capacity || frameId + minSellDistance >= GAME_FRAME - min(FPS / 2 + 5, boats.size() * 5)) {
                 //卖
                 int value = boat.num;
                 double profit = 1.0 * value / minSellDistance;
