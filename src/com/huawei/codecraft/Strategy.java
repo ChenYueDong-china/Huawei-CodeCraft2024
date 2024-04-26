@@ -552,12 +552,19 @@ public class Strategy {
         } else {
             //咋搞
             int minBuyCount = Integer.MAX_VALUE;
+            ArrayList<Integer> minCountIds = new ArrayList<>();
             for (int i = 0; i < robotPurchaseCount.size(); i++) {
                 if (robotPurchaseCount.get(i) < minBuyCount) {
                     minBuyCount = robotPurchaseCount.get(i);
-                    bestI = i;
+                    minCountIds.clear();
+                    minCountIds.add(i);
+                }
+                if (robotPurchaseCount.get(i) == minBuyCount) {
+                    minCountIds.add(i);
                 }
             }
+            int index = random.nextInt(minCountIds.size());
+            bestI = minCountIds.get(index);
         }
         return bestI;
     }
