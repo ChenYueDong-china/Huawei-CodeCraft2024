@@ -41,6 +41,11 @@ public class SimpleBoat {
         corePoint.y = Integer.parseInt(parts[3]);
         direction = Integer.parseInt(parts[4]);
         pointWithDirection = new PointWithDirection(new Point(corePoint), direction);
+        if (pointWithDirection.equal(lastPointWithDirection)) {
+            noMoveTime++;
+        } else {
+            noMoveTime = 0;
+        }
         lastStatus = status;
         status = Integer.parseInt(parts[5]);
         path.offer(pointWithDirection);

@@ -319,13 +319,14 @@ public class Strategy {
                 robots.add(robot);
             }
             for (int i = 0; i < 1; i++) {
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(3).x, boatPurchasePoint.get(3).y);
                 boats.add(new Boat(this, boatCapacity));
                 money -= BOAT_PRICE;
             }
         }
         while (money >= BOAT_PRICE && boats.size() < 30) {
-            outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+            int index = random.nextInt(4);
+            outStream.printf("lboat %d %d\n", boatPurchasePoint.get(index).x, boatPurchasePoint.get(index).y);
             boats.add(new Boat(this, boatCapacity));
             money -= BOAT_PRICE;
         }
@@ -1081,10 +1082,10 @@ public class Strategy {
                 }
                 if (!contain) {
                     //加入进去
-                    robotsAvoidOtherPoints[boat.id].add(avoidPoint);
+                    boatsAvoidOtherPoints[boat.id].add(avoidPoint);
                 }
             }
-            for (Point point2 : robotsAvoidOtherPoints[boat.id]) {
+            for (Point point2 : boatsAvoidOtherPoints[boat.id]) {
                 gameMap.commonConflictPoints[point2.x][point2.y] = true;
             }
             //保持目标不变，重新寻路,启发式搜
