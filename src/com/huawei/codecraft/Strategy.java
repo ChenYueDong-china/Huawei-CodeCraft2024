@@ -291,83 +291,11 @@ public class Strategy {
         long l = System.currentTimeMillis();
         robotDoAction();
         boatDoAction();
-        //robotAndBoatBuy();
+        robotAndBoatBuy();
         long l2 = System.currentTimeMillis();
         if (l2 - l > 20) {
             printError("frame:" + frameId + ",runTime:" + (l2 - l));
         }
-//        if (frameId > 19500 && money >= 3000) {
-//            //再买一个
-//            outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 1);
-//            Robot robot = new Robot(this, 1);
-//            robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
-//            robot.buyFrame = frameId;
-//            robot.id = robots.size();
-//            robots.add(robot);
-//            money -= 3000;
-//        }
-
-        long r = System.currentTimeMillis();
-        printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
-        if (frameId == 1) {
-            for (int i = 0; i < 8; i++) {
-                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
-                Robot robot = new Robot(this, 0);
-                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
-                robot.buyFrame = frameId;
-                robot.id = robots.size();
-                robots.add(robot);
-            }
-            for (int i = 0; i < 1; i++) {
-                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(3).x, boatPurchasePoint.get(3).y);
-                boats.add(new Boat(this, boatCapacity));
-                money -= BOAT_PRICE;
-            }
-        }
-        while (money >= BOAT_PRICE && boats.size() < 30) {
-            int index = random.nextInt(4);
-            outStream.printf("lboat %d %d\n", boatPurchasePoint.get(index).x, boatPurchasePoint.get(index).y);
-            boats.add(new Boat(this, boatCapacity));
-            money -= BOAT_PRICE;
-        }
-//        if (money > 2000 && ROBOTS_PER_PLAYER < 50) {
-//            outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
-//            Robot robot = new Robot(this, 0);
-//            robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
-//            robot.buyFrame = frameId;
-//            robot.id = robots.size();
-//            robots.add(robot);
-//        }
-//            boatDoAction();
-//            robotAndBoatBuy();
-
-//        if (frameId == 1) {
-//            for (int i = 0; i < 1; i++) {
-//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
-//                boats.add(new Boat(this, boatCapacity));
-//                outStream.printf("lboat %d %d\n", boatPurchasePoint.get(1).x, boatPurchasePoint.get(1).y);
-//                boats.add(new Boat(this, boatCapacity));
-//            }
-//        }
-//        if (frameId > 1 && frameId < 500) {
-//            Boat boat1 = boats.get(0);
-//            boat1.path = boatToPoint(boat1, new PointWithDirection(new Point(111, 98), -1), 9999);
-//            Boat boat2 = boats.get(1);
-//            boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1), 9999);
-//            //不然肯定dij不对
-//            ArrayList<ArrayList<PointWithDirection>> otherPaths = new ArrayList<>();
-//            ArrayList<Integer> otherIds = new ArrayList<>();
-//            otherPaths.add(boat1.path);
-//            otherIds.add(0);
-//            if (boatCheckCrash(gameMap, boat2.id, boat2.path, otherPaths, otherIds, Integer.MAX_VALUE) != -1) {
-//                //撞了
-//                boat2.path = boatToPoint(boat2, new PointWithDirection(new Point(49, 120), -1)
-//                        , 9999, otherPaths, otherIds);
-//
-//            }
-//            boat1.finish();
-//            boat2.finish();
-//        }
     }
 
 
@@ -445,26 +373,24 @@ public class Strategy {
         estimateMaxRobotCount = (estimateRemainTotalCount + remainCount) * avgWorkBenchLoopDistance / (GAME_FRAME - frameId);
         double remainTotalValue = (estimateRemainTotalCount + remainCount) * goodAvgValue;
         double curCanGetValue = min(remainTotalValue,
-                1.0 * pullScore / totalValue * remainTotalValue * (0.5 * (robots.size() - curRobotCount)
-                        / curRobotCount + 1));
+                1.0 * pullScore / 2 / totalValue * remainTotalValue * robots.size()
+                        / curRobotCount);
         remainTotalValue -= curCanGetValue;
         int buyRobotCount = 0;
         double curRemainValue = remainTotalValue;
         while (robots.size() + pendingRobots.size() + buyRobotCount < estimateMaxRobotCount) {
-            double oneRobotValue = curRemainValue * 1.0 * pullScore / totalValue / curRobotCount;
+            double oneRobotValue = curRemainValue * 1.0 * pullScore / 2 / totalValue / curRobotCount;
             if (oneRobotValue > BUY_ROBOT_FACTOR * ROBOT_PRICE) {
                 buyRobotCount++;
-                curRemainValue -= oneRobotValue;
+                curRemainValue -= oneRobotValue * 2;
             } else {
                 break;
             }
         }
 
         //决定是否买船
-        int berthTotalNum = 0;
         int berthRemainNum = 0;
         for (Berth berth : berths) {
-            berthTotalNum += berth.totalGoodsNums;
             berthRemainNum += berth.goodsNums;
         }
         for (Boat boat : boats) {
@@ -473,6 +399,7 @@ public class Strategy {
                 berthRemainNum -= needCount;
             }
         }
+        int berthTotalNum = totalPullGoodsCount;//只看自己丢的货物
         //估计未来到达的货物
         double berthSpeed = 1.0 * berthTotalNum / frameId;
         double estimateBerthComingGood = 1.0 * berthSpeed * (GAME_FRAME - frameId) * robots.size() / curRobotCount;
@@ -482,7 +409,7 @@ public class Strategy {
         int buyBoatCount = 0;
         while (boats.size() + pendingBoats.size() + buyBoatCount < estimateMaxBoatCount) {
             double oneBoatRealValue = oneBoatCanGetValue * min(estimateMaxBoatCount - buyBoatCount - boats.size(), 1);
-            if (oneBoatRealValue > BUY_BOAT_FACTOR * BOAT_PRICE) {
+            if (oneBoatRealValue / 2 > BUY_BOAT_FACTOR * BOAT_PRICE) {
                 buyBoatCount++;
             } else {
                 break;
@@ -500,8 +427,9 @@ public class Strategy {
                 return;
             }
         }
-        while (buyRobotCount > 0 && money >= ROBOT_TYPE1_PRICE) {
-            buyRobot(1);
+        while (buyRobotCount > 0 && (money >= (FUTURE_BUY_ROBOT_TYPE == 0 ? ROBOT_PRICE
+                : ROBOT_TYPE1_PRICE))) {
+            buyRobot(FUTURE_BUY_ROBOT_TYPE);
             buyRobotCount--;
         }
         while (buyBoatCount == 1) {
@@ -589,34 +517,34 @@ public class Strategy {
         double maxProfit = 0;
         int bestI = -1;
         int bestWorkBenchId = -1;
-        for (int i = 0; i < robotPurchasePoint.size(); i++) {
-            for (Workbench2 buyWorkbench : workbenches.values()) {
-                if (2.0 * buyWorkbench.value / buyWorkbench.minSellDistance < maxProfit) {
-                    continue;
-                }
-                if (workbenchesPermanentLock.contains(buyWorkbench.id)) {
-                    continue;
-                }
-                if (workbenchesLock.contains(buyWorkbench.id)) {
-                    continue;//别人选择过了
-                }
+        for (Workbench2 buyWorkbench : workbenches.values()) {
+            if (buyWorkbench.value < PRECIOUS_WORKBENCH_BOUNDARY && workbenches.size() > 1000) {
+                continue;//只买贵重物品
+            }
+            if (workbenchesLock.contains(buyWorkbench.id)) {
+                continue;//别人选择过了
+            }
+            short buyTime = Short.MAX_VALUE;
+            int curI = -1;
+            for (int i = 0; i < robotPurchasePoint.size(); i++) {
                 Point point = robotPurchasePoint.get(i);
-                int buyTime = buyWorkbench.getMinDistance(point);
-                int sellTime = buyWorkbench.minSellDistance;
-                if (frameId + buyTime + sellTime > GAME_FRAME) {
-                    continue;
+                short curBuyTime = buyWorkbench.getMinDistance(point);
+                if (curBuyTime < buyTime) {
+                    buyTime = curBuyTime;
+                    curI = i;
                 }
-                double value = buyWorkbench.value;
-                if (value < PRECIOUS_WORKBENCH_BOUNDARY) {
-                    value += DISAPPEAR_REWARD_FACTOR * value * (WORKBENCH_EXIST_TIME - buyWorkbench.remainTime)
-                            / WORKBENCH_EXIST_TIME;
-                }
-                double profit = value / (buyTime + sellTime);
-                if (profit > maxProfit) {
-                    maxProfit = profit;
-                    bestI = i;
-                    bestWorkBenchId = buyWorkbench.id;
-                }
+            }
+
+            int sellTime = buyWorkbench.minSellDistance;
+            if (frameId + buyTime + sellTime > GAME_FRAME) {
+                continue;
+            }
+            double value = buyWorkbench.value;
+            double profit = value / (double) (buyTime + sellTime);
+            if (profit > maxProfit) {
+                maxProfit = profit;
+                bestI = curI;
+                bestWorkBenchId = buyWorkbench.id;
             }
         }
         if (bestWorkBenchId != -1) {

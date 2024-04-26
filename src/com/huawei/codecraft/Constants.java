@@ -32,6 +32,7 @@ public class Constants {
     public static int MIN_BOAT_COUNT = 1;
     public static double BUY_ROBOT_FACTOR = 10;//动态的，0.5-1.5为好，越大越不容易买机器人
     public static double BUY_BOAT_FACTOR = 10;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
+    public static int FUTURE_BUY_ROBOT_TYPE = 1;//0或者1
     public static int ROBOT_DIRECTION_AVOID_OTHER_TRIGGER_THRESHOLD = 5;   // 直接避让触发阈值
     public static int ROBOT_AVOID_OTHER_DEEP = 6;   // 直接避让触发阈值
     public static double BOAT_CHANGE_FACTOR = 0.9;   // 直接避让触发阈值
