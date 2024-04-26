@@ -18,7 +18,7 @@ public class Constants {
     public static int BOAT_PREDICT_DISTANCE = 16;//预测距离,待测试
     public static int BOAT_AVOID_DISTANCE = 8;//避让距离，一人前进四格，就是4帧之内撞
     public static int BOAT_FIND_PATH_DEEP = 2;//避让距离
-    public static int BOAT_AVOID_OTHER_DEEP = 10;//避让对面增加的深度距离
+    public static int BOAT_AVOID_OTHER_DEEP = 15;//避让对面增加的深度距离
     public static int BOAT_AVOID_CANDIDATE_SIZE = 25;//避让候选集
     public static int BOAT_FLASH_NO_MOVE_TIME = 20;//超过20帧动不了，直接闪现躲避
     public static int BOAT_AVOID_OTHER_TRIGGER_THRESHOLD = 3;//等别人让五帧，还是不让说明问题很大，自己让吧
@@ -32,7 +32,10 @@ public class Constants {
     public static int MIN_BOAT_COUNT = 1;
     public static double BUY_ROBOT_FACTOR = 10;//动态的，0.5-1.5为好，越大越不容易买机器人
     public static double BUY_BOAT_FACTOR = 10;//动态的，0.5-1.5为好，越大越不容易买船,暂时不买船
-
+    public static int ROBOT_DIRECTION_AVOID_OTHER_TRIGGER_THRESHOLD = 5;   // 直接避让触发阈值
+    public static int ROBOT_AVOID_OTHER_DEEP = 6;   // 直接避让触发阈值
+    public static double BOAT_CHANGE_FACTOR = 0.9;   // 直接避让触发阈值
+    public static int BOAT_CHANGE_BERTH_MIN_NUM_DIFF =2;   // 直接避让触发阈值
 
     //调调超参数，打不过的话
     public static final boolean GET_LAST_ONE = false;//是否拿倒数第一

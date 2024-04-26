@@ -165,7 +165,7 @@ public class BoatUtils {
             PointWithDeep point = q.pollLast();
             assert point != null;
             int deep = point.deep;//最多16万个点,这个不是启发式，会一直搜
-            if (totalDeep > maxDeep || count > MAP_FILE_ROW_NUMS * MAP_FILE_COL_NUMS / 4) {
+            if (totalDeep > maxDeep || count > MAP_FILE_ROW_NUMS * 5) {
                 break;
             }
             PointWithDirection top = point.point;

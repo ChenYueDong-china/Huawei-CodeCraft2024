@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import static com.huawei.codecraft.Utils.*;
 import static java.lang.Math.abs;
 import static com.huawei.codecraft.Constants.*;
+import static java.lang.Math.max;
 
 public class Boat {
 
@@ -70,15 +71,12 @@ public class Boat {
 
         if (lastFlashBerth && status == 0) {//闪现，且这一帧没等待或者出问题
             //没闪现成功
-            assert strategy.berths.get(targetBerthId).curBoatId != -1;
-            assert strategy.berths.get(targetBerthId).curBoatId < globalId;
             //不一定是代码问题，可能同时闪现，自己没成功
             printError(frameId + "last frame flash berth default");
         }
-        if (lastFlashBerth && status != 0 && strategy.berths.get(targetBerthId).corePoint.equal(corePoint) &&
-                strategy.berths.get(targetBerthId).coreDirection == direction) {
+        if (lastFlashBerth && status != 0) {
             //闪现成功,这个泊位当前boat一定是我
-            strategy.berths.get(targetBerthId).curBoatId = globalId;
+            strategy.berths.get(targetBerthId).curBoatGlobalId = globalId;
         }
         lastFlashBerth = false;
         if (lastFlashDept && !strategy.gameMap.boatIsAllInMainChannel(corePoint, direction)) {
@@ -93,6 +91,10 @@ public class Boat {
         if (status == 1) {
             //恢复状态
             remainRecoveryTime--;
+            if (remainRecoveryTime <= 0) {
+                printError("error");
+            }
+            remainRecoveryTime = max(1, remainRecoveryTime);
         } else {
             //可能掉帧，一般情况下可能为1或者0
             remainRecoveryTime = 0;
@@ -119,7 +121,7 @@ public class Boat {
         }
         if (status == 1 || (status == 2
                 && targetBerthId != -1
-                && strategy.berths.get(targetBerthId).curBoatId == id)) {
+                && strategy.berths.get(targetBerthId).curBoatGlobalId == id)) {
             //恢复状态，或者已经在目标泊位装货了
             lastFrameMove = false;
             return;
@@ -128,9 +130,11 @@ public class Boat {
         if (!carry
                 && targetBerthId != -1
                 && next.point.equal(strategy.berths.get(targetBerthId).corePoint)) {
-            flashBerth();//去泊位
-            lastFrameMove = false;//闪现泊位不能算动，因为可以跟别人抢位置
-            return;
+            if (strategy.berths.get(targetBerthId).curBoatGlobalId == -1 || corePoint == next.point) {
+                flashBerth();//去泊位
+                lastFrameMove = false;//闪现泊位不能算动，因为可以跟别人抢位置
+                return;
+            }
         }
         if (next.point.equal(corePoint) && next.direction == direction) {
             lastFrameMove = false;

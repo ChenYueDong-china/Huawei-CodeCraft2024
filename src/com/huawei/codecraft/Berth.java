@@ -11,7 +11,9 @@ import static java.lang.Math.abs;
 public class Berth {
 
     int id;
-    public int curBoatId = -1;
+    public int curBoatGlobalId = -1;
+    public int lastBoatGlobalId = -1;
+    public int curBoatIdNoChangeTime = 0;
     Point corePoint = new Point();
     int coreDirection = 0;
     int loadingSpeed;
@@ -137,7 +139,7 @@ public class Berth {
         tmp.add(t);
         while ((boatMinDistance[t.point.x][t.point.y][t.direction] >> 2) != 0) {
             //特殊标记过
-            if (gameMap.getBelongToBerthId(t.point) == id) {
+            if (gameMap.boatGetFlashBerthId(t.point.x, t.point.y) == id) {
                 int waitTime = 1 + 2 * (abs(t.point.x - corePoint.x) + abs(t.point.y - corePoint.y));
                 if ((boatMinDistance[t.point.x][t.point.y][t.direction] >> 2)
                         == waitTime) {
@@ -145,7 +147,7 @@ public class Berth {
                 }
             }
             if (comeBreak) {
-                if (gameMap.getBelongToBerthId(t.point) == id) {
+                if (gameMap.boatGetFlashBerthId(t.point.x, t.point.y) == id) {
                     break;
                 }
             }

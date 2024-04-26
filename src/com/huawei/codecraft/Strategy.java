@@ -26,6 +26,7 @@ public class Strategy {
     public static int workbenchId = 0;
     public final HashMap<Integer, Workbench2> workbenches = new HashMap<>();
     public final HashSet<Integer> workbenchesLock = new HashSet<>();//锁住某些工作台
+    public final HashSet<Integer> berthLock = new HashSet<>();//锁住某些工作台
     public final HashSet<Integer> workbenchesPermanentLock = new HashSet<>();//万一自己,没拿到，永久锁住
 
 
@@ -249,7 +250,7 @@ public class Strategy {
     public ArrayList<Point> robotToBerthHeuristic(Robot robot, int berthId, ArrayList<ArrayList<Point>> otherPath, boolean[][] conflictPoints) {
         short maxDeep = (short) (berths.get(berthId).robotMinDistance[robot.pos.x][robot.pos.y] >> 2);
         if (conflictPoints != null) {
-            maxDeep += 5;//多5帧能让对面也行,不然只能随机了
+            maxDeep += (short) (ROBOT_AVOID_OTHER_DEEP);//多5帧能让对面也行,不然只能随机了
         }
 //        if (otherPath == null && conflictPoints == null) {
 //            return robotMoveToBerth(gameMap, robot.pos, berthId, berths.get(berthId).robotMinDistance);
@@ -268,25 +269,19 @@ public class Strategy {
             long l = System.currentTimeMillis();
             dispatch();
             long e = System.currentTimeMillis();
-//            printDebug("frameId:" + frameId + ",time:" + (e - l));
             if (e - l > 50) {
                 printError("frameId:" + frameId + ",time:" + (e - l));
             }
-            if (frameId >= GAME_FRAME - 2) {
-                int sellCount = 0;
-                for (Boat boat : boats) {
-                    sellCount += boat.sellCount;
-                }
-                printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:" + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
-            }
-            //留2ms阈值
-//            while (BackgroundThread.Instance().IsWorking() && frameStartTime + 15 < System.currentTimeMillis()) {
-//                //noinspection BusyWait
-//                Thread.sleep(1);
-//            }
+
             outStream.print("OK\n");
             outStream.flush();
         }
+        int sellCount = 0;
+        for (Boat boat : boats) {
+            sellCount += boat.sellCount;
+        }
+        printError("jumpTime:" + jumpCount + ",buyRobotCount:" + robots.size() + ",buyBoatCount:" + boats.size() + ",totalValue:"
+                + totalValue + ",pullValue:" + pullScore + ",score:" + money + ",boatSellCount:" + sellCount);
         BackgroundThread.Instance().exitThread();
     }
 
@@ -294,7 +289,7 @@ public class Strategy {
     private void dispatch() {
 
         long l = System.currentTimeMillis();
-        //robotDoAction();
+        robotDoAction();
         boatDoAction();
         //robotAndBoatBuy();
         long l2 = System.currentTimeMillis();
@@ -315,19 +310,24 @@ public class Strategy {
         long r = System.currentTimeMillis();
         printDebug("frame:" + frameId + ",robotRunTime:" + (r - l));
         if (frameId == 1) {
-//            for (int i = 0; i < 4; i++) {
-//                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
-//                Robot robot = new Robot(this, 0);
-//                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
-//                robot.buyFrame = frameId;
-//                robot.id = robots.size();
-//                robots.add(robot);
-//            }
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 8; i++) {
+                outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
+                Robot robot = new Robot(this, 0);
+                robotPurchaseCount.set(0, robotPurchaseCount.get(0) + 1);
+                robot.buyFrame = frameId;
+                robot.id = robots.size();
+                robots.add(robot);
+            }
+            for (int i = 0; i < 1; i++) {
                 outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
                 boats.add(new Boat(this, boatCapacity));
                 money -= BOAT_PRICE;
             }
+        }
+        while (money >= BOAT_PRICE && boats.size() < 30) {
+            outStream.printf("lboat %d %d\n", boatPurchasePoint.get(0).x, boatPurchasePoint.get(0).y);
+            boats.add(new Boat(this, boatCapacity));
+            money -= BOAT_PRICE;
         }
 //        if (money > 2000 && ROBOTS_PER_PLAYER < 50) {
 //            outStream.printf("lbot %d %d %d\n", robotPurchasePoint.get(0).x, robotPurchasePoint.get(0).y, 0);
@@ -648,6 +648,17 @@ public class Strategy {
         for (int i = 0; i < goodsNumList.length; i++) {
             goodsNumList[i] = berths.get(i).goodsNums;
         }
+        for (Berth berth : berths) {
+            //别人占领的
+            if (berth.curBoatGlobalId != -1) {
+                SimpleBoat boat = totalBoats.get(berth.curBoatGlobalId);
+                if (boat.belongToMe) {
+                    continue;
+                }
+                int needCount = max(0, boatCapacity - boat.num);
+                goodsNumList[berth.id] -= needCount;
+            }
+        }
         for (Robot robot : robots) {
             if (!robot.assigned) {
                 continue;
@@ -679,25 +690,17 @@ public class Strategy {
             //1.正常路径
             if (boat.carry) {
                 //卖
-//                boat.path = boatToSellPointHeuristic(boat, boatSellPoints.get(boat.targetSellId)
-//                        , null, null, null);
                 boat.path = boatSellPoints.get(boat.targetSellId).boatMoveFrom(boat.corePoint, boat.direction, boat.remainRecoveryTime);
-//                assert boat.path.size() == paths2.size();
-
                 assert !boat.path.isEmpty();
             } else {
                 //买
                 assert boat.targetBerthId != -1;
-//                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId), null, null, null);
-//                ArrayList<PointWithDirection> paths2 = berths.get(boat.targetBerthId).boatMoveFrom(boat.corePoint, boat.direction, boat.remainRecoveryTime, false);
                 boat.path = berths.get(boat.targetBerthId).boatMoveFrom(boat.corePoint,
                         boat.direction, boat.remainRecoveryTime, false);
-                boat.path = boatToBerthHeuristic(boat, berths.get(boat.targetBerthId)
-                        , null, null, null);
                 assert !boat.path.isEmpty();
                 //目标有船，且自己里目标就差5帧了，此时直接搜到目标，后面再闪现
                 Berth berth = berths.get(boat.targetBerthId);
-                if (berth.curBoatId != -1 && berth.curBoatId != boat.id) {
+                if (berth.curBoatGlobalId != -1 && berth.curBoatGlobalId != boat.globalId) {
                     for (int i = 0; i < min(boat.path.size(), 5); i++) {
                         PointWithDirection next = boat.path.get(i);
                         if (next.point.equal(berth.corePoint) && !boat.corePoint.equal(berth.corePoint)) {
@@ -787,7 +790,6 @@ public class Strategy {
             if (crashId != -1 && boat.status != 1) {
                 //此时可以避让，则开始避让
                 //避让
-                //todo
                 ArrayList<Point> conflictPoints = new ArrayList<>();
                 ArrayList<Point> noResultPoints = new ArrayList<>();
                 for (ArrayList<PointWithDirection> otherPath : otherPaths) {
@@ -997,7 +999,7 @@ public class Strategy {
                     continue;
                 }
                 //撞到一个超过五帧不动的人,
-                if (other.noMoveTime > 6 && boatCheckCrash(gameMap, next, other.pointWithDirection)) {
+                if (other.noMoveTime > 5 && boatCheckCrash(gameMap, next, other.pointWithDirection)) {
                     avoidOther = true;
                     break;
                 }
@@ -1005,7 +1007,7 @@ public class Strategy {
 
             if (boat.noMoveTime >= BOAT_AVOID_OTHER_TRIGGER_THRESHOLD && !avoidOther) {
                 boolean otherAvoid = false;
-                if (boat.noMoveTime < 3 * BOAT_AVOID_OTHER_TRIGGER_THRESHOLD) {
+                if (boat.noMoveTime < 2 * BOAT_AVOID_OTHER_TRIGGER_THRESHOLD) {
                     //超过8帧直接让，对面让不了
                     for (SimpleBoat other : totalBoats) {
                         if (other.belongToMe) {
@@ -1050,7 +1052,7 @@ public class Strategy {
                     if (simpleBoat.belongToMe) {
                         continue;
                     }
-                    if (i != index && simpleBoat.noMoveTime < 6) {
+                    if (i != index && simpleBoat.noMoveTime < 5) {
                         continue;
                     }
                     if (!boatCheckCrash(gameMap, simpleBoat.pointWithDirection, nextPoint)) {
@@ -1133,7 +1135,7 @@ public class Strategy {
                 boat.forcePri = 0;
             }
         }
-        printDebug("frame:" + frameId + ",di:" + (l2 - l1) + "，path：" + (l3 - l2) + ",avoid:" + (l4 - l3) + ",avoidOther:" + (l5 - l4));
+        printError("frame:" + frameId + ",BoatDi:" + (l2 - l1) + "，path：" + (l3 - l2) + ",avoid:" + (l4 - l3) + ",avoidOther:" + (l5 - l4));
     }
 
     private ArrayList<PointWithDirection> boatToAnyPoint(Boat boat, PointWithDirection end) {
@@ -1292,11 +1294,12 @@ public class Strategy {
 
         for (Berth berth : berths) {
             //停靠在泊位上了
-            if (berth.curBoatId != -1 && berth.goodsNums > 0
-                    && !boats.get(berth.curBoatId).buyAssign
-                    && !boats.get(berth.curBoatId).carry) {
+            if (berth.curBoatGlobalId != -1
+                    && berth.goodsNums > 0 && totalBoats.get(berth.curBoatGlobalId).belongToMe
+                    && !boats.get(totalBoats.get(berth.curBoatGlobalId).localId).buyAssign
+                    && !boats.get(totalBoats.get(berth.curBoatGlobalId).localId).carry) {
                 //没去卖
-                Boat boat = boats.get(berth.curBoatId);
+                Boat boat = boats.get(totalBoats.get(berth.curBoatGlobalId).localId);
                 decisionBoatBuy(boat, berth, boatSellPoints.get(boat.targetSellId), goodsNumList);
                 return true;
             }
@@ -1308,6 +1311,9 @@ public class Strategy {
 
         for (int i = 0; i < berths.size(); i++) {
             Berth berth = berths.get(i);
+            if (berthLock.contains(berth.id)) {
+                continue;
+            }
             int berthGoodNum = goodsNumList[i];
             //找最近的船
             Boat selectBoat = null;
@@ -1352,10 +1358,13 @@ public class Strategy {
             int needCount = selectBoat.carry ? selectBoat.capacity : selectBoat.capacity - selectBoat.num;
             int value = min(needCount, berthGoodNum);
             double profit = 1.0 * value / (minSellDistance + minBuyDistance);
-            if (!selectBoat.carry && selectBoat.targetBerthId == berth.id
-                    && berth.curBoatId != selectBoat.id) {//在泊位上，且目前没货了，不增加
-                //防止出问题
-                profit *= (1 + BOAT_DYNAMIC_SAME_TARGET_FACTOR);
+            if (!selectBoat.carry
+                    && selectBoat.targetBerthId != berth.id
+                    && selectBoat.targetBerthId != -1 &&
+                    berths.get(selectBoat.targetBerthId).curBoatGlobalId
+                            != selectBoat.globalId) {
+                //没到泊位切换目标降低点价值
+                profit *= BOAT_CHANGE_FACTOR;
             }
             if (profit > bestProfit) {
                 bestProfit = profit;
@@ -1366,6 +1375,12 @@ public class Strategy {
         }
         if (bestBoat == null) {
             return false;
+        }
+        if (!bestBoat.carry && bestBoat.targetBerthId != -1 &&
+                berths.get(bestBoat.targetBerthId).curBoatGlobalId == bestBoat.globalId &&
+                bestBerth.id != bestBoat.targetBerthId &&
+                goodsNumList[bestBerth.id] < BOAT_CHANGE_BERTH_MIN_NUM_DIFF) {
+            bestBerth = berths.get(bestBoat.targetBerthId);
         }
         decisionBoatBuy(bestBoat, bestBerth, bestSellPoint, goodsNumList);
         return true;
@@ -2255,13 +2270,13 @@ public class Strategy {
                 continue;
             }
             boolean avoidOther = false;
-            Point point = gameMap.discreteToPos(robot.path.get(2));
-            if (!point.equal(robot.pos)) {
+            Point originNext = gameMap.discreteToPos(robot.path.get(2));
+            if (!originNext.equal(robot.pos)) {
                 for (SimpleRobot other : totalRobots) {
                     if (other.belongToMe) {
                         continue;
                     }
-                    if (other.noMoveTime > FPS / 4 && other.p.equal(point)) {
+                    if (other.noMoveTime > ROBOT_DIRECTION_AVOID_OTHER_TRIGGER_THRESHOLD && other.p.equal(originNext)) {
                         avoidOther = true;
                         break;
                     }
@@ -2277,17 +2292,17 @@ public class Strategy {
             //大于判断是否其他人也不动
             //我的下一个点四周有至少一个机器人不动
 
-            if (point.equal(robot.pos)) {
+            if (originNext.equal(robot.pos)) {
                 if (!robot.avoid) {
                     printError("error in avoid other");
                 }
                 continue;
             }
             ArrayList<Point> avoidPoints = new ArrayList<>();
-            avoidPoints.add(point);//前一个点是避让点
+            avoidPoints.add(originNext);//前一个点是避让点
             for (int j = 0; j < DIR.length / 2; j++) {
                 Point e = robot.pos.add(DIR[j]);
-                if (e.equal(point) ||
+                if (e.equal(originNext) ||
                         !gameMap.robotCanReach(e.x, e.y)
                         || gameMap.isRobotMainChannel(e.x, e.y)) {
                     continue;
@@ -2297,7 +2312,7 @@ public class Strategy {
                     if (simpleRobot.belongToMe) {
                         continue;
                     }
-                    if (simpleRobot.noMoveTime < FPS / 4) {
+                    if (simpleRobot.noMoveTime < ROBOT_DIRECTION_AVOID_OTHER_TRIGGER_THRESHOLD) {
                         continue;
                     }
                     if (simpleRobot.p.equal(e)) {
@@ -2310,10 +2325,25 @@ public class Strategy {
 
             if (robot.path.size() == 3) {
                 //下一个点就是目标点,等着吧
-                robot.path.clear();
-                robot.path.add(gameMap.posToDiscrete(robot.pos));
-                robot.path.add(gameMap.posToDiscrete(robot.pos));
-                robot.path.add(gameMap.posToDiscrete(robot.pos));
+                boolean hasOther = false;
+                for (SimpleRobot other : totalRobots) {
+                    if (other.belongToMe) {
+                        continue;
+                    }
+                    //对面5帧不动，直接让
+                    if (other.p == originNext) {
+                        hasOther = true;
+                        break;
+                    }
+                }
+                if (!hasOther) {
+                    //下一个目标没人，给他了
+                    robot.path.clear();
+                    robot.path.add(gameMap.posToDiscrete(robot.pos));
+                    robot.path.add(gameMap.posToDiscrete(robot.pos));
+                    robot.path.add(gameMap.posToDiscrete(robot.pos));
+                }
+                //有人，则努力冲，直到他50帧不动当他人机
                 continue;
             }
             //加入避让路径进去
@@ -2350,9 +2380,17 @@ public class Strategy {
                 printError("frame:" + frameId + "robotId:" + robot.id + ",can not avoid suiji");
                 int index = random.nextInt(4);
                 Point next = robot.pos.add(DIR[index]);
+                if (next.equal(originNext)) {
+                    //如果随机出了原先下一个点，则站着不动
+                    next = robot.pos;
+                }
                 while (!gameMap.robotCanReach(next.x, next.y)) {
                     index = random.nextInt(4);
                     next = robot.pos.add(DIR[index]);
+                    if (next.equal(originNext)) {
+                        //如果随机出了原先下一个点，则站着不动
+                        next = robot.pos;
+                    }
                 }
                 Point mid = next.add(robot.pos).div(2);
                 robot.path.clear();
@@ -2401,7 +2439,7 @@ public class Strategy {
         }
         short maxDeep = (short) (robotCommonHeuristicCs[robot.pos.x][robot.pos.y] >> 2);
         if (conflictPoints != null) {
-            maxDeep += 5;
+            maxDeep += (short) (ROBOT_AVOID_OTHER_DEEP);
         }
         return robotMoveToPointBerth(gameMap, robot.pos, -1, workbenches.get(targetWorkBenchId).pos
                 , maxDeep, otherPaths, robotCommonHeuristicCs, conflictPoints);
@@ -2610,6 +2648,9 @@ public class Strategy {
                 if (!sellBerth.robotCanReach(robot.pos)) {
                     continue; //不能到达
                 }
+                if (berthLock.contains(sellBerth.id)) {
+                    continue;
+                }
                 //assert fixTime != Integer.MAX_VALUE;
                 int arriveTime = sellBerth.getRobotMinDistance(robot.pos);
                 double profit;
@@ -2750,7 +2791,9 @@ public class Strategy {
             printError("frame:" + frameId + ",jumpCount");
         }
         money = Integer.parseInt(parts[1]);
-
+        for (Berth berth : berths) {
+            berth.lastBoatGlobalId = berth.curBoatGlobalId;
+        }
         //场上新增工作台
         int num = getIntInput();
         for (Map.Entry<Integer, Workbench2> entry : workbenches.entrySet()) {
@@ -2835,7 +2878,7 @@ public class Strategy {
             SimpleRobot simpleRobot = totalRobots.get(i);
             simpleRobot.input();
             //5帧不动且是贵重物品
-            if (simpleRobot.noMoveTime > FPS / 4 && !simpleRobot.belongToMe) {
+            if (simpleRobot.noMoveTime > ROBOT_DIRECTION_AVOID_OTHER_TRIGGER_THRESHOLD && !simpleRobot.belongToMe) {
                 //5帧不动，很可能对面进入了pending状态，此时自己暂时放弃这个工作台
                 int id = gameMap.curWorkbenchId[simpleRobot.p.x][simpleRobot.p.y];
                 if (id != -1 && workbenches.get(id).value > PRECIOUS_WORKBENCH_BOUNDARY) {
@@ -2844,7 +2887,7 @@ public class Strategy {
                 }
             }
             //200帧不动且有物品，说明对面应该是卡死了，这个位置所有工作台锁死
-            if (simpleRobot.noMoveTime > FPS * 5 && !simpleRobot.belongToMe) {
+            if (simpleRobot.noMoveTime > FPS * 2 && !simpleRobot.belongToMe) {
                 //5帧不动，很可能对面进入了pending状态，此时自己暂时放弃这个工作台，对面超过100帧不动,选择这个目标的我直接换
                 int id = gameMap.curWorkbenchId[simpleRobot.p.x][simpleRobot.p.y];
                 if (id != -1) {
@@ -2945,22 +2988,22 @@ public class Strategy {
                 if (simpleBoat.status != 0 &&
                         simpleBoat.corePoint.equal(berth.corePoint)
                         && simpleBoat.direction == berth.coreDirection
-                        && berth.curBoatId == -1) {
+                        && berth.curBoatGlobalId == -1) {
                     //此时我不能发berth指令，因为会导致慢,有人了，则不管
-                    berth.curBoatId = simpleBoat.id;
+                    berth.curBoatGlobalId = simpleBoat.id;
                 }
-                if (berth.curBoatId == simpleBoat.id) {
+                if (berth.curBoatGlobalId == simpleBoat.id) {
                     if (!(simpleBoat.corePoint.equal(berth.corePoint)
                             && //不在泊位上，一定是离开了泊位
                             simpleBoat.direction == berth.coreDirection)) {
-                        berth.curBoatId = -1;
+                        berth.curBoatGlobalId = -1;
                     }
                     //行驶状态也没到达泊位
                     if (simpleBoat.status == 0) {
-                        berth.curBoatId = -1;
+                        berth.curBoatGlobalId = -1;
                     }
                     if (simpleBoat.status != 2 && simpleBoat.lastStatus == 2) {
-                        berth.curBoatId = -1;
+                        berth.curBoatGlobalId = -1;
                     }
                 }
             }
@@ -2998,7 +3041,7 @@ public class Strategy {
             if (boat.status == 2) {
                 int berthId = gameMap.getBelongToBerthId(boat.corePoint);
                 assert berthId != -1;
-                berths.get(berthId).curBoatId = boat.id;//一定进入泊位
+                berths.get(berthId).curBoatGlobalId = boat.id;//一定进入泊位
             }
         }
 
@@ -3091,6 +3134,7 @@ public class Strategy {
                 Boat boat = boats.get(i);
                 boat.id = i;
                 boat.globalId = id;
+                totalBoats.get(id).localId = i;
                 boat.input(totalBoats.get(id));
             }
         }
@@ -3104,7 +3148,19 @@ public class Strategy {
             }
             printError("error,no buy boats");
         }
-
+        berthLock.clear();
+        for (Berth berth : berths) {
+            if (berth.lastBoatGlobalId == berth.curBoatGlobalId) {
+                berth.curBoatIdNoChangeTime++;
+            } else {
+                berth.curBoatIdNoChangeTime = 0;
+            }
+            if (berth.curBoatGlobalId != -1 && berth.curBoatIdNoChangeTime >= FPS * 10 &&
+                    berth.goodsNums * 2 > boatCapacity) {
+                //占了两百帧还不懂，且此时还多了一半的货物
+                berthLock.add(berth.id);//锁死泊位
+            }
+        }
         String okk = inStream.readLine();
         printMost(okk);
         long e = System.currentTimeMillis();

@@ -13,6 +13,7 @@ public class SimpleBoat {
     int num;
     boolean belongToMe;
     int noMoveTime;
+    int localId = -1;
 
     PointWithDirection pointWithDirection = new PointWithDirection(new Point(), -1);
     PointWithDirection lastPointWithDirection = new PointWithDirection(new Point(), -1);
