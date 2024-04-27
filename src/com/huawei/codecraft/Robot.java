@@ -46,7 +46,7 @@ public class Robot {
     public Robot(Strategy strategy, int type) {
         this.strategy = strategy;
         this.type = type;
-        this.maxNum = type == 0 ? 1 : 2;
+        this.maxNum = (type == 0 ? 1 : 2);
     }
 
 
